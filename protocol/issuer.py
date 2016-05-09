@@ -1,4 +1,5 @@
-from charm.core.math.integer import randomPrime, random, integer, randomBits
+from random import randint
+from charm.core.math.integer import randomPrime, random, integer, randomBits, isPrime
 from protocol.globals import lprime, lvprimeprime, le
 from protocol.utils import randomQR
 
@@ -44,8 +45,13 @@ class Issuer:
         return self.pk, self.sk
 
     def issuance(self, u, attrs):
-        vprimeprime = randomBits(lvprimeprime)
-        e = randomPrime(le)
+        # Set the Most-significant-bit to 1
+        vprimeprime = randomBits(lvprimeprime) | (2 ** (lvprimeprime - 1))
+
+        estart = 2 ** 596
+        eend = (estart + 2 ** 196)
+
+        e = self.__get_prime_in_range(estart, eend)
 
         sig = self.__sign__(self.pk, self.sk, attrs, vprimeprime, u, e)
         return sig["A"], e, vprimeprime
@@ -73,3 +79,12 @@ class Issuer:
         return {'A': A, 'Q': Q, 'e': e, 'v': v}
 
 
+    def __get_prime_in_range(self, start, end):
+        n = 0
+        while n < 100000:
+            r = randint(start, end)
+            if isPrime(r):
+                print("Found prime in {} iteration between {} and {}".format(n, start, end))
+                return r
+            n += 1
+        raise Exception("Cannot find prime in 1000 iterations")

@@ -20,7 +20,12 @@ class Prover:
     def set_attrs(self, attrs):
         self.m = attrs
 
-    def prepare_proof(self, attrs, revealed_attrs, A, e, v, nonce):
+    def prepare_proof(self, credential, revealed_attrs, nonce):
+        attrs = credential["attrs"]
+        A = credential["A"]
+        e = credential["e"]
+        v = credential["v"]
+
         # Revealed attributes
         Ar = {}
         # Unrevealed attributes

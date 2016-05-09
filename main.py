@@ -18,15 +18,17 @@ prover.set_attrs(attrs)
 
 A, e, vprimeprime = issuer.issuance(prover.U, attrs)
 v = prover.vprime + vprimeprime
-credential = (attrs, A, e, v)
+credential = {"attrs": attrs, "A": A, "e": e, "v": v}
 
 # Setup verifier
 verifier = Verifier(pk_i)
 nonce = verifier.get_nonce()
 
+# Prepare proof
 revealed_attrs = ['1']
-proof = prover.prepare_proof(attrs, revealed_attrs, A, e, v, nonce)
+proof = prover.prepare_proof(credential, revealed_attrs, nonce)
 
+# Verify the proof
 verify_status = verifier.verify_proof(proof, nonce, attrs)
 
 if verify_status:

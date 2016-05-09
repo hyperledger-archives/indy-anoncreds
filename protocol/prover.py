@@ -1,5 +1,5 @@
-import hashlib
 from charm.core.math.integer import randomBits, integer
+from protocol.utils import get_hash
 
 class Prover:
     "Idemix prover"
@@ -37,35 +37,33 @@ class Prover:
                 Aur[key] = val
 
         mtilde = {}
-        for i in range(1, len(Aur)):
-            mtilde[str(i)] = randomBits(592)
+        for key, val in Aur.items():
+            mtilde[str(key)] = randomBits(592)
 
         Ra = randomBits(2128)
 
         Aprime = A * (S ** Ra) % N
-        vprime = integer(v - e * Ra)
+        vprime = (v - e * Ra)
         eprime = e - (2 ** 596)
 
-        etilde = randomBits(456)
-        vtilde = randomBits(3060)
+        etilde = integer(randomBits(456))
+        vtilde = integer(randomBits(3060))
 
         Rur = 1 % N
 
-        for i in range(1, len(Aur)):
-            Rur = Rur * (R[str(i)] ** mtilde[str(i)])
+        for key, val in Aur.items():
+            Rur = Rur * (R[str(key)] ** mtilde[str(key)])
 
         T = (Aprime ** etilde) * Rur * (S ** vtilde) % N
 
-        h_challenge = hashlib.sha256()
-        h_challenge.update(T, Aprime, nonce)
-        c = h_challenge.digest()
+        c = integer(get_hash(Aprime, T, nonce))
 
-        evect = etilde - c * eprime
-        vvect = vtilde + c * vprime
+        evect = etilde - (c * eprime)
+        vvect = vtilde + (c * vprime)
 
         mvect = {}
-        for i, val in Aur.items():
-            mvect[str(i)] = mtilde[str(i)] + c * attrs[str(i)]
+        for key, val in Aur.items():
+            mvect[str(key)] = mtilde[str(key)] + (c * attrs[str(key)])
 
         return c, evect, vvect, mvect, Aprime, Ar, Aur
 

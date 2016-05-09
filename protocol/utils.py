@@ -20,8 +20,9 @@ def encodeAttrs(attrs):
     return attrs
 
 
-def get_hash(a, b, c):
+def get_hash(*args):
     h_challenge = hashlib.sha256()
-    h_challenge.update(a, b, c)
+    for i in range(0, len(args)):
+        h_challenge.update(Conversion.IP2OS(args[i]))
     return h_challenge.digest()
 

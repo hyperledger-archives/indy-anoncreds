@@ -27,9 +27,12 @@ nonce = verifier.get_nonce()
 revealed_attrs = ['1']
 proof = prover.prepare_proof(attrs, revealed_attrs, A, e, v, nonce)
 
-assert verifier.verify_proof(proof, nonce)
+verify_status = verifier.verify_proof(proof, nonce, attrs)
 
-
+if verify_status:
+    print("Proof verified")
+else:
+    print("Proof not valid")
 
 
 

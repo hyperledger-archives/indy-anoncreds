@@ -57,12 +57,6 @@ class Issuer:
         N = pk["N"]
         Rx = 1 % N
 
-        # print(R)
-        # print(list(attr.values()))
-        # attr_values = list(attr.values())
-        # for index in attr_values:
-        #     Rx = Rx * (R[index + 1] ** attr_values[index])
-
         for i in range(1, len(attr) + 1):
             Rx = Rx * (R[str(i)] ** attr[str(i)])
 

@@ -16,17 +16,16 @@ class Issuer:
         self.q = integer(2 * randQPrime + 1)
 
         n = self.p * self.q
-        nprime = randPPrime * randQPrime
 
         S = randomQR(n)
         # AS: Not sure where we would need this
         self.randomQuadResidue = S % n
 
-        Xz = integer(random(nprime))
+        Xz = integer(random(n))
         Xr = {}
 
         for i in range(1, l+1):
-            Xr[str(i)] = integer(random(nprime))
+            Xr[str(i)] = integer(random(n))
 
         Z = (S ** Xz) % n
 
@@ -46,12 +45,13 @@ class Issuer:
 
     def issuance(self, u, attrs):
         # Set the Most-significant-bit to 1
-        vprimeprime = randomBits(lvprimeprime) | (2 ** (lvprimeprime - 1))
+        vprimeprime = integer(randomBits(lvprimeprime) | (2 ** (lvprimeprime - 1)))
 
         estart = 2 ** 596
         eend = (estart + 2 ** 196)
 
-        e = self.__get_prime_in_range(estart, eend)
+        # e = self.__get_prime_in_range(estart, eend)
+        e = randomPrime(le)
 
         sig = self.__sign__(self.pk, self.sk, attrs, vprimeprime, u, e)
         return sig["A"], e, vprimeprime

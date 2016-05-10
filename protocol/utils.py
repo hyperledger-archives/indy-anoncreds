@@ -22,7 +22,7 @@ def encodeAttrs(attrs):
 
 def get_hash(*args):
     h_challenge = hashlib.sha256()
-    for i in range(0, len(args)):
-        h_challenge.update(Conversion.IP2OS(args[i]))
+    for i, val in enumerate(args):
+        h_challenge.update(Conversion.IP2OS(val))
     return h_challenge.digest()
 

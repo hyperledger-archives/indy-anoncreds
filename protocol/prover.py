@@ -43,9 +43,9 @@ class Prover:
 
         mtilde = {}
         for key, val in Aur.items():
-            mtilde[str(key)] = randomBits(592)
+            mtilde[str(key)] = integer(randomBits(592))
 
-        Ra = randomBits(2128)
+        Ra = integer(randomBits(2128))
 
         Aprime = A * (S ** Ra) % N
         vprime = (v - e * Ra)
@@ -59,11 +59,11 @@ class Prover:
         for key, val in Aur.items():
             Rur = Rur * (R[str(key)] ** mtilde[str(key)])
 
-        T = (Aprime ** etilde) * Rur * (S ** vtilde) % N
+        T = ((Aprime ** etilde) * Rur * (S ** vtilde)) % N
 
         c = integer(get_hash(Aprime, T, nonce))
 
-        evect = etilde - (c * eprime)
+        evect = etilde + (c * eprime)
         vvect = vtilde + (c * vprime)
 
         mvect = {}

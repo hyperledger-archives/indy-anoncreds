@@ -9,13 +9,15 @@ class Issuer:
         Setup an issuer
         :param l: Number of attributes
         """
-        randPPrime = randomPrime(lprime)
-        self.p_prime = randPPrime
-        self.p = integer(2 * randPPrime + 1)
+        self.p_prime = randomPrime(lprime)
+        while not isPrime(2 * self.p_prime + 1):
+            self.p_prime = randomPrime(lprime)
+        self.p = 2 * self.p_prime + 1
 
-        randQPrime = randomPrime(lprime)
-        self.q_prime = randQPrime
-        self.q = integer(2 * randQPrime + 1)
+        self.q_prime = randomPrime(lprime)
+        while not isPrime(2 * self.q_prime + 1):
+            self.q_prime = randomPrime(lprime)
+        self.q = 2 * self.q_prime + 1
 
         n = self.p * self.q
 
@@ -86,7 +88,7 @@ class Issuer:
         while n < 100000:
             r = randint(start, end)
             if isPrime(r):
-                print("Found prime in {} iteration between {} and {}".format(n, start, end))
+                # print("Found prime in {} iteration between {} and {}".format(n, start, end))
                 return r
             n += 1
         raise Exception("Cannot find prime in 1000 iterations")

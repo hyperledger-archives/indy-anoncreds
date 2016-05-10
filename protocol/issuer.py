@@ -10,9 +10,11 @@ class Issuer:
         :param l: Number of attributes
         """
         randPPrime = randomPrime(lprime)
+        self.p_prime = randPPrime
         self.p = integer(2 * randPPrime + 1)
 
         randQPrime = randomPrime(lprime)
+        self.q_prime = randQPrime
         self.q = integer(2 * randQPrime + 1)
 
         n = self.p * self.q
@@ -50,13 +52,13 @@ class Issuer:
         estart = 2 ** 596
         eend = (estart + 2 ** 196)
 
-        # e = self.__get_prime_in_range(estart, eend)
-        e = randomPrime(le)
+        e = self.__get_prime_in_range(estart, eend)
+        # e = randomPrime(le)
 
-        sig = self.__sign__(self.pk, self.sk, attrs, vprimeprime, u, e)
+        sig = self.__sign__(self.pk, attrs, vprimeprime, u, e)
         return sig["A"], e, vprimeprime
 
-    def __sign__(self, pk, sk, attr, v=0, u=0, e=0):
+    def __sign__(self, pk, attr, v=0, u=0, e=0):
         R = pk["R"]
         Z = pk["Z"]
         S = pk["S"]
@@ -70,11 +72,11 @@ class Issuer:
             u = u % N
             Rx = Rx * u
 
-        eprime = (sk["p"] - 1) * (sk["q"] - 1)
-        eprime = e % eprime
+        nprime = (self.p_prime * self.q_prime)
+        e1 = e % nprime
 
         Q = Z / (Rx * (S ** v)) % N
-        A = Q ** (eprime ** -1) % N  # This part is unclear. Revisit it
+        A = Q ** (e1 ** -1) % N  # This part is unclear. Revisit it
 
         return {'A': A, 'Q': Q, 'e': e, 'v': v}
 

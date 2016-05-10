@@ -1,10 +1,6 @@
-# Pydemix: Idemix implementation in python
+# AnonCreds: Anonymous credentials protocol implementation in python
 
-Implementation of Idemix Anonymous Credential System in python.
-
-## TODO:
-* Implement all predicate's provers/verifiers
-* Wrap all in the FiWare APIs
+Implementation of Anonymous Credential using python.
 
 ## Setup the project and dependencies
 Execute `bash setup.sh`

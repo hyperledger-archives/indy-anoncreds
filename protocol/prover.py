@@ -1,5 +1,8 @@
 from charm.core.math.integer import randomBits, integer
+
+from protocol.globals import lvprime, lmvect, lestart, letilde, lvtilde
 from protocol.utils import get_hash
+
 
 class Prover:
     "Idemix prover"
@@ -11,7 +14,7 @@ class Prover:
         """
         self.m = {}
         self.pk_i = pk_i
-        self._vprime = randomBits(2048)
+        self._vprime = randomBits(lvprime)
 
         S = self.pk_i["S"]
         n = self.pk_i["N"]
@@ -43,16 +46,16 @@ class Prover:
 
         mtilde = {}
         for key, val in Aur.items():
-            mtilde[str(key)] = integer(randomBits(592))
+            mtilde[str(key)] = integer(randomBits(lmvect))
 
-        Ra = integer(randomBits(2128))
+        Ra = integer(randomBits(lvprime))
 
         Aprime = A * (S ** Ra) % N
         vprime = (v - e * Ra)
-        eprime = e - (2 ** 596)
+        eprime = e - (2 ** lestart)
 
-        etilde = integer(randomBits(456))
-        vtilde = integer(randomBits(3060))
+        etilde = integer(randomBits(letilde))
+        vtilde = integer(randomBits(lvtilde))
 
         Rur = 1 % N
 

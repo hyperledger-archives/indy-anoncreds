@@ -6,12 +6,13 @@ from protocol.utils import encodeAttrs
 # Create a dictionary of attributes to share
 # {'1': name, '2': age, '3': sex}
 attrs = {'1': 'Aditya Pratap Singh', '2': '25', '3': 'male'}
-# Encode the attributes such that none of them exceed 256 integer limit imposed by AnonCreds
+# Encode the attributes such that none of them exceed 256 integer limit
+# imposed by AnonCreds
 attrs = encodeAttrs(attrs)
 
 # Create issuer and get its public key
 issuer = Issuer(len(attrs))
-pk_i, sk_i = issuer.gen_key_pair()
+pk_i = issuer.PK
 
 prover = Prover(pk_i)
 prover.set_attrs(attrs)
@@ -22,7 +23,7 @@ credential = {"attrs": attrs, "A": A, "e": e, "v": v}
 
 # Setup verifier
 verifier = Verifier(pk_i)
-nonce = verifier.get_nonce()
+nonce = verifier.Nonce
 
 # Prepare proof
 revealed_attrs = ['1']
@@ -35,7 +36,3 @@ if verify_status:
     print("Proof verified")
 else:
     print("Proof not valid")
-
-
-
-

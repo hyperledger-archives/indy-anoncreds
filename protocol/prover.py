@@ -1,6 +1,6 @@
 from charm.core.math.integer import randomBits, integer
 
-from protocol.globals import lvprime, lmvect
+from protocol.globals import lvprime, lmvect, lestart, letilde, lvtilde
 from protocol.utils import get_hash
 
 
@@ -14,7 +14,6 @@ class Prover:
         """
         self.m = {}
         self.pk_i = pk_i
-        # TODO: LH confirm the lenght of lvprime? Is it 2128 bits or 2048 bits
         self._vprime = randomBits(lvprime)
 
         S = self.pk_i["S"]
@@ -53,10 +52,10 @@ class Prover:
 
         Aprime = A * (S ** Ra) % N
         vprime = (v - e * Ra)
-        eprime = e - (2 ** 596)
+        eprime = e - (2 ** lestart)
 
-        etilde = integer(randomBits(456))
-        vtilde = integer(randomBits(3060))
+        etilde = integer(randomBits(letilde))
+        vtilde = integer(randomBits(lvtilde))
 
         Rur = 1 % N
 

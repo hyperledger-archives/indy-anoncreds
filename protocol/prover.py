@@ -5,7 +5,6 @@ from protocol.utils import get_hash
 
 
 class Prover:
-    "Idemix prover"
 
     def __init__(self, pk_i):
         """

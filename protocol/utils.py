@@ -23,6 +23,11 @@ def encodeAttrs(attrs):
 
 
 def get_hash(*args):
+    """
+    Enumerate over the input tuple and generate a hash using the tuple values
+    :param args:
+    :return:
+    """
     h_challenge = hashlib.sha256()
     for i, val in enumerate(args):
         h_challenge.update(Conversion.IP2OS(val))

@@ -23,7 +23,7 @@ class Prover:
         self.m = attrs
 
     def prepare_proof(self, credential, revealed_attrs, nonce):
-        attrs = credential["attrs"]
+        attrs = credential["encodedAttrs"]
         A = credential["A"]
         e = credential["e"]
         v = credential["v"]

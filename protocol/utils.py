@@ -1,4 +1,4 @@
-import hashlib
+from hashlib import sha256
 from random import randint
 
 from charm.core.math.integer import random, isPrime
@@ -15,15 +15,12 @@ def encodeAttrs(attrs):
     :param attrs: The attributes to pass in credentials
     :return:
     """
-    for key, value in attrs.items():
-        h_challenge = hashlib.sha256()
-        h_challenge.update(value.encode())
-        attrs[key] = Conversion.bytes2integer(h_challenge.digest())
-    return attrs
+    return {key: Conversion.bytes2integer(sha256(value.encode()).digest())
+            for key, value in attrs.items()}
 
 
 def get_hash(*args):
-    h_challenge = hashlib.sha256()
+    h_challenge = sha256()
     for i, val in enumerate(args):
         h_challenge.update(Conversion.IP2OS(val))
     return h_challenge.digest()
@@ -36,7 +33,7 @@ def get_prime_in_range(start, end):
         r = randint(start, end)
         if isPrime(r):
             print("Found prime in {} iteration between {} and {}".
-                format(n, start, end))
+                  format(n, start, end))
             return r
         n += 1
     raise Exception("Cannot find prime in {} iterations".format(maxIter))

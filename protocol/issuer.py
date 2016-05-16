@@ -55,7 +55,7 @@ class Issuer:
         """
         return self._pk
 
-    def issuance(self, u, attrs):
+    def issue(self, u, attrs):
         # Set the Most-significant-bit to 1
         vprimeprime = integer(randomBits(lvprimeprime) |
                               (2 ** (lvprimeprime - 1)))

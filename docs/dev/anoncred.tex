@@ -97,7 +97,7 @@ The issuer's public key is $pk_I = (n, S,Z,R_1,R_2,\ldots,R_l,P)$ and the privat
 For the master secret $m_1$ and Issuer's public key $pk_I$ Prover 
 \begin{enumerate}
 \item Generates random $r<\rho$ and computes
-$\mathrm{nym} = g^{m_1}h^{r}$.
+$\mathrm{nym} = g^{m_1}h^{r}\pmod{\Gamma}$.
 \item Sends $\mathrm{nym}$ to the Issuer.
 \end{enumerate}
 

@@ -17,17 +17,17 @@ pk_i, sk_i = issuer.key_pair
 prover = Prover(pk_i)
 prover.set_attrs(encodedAttrs)
 
-A, e, vprimeprime = issuer.issuance(prover.U, encodedAttrs)
+A, e, vprimeprime = issuer.issue(prover.U, encodedAttrs)
 v = prover.vprime + vprimeprime
-credential = {"encodedAttrs": encodedAttrs, "A": A, "e": e, "v": v}
+presentationToken = {"encodedAttrs": encodedAttrs, "A": A, "e": e, "v": v}
 
 # Setup verifier
 verifier = Verifier(pk_i)
 nonce = verifier.get_nonce()
 
 # Prepare proof
-revealed_attrs = ['1']
-proof = prover.prepare_proof(credential, revealed_attrs, nonce)
+revealedAttrs = ['1']
+proof = prover.prepare_proof(presentationToken, revealedAttrs, nonce)
 
 # Verify the proof
 verify_status = verifier.verify_proof(proof, nonce, encodedAttrs)

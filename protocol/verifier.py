@@ -1,13 +1,15 @@
 from charm.core.math.integer import integer, randomBits
 from protocol.utils import get_hash
+from protocol.globals import lestart, lnonce
 
 
 class Verifier:
     def __init__(self, pk_i):
         self.pk_i = pk_i
 
-    def get_nonce(self):
-        nv = integer(randomBits(80))
+    @property
+    def Nonce(self):
+        nv = integer(randomBits(lnonce))
 
         return nv
 
@@ -27,7 +29,7 @@ class Verifier:
         for key, val in Ar.items():
             Rr *= R[str(key)] ** attrs[str(key)]
 
-        denom = (Rr * (Aprime ** (2 ** 596)))
+        denom = (Rr * (Aprime ** (2 ** lestart)))
         Tvect1 = (Z / denom) ** (-1 * c)
         Tvect2 = (Aprime ** evect)
         Tvect3 = (S ** vvect)

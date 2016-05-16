@@ -12,7 +12,7 @@ encodedAttrs = encodeAttrs(attrs)
 
 # Create issuer and get its public key
 issuer = Issuer(len(encodedAttrs))
-pk_i, sk_i = issuer.key_pair
+pk_i = issuer.PK
 
 prover = Prover(pk_i)
 prover.set_attrs(encodedAttrs)
@@ -23,7 +23,7 @@ presentationToken = {"encodedAttrs": encodedAttrs, "A": A, "e": e, "v": v}
 
 # Setup verifier
 verifier = Verifier(pk_i)
-nonce = verifier.get_nonce()
+nonce = verifier.Nonce
 
 # Prepare proof
 revealedAttrs = ['1']

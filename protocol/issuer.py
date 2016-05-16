@@ -1,9 +1,7 @@
-from random import randint
 from charm.core.math.integer import randomPrime, random, integer, randomBits, \
     isPrime
-from protocol.globals import lprime, lvprimeprime, le
-from protocol.utils import randomQR, get_prime_in_range, get_prime_in_range, \
-    get_prime_in_range
+from protocol.globals import lprime, lvprimeprime, lestart, leendrange
+from protocol.utils import randomQR, get_prime_in_range
 
 
 class Issuer:
@@ -46,28 +44,28 @@ class Issuer:
         for i in range(1, l+1):
             R[str(i)] = S ** Xr[str(i)]
 
-        self.pk = {'N': n, 'S': S, 'Z': Z, 'R': R}
+        self._pk = {'N': n, 'S': S, 'Z': Z, 'R': R}
         self.sk = {'p': self.p, 'q': self.q}
 
     @property
-    def key_pair(self):
+    def PK(self):
         """
         Generate key pair for the issuer
         :return: Tuple of public-secret key for the issuer
         """
-        return self.pk, self.sk
+        return self._pk
 
     def issue(self, u, attrs):
         # Set the Most-significant-bit to 1
         vprimeprime = integer(randomBits(lvprimeprime) |
                               (2 ** (lvprimeprime - 1)))
 
-        estart = 2 ** 596
-        eend = (estart + 2 ** 196)
+        estart = 2 ** lestart
+        eend = (estart + 2 ** leendrange)
 
         e = get_prime_in_range(estart, eend)
 
-        sig = self._sign(self.pk, attrs, vprimeprime, u, e)
+        sig = self._sign(self._pk, attrs, vprimeprime, u, e)
         return sig["A"], e, vprimeprime
 
     def _sign(self, pk, attr, v=0, u=0, e=0):

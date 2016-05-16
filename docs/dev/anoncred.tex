@@ -1,0 +1,276 @@
+
+\documentclass[a4paper]{article}
+\usepackage[hmargin=2cm,vmargin=2cm]{geometry}
+
+
+\pagestyle{plain}
+
+\usepackage{amssymb,amsthm,amsmath,amsfonts,longtable, comment,array, ifpdf, hyperref,url}
+\usepackage{graphicx}
+
+\title{Anonymous credentials}
+\author{Dmitry Khovratovich}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}\label{sec:intro}
+
+\subsection{Concept}
+
+The concept of \emph{anonymous credentials} allows users of certain web service (for example, online banking) to prove that their identity satisfy certain properties in uncorrelated way without revealing the other identity details.  The properties can be raw identity attributes  such as
+the birth date or the address, or a more sophisticated predicates such as ``A is older than 20 years old''.
+
+We assume three parties: Issuer, Prover, Verifier (Service). From the functional perspective, the Issuer gives a credential $C$ based on identity $X$, which asserts certain property $\mathcal{P}$ about $X$, to the Prover. The identity consists of attributes $m_1, m_2,\ldots, m_l$. The Prover then presents $(\mathcal{P},C)$  to the Verifier, which 
+can verify that the Issuer had checked that Prover's identity has property $\mathcal{P}$. 
+
+For compliance, another party Inspector is often deployed. Inspector is able to deanonymize the Prover given the transcript of his interaction with the Verifier.  
+
+\subsection{Properties}
+
+First of all, credentials are \emph{unforgeable} in the sense that no one can fool the Verifier with a credential not prepared by the Issuer.
+
+We say that credentials are  \emph{unlinkable} if it is impossible to correlate the presented credential across multiple presentations. Technically it is implemented by the Prover \emph{proving} with a zero-knowledge proof \emph{that he has a credential} rather than showing the credential.
+
+Unlinkability can be simulated by the issuer generating a sufficient number of ordinary unrelated credentials. Also unlinkability can be turned off to make credentials \emph{one-show} so that second and later presentations are detected.
+
+
+Credentials are \emph{delegatable} if Prover $A$ can delegate a credential $C$ to Prover $B$ with certain attributes $X$, so that Verifier would not learn the identity of $A$ if $B$ presents $Y$ to him. The delegation may continue further thus creating a credential chain. 
+
+\subsection{Pseudonyms}
+Typically a credential is bound to a certain pseudonym $\mathrm{nym}$. It is supposed that Prover has been registered as $\mathrm{nym}$ at the Issuer, and communicated (part of) his identity $X$ to him. After  that the Issuer can issue a credential that couples $\mathrm{nym}$ and $X$. 
+
+The Prover may have a pseudonym at the Verifier, but not necessarily. If there is no pseudonym then the Verifier provides the service to users who did not register. If the pseudonym $\mathrm{nym}_V$ is required, it can be generated from a master secret $m_1$ together with $\mathrm{nym}$ in a way that $\mathrm{nym}$ can not be linked to $\mathrm{nym}_V$. However, Prover is supposed to prove that the credential  he presents was issued to a pseudonym derived from the same master secret as used to produce $\mathrm{nym}_V$.
+
+\section{Simple example}
+
+ Government (Issuer $G$) issues credentials with age and photo hash. Company ABC-Co (Issuer $A$) issues a credential that includes start-date and employment status, e.g., 'FULL-TIME'.
+ 
+Prover establishes a pseudonym with both issuers. Then he got two credentials independently. After that he proves
+to Verifier that he has two credentials such that
+\begin{itemize}
+\item The same master secret is used in both credentials;
+\item The age value in the first credential is over 20;
+\item The employment status is 'FULL-TIME'.
+\end{itemize}
+
+Steps in Section~\ref{sec:iss-setup} must be executed for each Issuer.
+
+Issuer and Prover mutually trust each other in submitting values of the right format
+during credential's issuance. This trust can be eliminated at the cost of some extra steps.
+
+\subsection{Common parameters}
+
+Some parameters are common for all users and are generated as follows.
+\begin{enumerate}
+\item Generate random 256-bit prime $\rho$ and a random 1376-bit number $b$ such that
+$\Gamma = b\rho+1$ is prime and $\rho$ does not divide $b$;
+\item Generate random $g'< \Gamma$ such that
+$g'^{b}\neq 1\pmod{\Gamma}$ and compute $g = g'^{b}\neq 1$.
+\item Generate random $r<\rho$ and compute $h = g^r$.
+\end{enumerate}
+Then $(\Gamma,\rho,g,h)$ are public parameters.
+
+\subsection{Issuer setup}\label{sec:iss-setup}
+
+Let $l$ be the number of attributes we work with.  Let $P$ be a description of the 
+attribute set (types, number, length).  Every credential is bind to a pseudonym, which is derived from the master secret
+$m_1$.
+
+%Additional pre-fixed parameters:
+%\begin{itemize}
+%\item $l_n = 2048$ bits (\textsl{secparam} in Charm);
+%\end{itemize}
+
+Steps to set up the issuer
+\begin{enumerate}
+\item Generate random 1024-bit primes $p',q'$ such that  $p \leftarrow 2p'+1$ and $q \leftarrow 2q'+1$ are primes too. Finally compute $n \leftarrow pq$.
+    \item Generate a random quadratic residue\footnote{using the function \textsl{randomQR} from the Charm library.} $S$ modulo $n$;
+    \item Select random $x_Z, x_{R_1},\ldots , x_{R_l}\in [2; p'q'-1]$ and
+compute $Z \leftarrow S^{x_Z}\pmod{n} , R_i \leftarrow S^{x_{R_i}}\pmod{n}$ for $1\leq i \leq l$.
+\end{enumerate}
+The issuer's public key is $pk_I = (n, S,Z,R_1,R_2,\ldots,R_l,P)$ and the private key is $sk_I = (p, q)$.
+
+\subsection{Pseudonym registration}
+
+For the master secret $m_1$ and Issuer's public key $pk_I$ Prover 
+\begin{enumerate}
+\item Generates random $r<\rho$ and computes
+$\mathrm{nym} = g^{m_1}h^{r}$.
+\item Sends $\mathrm{nym}$ to the Issuer.
+\end{enumerate}
+
+
+\subsection{Issuance}
+Let $m_2,m_3,..,m_l$ be integer attribute values, all 256-bit, known to the Issuer. 
+\begin{enumerate}
+%\item [0.1-0.2] Issuer generates 80-bit nonce $n_1$ and sends it to the Prover;
+\item [1.1] Prover generates random 2128-bit $v'$ and loads Issuer's key $pk_I$.
+\item [1.2] Prover computes $
+U \leftarrow S^{v'}R_1^{m_1}\pmod{n}$ taking $S$ from $pk_I$.
+%\item [1.3] Prover computes $c \leftarrow H(U||n_1)$, where $H$ is a hash function.
+\item [1.4] Prover sends $U$ to the Issuer.
+\item [2.1] Issuer generates  random 2724-bit number $v''$ with most significant bit equal 1 and random prime  $e$ such that
+$$
+2^{596}\leq e \leq 2^{596}+ 2^{119}.
+$$
+\item [2.2] Issuer computes 
+$$
+Q \leftarrow \frac{Z}{U S^{v''}(R_2^{m_2}R_3^{m_3}\cdots  R_l^{m_l})}\pmod{n}.
+$$
+and
+$$
+A \leftarrow Q^{e^{-1}\pmod{p'q'}}\pmod{n}.
+$$
+\item [2.3] Issuer sends $(A,e,v'')$ to the Prover.
+\item [3.0] Prover computes $v \leftarrow v'+v''$.
+\end{enumerate}
+Prover stores credential $(\{m_i\},A,e,v)$.
+
+\subsection{Proof preparation}
+Let $\mathcal{A}$ be the set of \emph{all} attribute identifiers present, of which  $\mathcal{A}_r$ are the identifiers of attributes  that are revealed to the Verifier, and $\mathcal{A}_{\overline{r}}$ are those that are hidden.
+
+  
+\begin{enumerate}
+\item [0.0] Verifier sends nonce $n_1$ to the Prover.
+\item [0.1] For each non-revealed attribute $i\in \mathcal{A}_{\overline{r}}$ generate random 592-bit number $\widetilde{m_i}$.
+\item For each credential $C = (\mathcal{I}=\{m_i\},A,e,v)$ and Issuer's 
+public key $pk_I$ compute values $T$ and $A'$\begin{enumerate}
+\item [1.1] Choose random 2128-bit $r$;
+\item [1.2] (\emph{signature randomization}) Take $n,S$ from $pk_I$ compute 
+\begin{equation}\label{eq:aprime}
+A' \leftarrow A S^{r}\pmod{n}
+\text{ and } v' \leftarrow v - e\cdot r\text{ in integers.}
+\end{equation} 
+Also compute $e' \leftarrow e - 2^{596}$.
+\item[2.1] Generate random 456-bit number $\widetilde{e}$ and random 3060-bit number $\widetilde{v}$.
+\item[2.2] Compute 
+$$
+T \leftarrow (A')^{\widetilde{e}}\left(\prod_{i\in A_{\overline{r}}\cap \mathcal{I}} (R_i)^{\widetilde{m_i}}\right)(S^{\widetilde{v}})\pmod{n}.
+$$
+\end{enumerate}
+\item[3] Gather all computed $T$ and $A'$ into sets $\{T\}$ and $\{A\}$ respectively. Compute 
+$$
+c\leftarrow H(\{A'\},\{T\},n_1)
+$$
+\item[4.1] For each credential $C = (\mathcal{I}=\{m_i\},A,e,v)$ and Issuer's 
+public key $pk_I$ compute
+\begin{align*}
+\widehat{e}& \leftarrow \widetilde{e}+c\cdot e';\\
+\widehat{v} &\leftarrow \widetilde{v}+cv'.
+\end{align*}
+\item[4.2] For all $i\in A_{\overline{r}}$ compute
+$$ 
+\widehat{m}_i \leftarrow \widetilde{m_i} + cm_i.
+$$
+The values $Pr_C=(\widehat{e},\widehat{v},A')$ are the \emph{sub-proof}
+for credential $C$.
+
+\end{enumerate}
+Then $(c,\{\widehat{e}\},\{\widehat{v}\},\{\widehat{m}_i\},\{A'\})$ is a proof sent to the Verifier.
+
+\subsection{Verification}
+Verifier uses all Issuer public key $pk_I$ involved into the credential generation and  the received $(c,\widehat{e},\widehat{v},\{\widehat{m}_i\},A')$. He also uses revealed 
+$m_i$ for $i\in A_r$.
+
+\begin{enumerate}
+\item[1.] For each credential $C$ consider the involved attributes $I$ and take sub-proof $(\widehat{e},\widehat{v},A')$. Then compute 
+\begin{equation}\label{eq:that}
+ \widehat{T} \leftarrow \left(
+    \frac{Z}
+    { \left(
+        \prod_{i \in A_r\cap I}(R_i)^{m_i}
+    \right)
+    (A')^{2^{596}}
+    }\right)^{-c}
+    (A')^{\widehat{e}}
+    \left(\prod_{i\in A_{\overline{r}}\cap I}(R_i)^{\widehat{m}_i}\right)
+    S^{\widehat{v}}\pmod{n}.
+\end{equation}
+\item[2.] Gather computed $\widehat{T}$ into the set $\{\widehat{T}\}$ and compute $$
+\widehat{c} \leftarrow H(\{A'\},\{\widehat{T}\},n_1);
+$$
+\item[3.] If $c=\widehat{c}$ output VERIFIED else FAIL.
+\end{enumerate}
+
+\subsection{Implementation notice}
+The exponentiation, modulo, and inverse operations are implemented in the Charm library for the class \textsl{integer}.
+
+\subsection{Why it works}
+
+Suppose that the Prover submitted the right values. Then Equation~\eqref{eq:that} can be viewed as
+\begin{equation}
+\widehat{T} = Z^{-c}\left(\prod_{i \in A_r}(R_i)^{cm_i}\right)
+(A')^{ \widetilde{e}+c\cdot e'+c2^{596}} \left(\prod_{i\in A_{\overline{r}}}(R_i)^{ \widetilde{m_i} + cm_i}\right)
+S^{\widetilde{v}+cv'}.
+\end{equation}
+If we reorder the multiples, we get
+\begin{equation}
+\widehat{T} = Z^{-c}\left(\prod_{i \in A_r}(R_i)^{cm_i}\right)\left(\prod_{i\in A_{\overline{r}}}(R_i)^{ cm_i}\right)
+(A')^{ c\cdot (e'+2^{596})}
+S^{cv'}
+\left(\prod_{i\in A_{\overline{r}}}(R_i)^{ \widetilde{m_i}}\right)(A')^{ \widetilde{e}}
+S^{\widetilde{v}}
+\end{equation}
+The last three factors multiple to $T$ so we get
+\begin{equation}
+\widehat{T} =\left(\frac{Z}{(A')^{e}S^{v'}\prod_i (R_i)^{m_i}}\right)^{-c}T
+\end{equation}
+From Equation~\eqref{eq:aprime} we obtain that
+$(A')^e =A^e S^{v-v'}$, so we finally get
+\begin{equation}
+\widehat{T} =\left(\frac{Z}{A^{e}S^{v}\prod_i (R_i)^{m_i}}\right)^{-c}T
+\end{equation} 
+From the definition of $A$ we get that
+\begin{equation}
+A^e S^v = \frac{Z}{\prod_i (R_i)^{m_i}},
+\end{equation}
+which implies
+$$
+\widehat{T} = T.
+$$
+\begin{comment}
+
+\section{Actual implementation}
+
+Idemix is a cryptographic library that implements the concepts described in Section~\ref{sec:intro}.
+
+Each Issuer specifies the policy: the names  of attributes and their data types (set, string, or integer). These names and types may collide for distinct Issuers. 
+
+The attribute values may be known to the Issuer or hidden from him. This is also defined at the policy level.
+
+\subsection{Parameter agreement}
+
+Registration
+In the registration process, a Prover authenticates himself to the Issuer and asks for a credential containing certain identity attributes. The credential is given to the Prover in the form of a token signed by the Issuer.
+
+\paragraph{Policy} The Issuer publishes a \emph{policy}:
+\begin{itemize}
+\item The number $L$ of attributes that are part
+of a credential;
+\item The numbers $n=pq$ and $a_1,a_2,\ldots,a_L, b,c$ (have certain properties).
+\end{itemize}
+
+\paragraph{Credential issuance}
+
+The Prover selects integer attributes $M=(m_1,m_2,\ldots,m_L)$. The Issuer selects  random $e,s$ and computes $z\leftarrow a_1^{m_1}a_2^{m_2}\cdots a_L^{m_L}b^s c \pmod{n}$. The Issuer, as he knows the factorization of $n$, finds $v$ such that $v^e = z$ and publishes $SIG(M)=(e,s,v)$ as a signature.
+
+For message $x$ Prover selects random $g,r$ and computes $ C \leftarrow g^x h^r \pmod {N'}$. Then computes $C_x \leftarrow a^x b^r$ and sends it to the Issuer. Issuer selects random $e,r'$ and sends $v=(C_x b^{r'}c)^{1/e}$ to Prover. Prover gets signature $(e,r+r',v)$. 
+
+Given the commitment $C_x$, Prover can prove he knows $(x,r)$ that form it and a valid signature on it $(e,s,v)$ using a sophisticated protocol (Figure 2 at CL02). For this he must know $(x,r)$.
+
+\end{comment}
+
+\appendix 
+
+\section{Additional math}\label{sec:detail}
+
+ Prover  is a person with certain identity $X$, consisting of several attributes $m_1,m_2,\ldots, m_l$. The attributes must be integers or convertible to them. The integers have bit length around 256 bits, so longer attributes must be encoded, hashed, or partitioned to fit the length restriction.
+ 
+ The statements about attribute $m_i$ use \emph{commits}. For public fixed parameters $g,h$
+ Prover selects random $r$ and computes commit $C\leftarrow  g^{m_i}h^r$. The value $m_i$ is then called a committed value. He is then able to prove various assertions about the committed value, including the existence of Issuer's signature on it.
+ 
+ 
+ 
+\end{document}

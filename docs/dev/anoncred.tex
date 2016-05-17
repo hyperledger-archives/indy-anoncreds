@@ -135,10 +135,11 @@ Let $\mathcal{A}$ be the set of \emph{all} attribute identifiers present, of whi
 \begin{enumerate}
 \item [0.0] Verifier sends nonce $n_1$ to the Prover.
 \item [0.1] For each non-revealed attribute $i\in \mathcal{A}_{\overline{r}}$ generate random 592-bit number $\widetilde{m_i}$.
-\item For each credential $C = (\mathcal{I}=\{m_i\},A,e,v)$ and Issuer's 
-public key $pk_I$ compute values $T$ and $A'$\begin{enumerate}
+\item [0.2] Initiate $\mathcal{T}$ and $\mathcal{C}$ as empty sets.
+\item For each credential $C = (\mathcal{I}=\{m_j\},A,e,v)$ and Issuer's 
+public key $pk_I$:\begin{enumerate}
 \item [1.1] Choose random 2128-bit $r$;
-\item [1.2] (\emph{signature randomization}) Take $n,S$ from $pk_I$ compute 
+\item [1.2] Take $n,S$ from $pk_I$ compute 
 \begin{equation}\label{eq:aprime}
 A' \leftarrow A S^{r}\pmod{n}
 \text{ and } v' \leftarrow v - e\cdot r\text{ in integers.}
@@ -147,35 +148,77 @@ Also compute $e' \leftarrow e - 2^{596}$.
 \item[2.1] Generate random 456-bit number $\widetilde{e}$ and random 3060-bit number $\widetilde{v}$.
 \item[2.2] Compute 
 $$
-T \leftarrow (A')^{\widetilde{e}}\left(\prod_{i\in A_{\overline{r}}\cap \mathcal{I}} (R_i)^{\widetilde{m_i}}\right)(S^{\widetilde{v}})\pmod{n}.
+T \leftarrow (A')^{\widetilde{e}}\left(\prod_{j\in A_{\overline{r}}\cap \mathcal{I}} (R_i)^{\widetilde{m_j}}\right)(S^{\widetilde{v}})\pmod{n}.
 $$
+\item[2.3] Add $T$ to $\mathcal{T}$, $A'$ to $\mathcal{C}$.
 \end{enumerate}
-\item[3] Gather all computed $T$ and $A'$ into sets $\{T\}$ and $\{A\}$ respectively. Compute 
+\item For each predicate $p:\;m_j \geq  z_j$:
+\begin{enumerate}
+\item Load $Z,S$ from issuer's public key.
+\item Let $\Delta \leftarrow m_j - z_j$ and find (possibly by exhaustive search) $u_1, u_2,u_3, u_4$ such
+that $$
+\Delta = (u_1)^2+ (u_2)^2+ (u_3)^2+ (u_4)^2;
 $$
-c\leftarrow H(\{A'\},\{T\},n_1)
+\item Generate random 2128-bit numbers $r_1,r_2,r_3,r_4, r_{\Delta}$, compute
+\begin{align}
+T_1 &\leftarrow Z^{u_1}S^{r_1}\pmod{n}& 
+T_2 &\leftarrow Z^{u_2}S^{r_2}\pmod{n}\\
+T_3 &\leftarrow Z^{u_3}S^{r_3}\pmod{n} &
+ T_4 &\leftarrow Z^{u_4}S^{r_4}\pmod{n}\\
+T_{\Delta} &\leftarrow  Z^{\Delta}S^{r_{\Delta}} \pmod{n};
+\end{align}
+and add these values to $\mathcal{C}$.
+\item Take $\widetilde{m_j}$ generated at step 0.1, 
+generate random 592-bit numbers $\widetilde{u_1},\widetilde{u_2},\widetilde{u_3},\widetilde{u_4}$, generate random
+672-bit numbers $\widetilde{r_1},\widetilde{r_2},\widetilde{r_3},\widetilde{r_4},\widetilde{r_{\Delta}}$ compute
+\begin{align}
+\widehat{T_1} &\leftarrow Z^{\widetilde{u_1}}S^{\widetilde{r_1}}\pmod{n}& 
+\widehat{T_2} &\leftarrow Z^{\widetilde{u_2}}S^{\widetilde{r_2}}\pmod{n}\\
+\widehat{T_3} &\leftarrow Z^{\widetilde{u_3}}S^{\widetilde{r_3}}\pmod{n} &
+ \widehat{T_4} &\leftarrow Z^{\widetilde{u_4}}S^{\widetilde{r_4}}\pmod{n}\\
+\widehat{T_{\Delta}} &\leftarrow  Z^{\widetilde{m_j}}S^{\widetilde{r_{\Delta}}} \pmod{n};
+\end{align}
+and add this values to $\mathcal{T}$.
+\item Generate random 2787-bit number $\widetilde{\alpha}$ and compute 
 $$
-\item[4.1] For each credential $C = (\mathcal{I}=\{m_i\},A,e,v)$ and Issuer's 
+Q \leftarrow T_1^{\widetilde{u_1}}T_2^{\widetilde{u_2}}
+T_3^{\widetilde{u_3}} T_4^{\widetilde{u_4}}S^{\widetilde{\alpha}}
+$$
+Add $Q$ to $\mathcal{T}$.
+\end{enumerate}  
+\item[3] Compute 
+$$
+c\leftarrow H(\mathcal{T},\mathcal{C},n_1)
+$$
+\item[4.1] For each credential $C = (\mathcal{I}=\{m_j\},A,e,v)$ and Issuer's 
 public key $pk_I$ compute
 \begin{align*}
 \widehat{e}& \leftarrow \widetilde{e}+c\cdot e';\\
 \widehat{v} &\leftarrow \widetilde{v}+cv'.
 \end{align*}
-\item[4.2] For all $i\in A_{\overline{r}}$ compute
+\item[4.2] For all $j\in A_{\overline{r}}$ compute
 $$ 
-\widehat{m}_i \leftarrow \widetilde{m_i} + cm_i.
+\widehat{m}_j \leftarrow \widetilde{m_j} + cm_j.
 $$
-The values $Pr_C=(\widehat{e},\widehat{v},A')$ are the \emph{sub-proof}
+The values $Pr_C=(\widehat{e},\widehat{v},\widehat{m_j},A')$ are the \emph{sub-proof}
 for credential $C$.
-
+\item[4.3] For  each predicate $p:\;m_j \geq  z_j$:
+\begin{enumerate}
+\item For $1\leq i \leq 4$ compute $\widehat{u_i} \leftarrow \widetilde{u_i}+cu_i$.
+\item For $1\leq i \leq 4$ compute  $\widehat{r_i} \leftarrow \widetilde{r_i}+cr_i$.
+\item Compute  $\widehat{r_{\Delta}} \leftarrow \widetilde{r_{\Delta}}+cr_{\Delta}$.
+\item Compute  $\widehat{\alpha} \leftarrow \widetilde{\alpha}+c(r_{\Delta}- u_1r_1 - u_2r_2 - u_3r_3 - u_4r_4)$. 
 \end{enumerate}
-Then $(c,\{\widehat{e}\},\{\widehat{v}\},\{\widehat{m}_i\},\{A'\})$ is a proof sent to the Verifier.
+The values $Pr_p =( \{\widehat{u_i}\}, \{\widehat{r_i}\},\widehat{r_{\Delta}},\widehat{\alpha},\widehat{m_j})$ are the sub-proof for predicate $p$.
+\end{enumerate}
+Then $(c,\{Pr_C\},\{Pr_p\},\mathcal{C})$ is the full proof sent to the Verifier.
 
 \subsection{Verification}
 Verifier uses all Issuer public key $pk_I$ involved into the credential generation and  the received $(c,\widehat{e},\widehat{v},\{\widehat{m}_i\},A')$. He also uses revealed 
 $m_i$ for $i\in A_r$.
 
 \begin{enumerate}
-\item[1.] For each credential $C$ consider the involved attributes $I$ and take sub-proof $(\widehat{e},\widehat{v},A')$. Then compute 
+\item For each credential $C$ consider the  attributes $I$ used in $C$ and take sub-proof $(\widehat{e},\widehat{v},A')$. Then compute 
 \begin{equation}\label{eq:that}
  \widehat{T} \leftarrow \left(
     \frac{Z}
@@ -185,13 +228,25 @@ $m_i$ for $i\in A_r$.
     (A')^{2^{596}}
     }\right)^{-c}
     (A')^{\widehat{e}}
-    \left(\prod_{i\in A_{\overline{r}}\cap I}(R_i)^{\widehat{m}_i}\right)
+    \left(\prod_{i\in A_{\overline{r}}\cap I}(R_i)^{\widehat{m_i}}\right)
     S^{\widehat{v}}\pmod{n}.
 \end{equation}
-\item[2.] Gather computed $\widehat{T}$ into the set $\{\widehat{T}\}$ and compute $$
-\widehat{c} \leftarrow H(\{A'\},\{\widehat{T}\},n_1);
+Add $\widehat{T}$ to $\widehat{\mathcal{T}}$.
+\item For each predicate $p:\;m_j\geq z_j$
+\begin{enumerate}
+\item Using $Pr_p$ and $\mathcal{C}$ compute 
+\begin{align}
+\widehat{T_{\Delta}} &\leftarrow \left(T_{\Delta}Z^{z_j}\right)^{-c}Z^{\widehat{m_j}}S^{\widehat{r_{\Delta}}}\pmod{n};\\
+\widehat{T_i} &\leftarrow T_i^{-c}Z^{\widehat{u_i}} S^{\widehat{r_i}}\pmod{n} \quad \text{for }1\leq i \leq 4;\\
+\widehat{Q}&\leftarrow (T_{\Delta})^{-c}T_1^{\widehat{u_1}}T_2^{\widehat{u_2}}T_3^{\widehat{u_3}}T_4^{\widehat{u_4}}
+S^{\widehat{\alpha}},
+\end{align}
+and add these values to  $\widehat{\mathcal{T}}$.
+\end{enumerate}
+\item Compute $$
+\widehat{c} \leftarrow H(\widehat{\mathcal{T}},\mathcal{C},n_1);
 $$
-\item[3.] If $c=\widehat{c}$ output VERIFIED else FAIL.
+\item If $c=\widehat{c}$ output VERIFIED else FAIL.
 \end{enumerate}
 
 \subsection{Implementation notice}
@@ -262,15 +317,6 @@ Given the commitment $C_x$, Prover can prove he knows $(x,r)$ that form it and a
 
 \end{comment}
 
-\appendix 
 
-\section{Additional math}\label{sec:detail}
-
- Prover  is a person with certain identity $X$, consisting of several attributes $m_1,m_2,\ldots, m_l$. The attributes must be integers or convertible to them. The integers have bit length around 256 bits, so longer attributes must be encoded, hashed, or partitioned to fit the length restriction.
- 
- The statements about attribute $m_i$ use \emph{commits}. For public fixed parameters $g,h$
- Prover selects random $r$ and computes commit $C\leftarrow  g^{m_i}h^r$. The value $m_i$ is then called a committed value. He is then able to prove various assertions about the committed value, including the existence of Issuer's signature on it.
- 
- 
  
 \end{document}

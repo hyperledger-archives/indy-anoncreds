@@ -1,5 +1,5 @@
 from charm.core.math.integer import integer, randomBits
-from protocol.utils import get_hash
+from protocol.utils import get_hash, get_tuple_dict
 from protocol.globals import lestart, lnonce
 
 
@@ -13,28 +13,42 @@ class Verifier:
 
         return nv
 
-    def verify_proof(self, proof, nonce, attrs):
-        c, evect, vvect, mvect, Aprime, Ar, Aur = proof
-        Z = self.pk_i["Z"]
-        S = self.pk_i["S"]
-        N = self.pk_i["N"]
-        R = self.pk_i["R"]
+    def verify_proof(self, proof, nonce, attrs, revealed_attrs):
+        # Revealed attributes
+        Ar = {}
+        # Unrevealed attributes
+        Aur = {}
 
-        x = 1 % N
-        Rur = x
-        for key, val in Aur.items():
-            Rur *= R[str(key)] ** mvect[str(key)]
+        for k, value in attrs.items():
+            if k in revealed_attrs:
+                Ar[k] = value
+            else:
+                Aur[k] = value
 
-        Rr = x
-        for key, val in Ar.items():
-            Rr *= R[str(key)] ** attrs[str(key)]
+        Tvect = {}
+        c, evect, vvect, mvect, Aprime = proof
 
-        denom = (Rr * (Aprime ** (2 ** lestart)))
-        Tvect1 = (Z / denom) ** (-1 * c)
-        Tvect2 = (Aprime ** evect)
-        Tvect3 = (S ** vvect)
-        Tvect = (Tvect1 * Tvect2 * Rur * Tvect3) % N
+        for key, val in self.pk_i.items():
+            Z = self.pk_i[key]["Z"]
+            S = self.pk_i[key]["S"]
+            N = self.pk_i[key]["N"]
+            R = self.pk_i[key]["R"]
 
-        cvect = integer(get_hash(Aprime, Tvect, nonce))
+            x = 1 % N
+            Rur = x
+            for k, v in Aur.items():
+                Rur *= R[str(k)] ** mvect[str(k)]
+
+            Rr = x
+            for k, v in Ar.items():
+                Rr *= R[str(k)] ** attrs[str(k)]
+
+            denom = (Rr * (Aprime[key] ** (2 ** lestart)))
+            Tvect1 = (Z / denom) ** (-1 * c)
+            Tvect2 = (Aprime[key] ** evect[key])
+            Tvect3 = (S ** vvect[key])
+            Tvect[key] = (Tvect1 * Tvect2 * Rur * Tvect3) % N
+
+        cvect = integer(get_hash(*get_tuple_dict(Aprime, Tvect, { "nonce": nonce })))
 
         return c == cvect

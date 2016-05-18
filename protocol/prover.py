@@ -1,7 +1,7 @@
 from charm.core.math.integer import randomBits, integer
 
 from protocol.globals import lvprime, lmvect, lestart, letilde, lvtilde
-from protocol.utils import get_hash
+from protocol.utils import get_hash, get_tuple_dict
 
 
 class Prover:
@@ -15,64 +15,76 @@ class Prover:
         self.pk_i = pk_i
         self._vprime = randomBits(lvprime)
 
-        S = self.pk_i["S"]
-        n = self.pk_i["N"]
-        self._U = (S ** self._vprime) % n
+        self._U = {}
+        for key, val in self.pk_i.items():
+            S = val["S"]
+            n = val["N"]
+            self._U[key] = (S ** self._vprime) % n
 
     def set_attrs(self, attrs):
         self.m = attrs
 
-    def prepare_proof(self, credential, revealed_attrs, nonce):
-        attrs = credential["encodedAttrs"]
-        A = credential["A"]
-        e = credential["e"]
-        v = credential["v"]
+    def prepare_proof(self, credential, attrs, revealed_attrs, nonce):
+        T = {}
+        Aprime = {}
+        etilde = {}
+        eprime = {}
+        vtilde = {}
+        vprime = {}
+        evect = {}
+        vvect = {}
 
         # Revealed attributes
         Ar = {}
         # Unrevealed attributes
         Aur = {}
 
-        N = self.pk_i["N"]
-        S = self.pk_i["S"]
-        R = self.pk_i["R"]
-
-        for key, val in attrs.items():
+        for key, value in attrs.items():
             if key in revealed_attrs:
-                Ar[key] = val
+                Ar[key] = value
             else:
-                Aur[key] = val
+                Aur[key] = value
 
         mtilde = {}
         for key, val in Aur.items():
             mtilde[str(key)] = integer(randomBits(lmvect))
 
-        Ra = integer(randomBits(lvprime))
+        for key, val in credential.items():
+            A = val["A"]
+            e = val["e"]
+            v = val["v"]
 
-        Aprime = A * (S ** Ra) % N
-        vprime = (v - e * Ra)
-        eprime = e - (2 ** lestart)
+            N = self.pk_i[key]["N"]
+            S = self.pk_i[key]["S"]
+            R = self.pk_i[key]["R"]
 
-        etilde = integer(randomBits(letilde))
-        vtilde = integer(randomBits(lvtilde))
+            Ra = integer(randomBits(lvprime))
 
-        Rur = 1 % N
+            Aprime[key] = A * (S ** Ra) % N
+            vprime[key] = (v - e * Ra)
+            eprime[key] = e - (2 ** lestart)
 
-        for key, val in Aur.items():
-            Rur = Rur * (R[str(key)] ** mtilde[str(key)])
+            etilde[key] = integer(randomBits(letilde))
+            vtilde[key] = integer(randomBits(lvtilde))
 
-        T = ((Aprime ** etilde) * Rur * (S ** vtilde)) % N
+            Rur = 1 % N
 
-        c = integer(get_hash(Aprime, T, nonce))
+            for k, v in Aur.items():
+                Rur = Rur * (R[str(k)] ** mtilde[str(k)])
 
-        evect = etilde + (c * eprime)
-        vvect = vtilde + (c * vprime)
+            T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
+
+        c = integer(get_hash(*get_tuple_dict(Aprime, T, {"nonce": nonce})))
+
+        for key, val in credential.items():
+            evect[key] = etilde[key] + (c * eprime[key])
+            vvect[key] = vtilde[key] + (c * vprime[key])
 
         mvect = {}
-        for key, val in Aur.items():
-            mvect[str(key)] = mtilde[str(key)] + (c * attrs[str(key)])
+        for k, v in Aur.items():
+            mvect[str(k)] = mtilde[str(k)] + (c * attrs[str(k)])
 
-        return c, evect, vvect, mvect, Aprime, Ar, Aur
+        return c, evect, vvect, mvect, Aprime
 
     @property
     def U(self):

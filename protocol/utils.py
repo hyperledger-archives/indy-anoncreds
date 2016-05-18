@@ -31,6 +31,13 @@ def get_hash(*args):
     return h_challenge.digest()
 
 
+def get_tuple_dict(*args):
+    l = list()
+    for i, v in enumerate(args):
+        l.extend(list(v.values()))
+    return l
+
+
 def get_prime_in_range(start, end):
     n = 0
     maxIter = 100000

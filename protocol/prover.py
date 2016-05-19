@@ -24,7 +24,7 @@ class Prover:
     def set_attrs(self, attrs):
         self.m = attrs
 
-    def prepare_proof(self, credential, attrs, revealed_attrs, nonce):
+    def prepare_proof(self, credential, attrs, revealed_attrs, nonce, encodedAttrsDict):
         T = {}
         Aprime = {}
         etilde = {}
@@ -53,6 +53,7 @@ class Prover:
             A = val["A"]
             e = val["e"]
             v = val["v"]
+            includedAttrs = encodedAttrsDict[key]
 
             N = self.pk_i[key]["N"]
             S = self.pk_i[key]["S"]
@@ -69,8 +70,11 @@ class Prover:
 
             Rur = 1 % N
 
+            i = 1
             for k, v in Aur.items():
-                Rur = Rur * (R[str(k)] ** mtilde[str(k)])
+                if k in includedAttrs:
+                    Rur = Rur * (R[str(i)] ** mtilde[str(k)])
+                    i += 1
 
             T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
 

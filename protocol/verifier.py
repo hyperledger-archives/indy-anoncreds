@@ -13,7 +13,7 @@ class Verifier:
 
         return nv
 
-    def verify_proof(self, proof, nonce, attrs, revealed_attrs):
+    def verify_proof(self, proof, nonce, attrs, revealed_attrs, encodedAttrsDict):
         # Revealed attributes
         Ar = {}
         # Unrevealed attributes
@@ -33,15 +33,20 @@ class Verifier:
             S = self.pk_i[key]["S"]
             N = self.pk_i[key]["N"]
             R = self.pk_i[key]["R"]
+            includedAttrs = encodedAttrsDict[key]
 
             x = 1 % N
             Rur = x
+            i = 1
             for k, v in Aur.items():
-                Rur *= R[str(k)] ** mvect[str(k)]
-
+                if k in includedAttrs:
+                    Rur *= R[str(i)] ** mvect[str(k)]
+                    i += 1
             Rr = x
+            i = 1
             for k, v in Ar.items():
-                Rr *= R[str(k)] ** attrs[str(k)]
+                if k in includedAttrs:
+                    Rr *= R[str(i)] ** attrs[str(k)]
 
             denom = (Rr * (Aprime[key] ** (2 ** lestart)))
             Tvect1 = (Z / denom) ** (-1 * c)

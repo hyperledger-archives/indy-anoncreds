@@ -75,8 +75,10 @@ class Issuer:
         N = pk["N"]
         Rx = 1 % N
 
-        for i in range(1, len(attr) + 1):
-            Rx = Rx * (R[str(i)] ** attr[str(i)])
+        i = 1
+        for k, v in attr.items():
+            Rx = Rx * (R[str(i)] ** attr[str(k)])
+            i += 1
 
         if u != 0:
             u = u % N

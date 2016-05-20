@@ -1,6 +1,6 @@
 from charm.core.math.integer import randomBits, integer
 
-from protocol.globals import lvprime, lmvect, lestart, letilde, lvtilde
+from protocol.globals import lvprime, lmvect, lestart, letilde, lvtilde, lms
 from protocol.utils import get_hash, get_tuple_dict
 
 
@@ -12,14 +12,18 @@ class Prover:
         :param pk_i: The public key of the Issuer
         """
         self.m = {}
+        self._ms = integer(randomBits(lms))
         self.pk_i = pk_i
-        self._vprime = randomBits(lvprime)
+        self._vprime = {}
+        for key, val in self.pk_i.items():
+            self._vprime[key] = randomBits(lvprime)
 
         self._U = {}
         for key, val in self.pk_i.items():
             S = val["S"]
             n = val["N"]
-            self._U[key] = (S ** self._vprime) % n
+            R = val["R"]
+            self._U[key] = (S ** self._vprime[key]) * (R["1"] ** self._ms) % n
 
     def set_attrs(self, attrs):
         self.m = attrs

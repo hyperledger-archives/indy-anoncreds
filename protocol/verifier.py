@@ -54,6 +54,6 @@ class Verifier:
             Tvect3 = (S ** vvect[key])
             Tvect[key] = (Tvect1 * Tvect2 * Rur * Tvect3) % N
 
-        cvect = integer(get_hash(*get_tuple_dict(Aprime, Tvect, { "nonce": nonce })))
+        cvect = integer(get_hash(*get_tuple_dict(Aprime, Tvect, {"nonce": nonce})))
 
         return c == cvect

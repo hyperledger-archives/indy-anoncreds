@@ -8,3 +8,4 @@ leendrange = 119
 lnonce = 80
 letilde = 456
 lvtilde = 3060
+lms = 256

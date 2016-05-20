@@ -32,7 +32,7 @@ presentationToken = {}
 for key, val in prover.U.items():
     issuer = issuers[key]
     A, e, vprimeprime = issuer.issue(val, encodedAttrsDict[key])
-    v = prover.vprime + vprimeprime
+    v = prover.vprime[key] + vprimeprime
     presentationToken[key] = {"A": A, "e": e, "v": v}
 
 # Setup verifier

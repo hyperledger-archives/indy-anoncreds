@@ -50,7 +50,7 @@ class Prover:
                 Aur[key] = value
 
         mtilde = {}
-        for key, val in Aur.items():
+        for key, value in Aur.items():
             mtilde[str(key)] = integer(randomBits(lmvect))
         mtilde["0"] = integer(randomBits(lmvect))
 
@@ -76,7 +76,7 @@ class Prover:
             Rur = 1 % N
 
             i = 1
-            for k, v in Aur.items():
+            for k, value in Aur.items():
                 if k in includedAttrs:
                     Rur = Rur * (R[str(i)] ** mtilde[str(k)])
                     i += 1
@@ -91,7 +91,7 @@ class Prover:
             vvect[key] = vtilde[key] + (c * vprime[key])
 
         mvect = {}
-        for k, v in Aur.items():
+        for k, value in Aur.items():
             mvect[str(k)] = mtilde[str(k)] + (c * attrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 

@@ -79,7 +79,7 @@ class Issuer:
         Rx = 1 % N
 
         i = 1
-        for k, v in attr.items():
+        for k, val in attr.items():
             Rx = Rx * (R[str(i)] ** attr[str(k)])
             i += 1
 

@@ -12,25 +12,27 @@ class Issuer:
         """
         self.p_prime = randomPrime(lprime)
         i = 0
-        while not isPrime(2 * self.p_prime + 1):
-            self.p_prime = randomPrime(lprime)
-            i += 1
-        print("Found prime in {} iteration".format(i))
+        self.p_prime = integer(159761332860793652411271405738308323756309713571403964461727715088033341338954731575356408309672708510757243427026208884771840662897596091036761172657600918605317337919395271708095954898038033824239974330904445666409061983023701006244359488882052232525171291402032732043484991159690394490671353749090075503499)
+        # TODO: Uncomment later after issue is fixed
+        # while not isPrime(2 * self.p_prime + 1):
+        #     self.p_prime = randomPrime(lprime)
+        #     i += 1
+        # print("Found prime in {} iteration".format(i))
         self.p = 2 * self.p_prime + 1
 
         self.q_prime = randomPrime(lprime)
         i = 0
-        while not isPrime(2 * self.q_prime + 1):
-            self.q_prime = randomPrime(lprime)
-            i += 1
-        print("Found prime in {} iteration".format(i))
+        self.q_prime = integer(147941103885244984950922922580175537666860848468148610466834447282510085234067042630955504787368386886952154418980749829011289975605537475630591764256906718678887431749854811959005260218523276788687932977927794009742733812725985244889425877026238637746152871531210399229194025997481521534648478308545514605813)
+        # TODO: Uncomment later after issue is fixed
+        # while not isPrime(2 * self.q_prime + 1):
+        #     self.q_prime = randomPrime(lprime)
+        #     i += 1
+        # print("Found prime in {} iteration".format(i))
         self.q = 2 * self.q_prime + 1
 
         n = self.p * self.q
 
         S = randomQR(n)
-        # TODO: AS: Not sure where we would need this
-        self.randomQuadResidue = S % n
 
         Xz = integer(random(n))
         Xr = {}
@@ -43,6 +45,7 @@ class Issuer:
         R = {}
         for i in range(1, l+1):
             R[str(i)] = S ** Xr[str(i)]
+        R["0"] = S ** integer(random(n))
 
         self._pk = {'N': n, 'S': S, 'Z': Z, 'R': R}
         self.sk = {'p': self.p, 'q': self.q}

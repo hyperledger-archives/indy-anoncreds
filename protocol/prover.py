@@ -23,7 +23,7 @@ class Prover:
             S = val["S"]
             n = val["N"]
             R = val["R"]
-            self._U[key] = (S ** self._vprime[key]) * (R["1"] ** self._ms) % n
+            self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % n
 
     def set_attrs(self, attrs):
         self.m = attrs
@@ -52,6 +52,7 @@ class Prover:
         mtilde = {}
         for key, val in Aur.items():
             mtilde[str(key)] = integer(randomBits(lmvect))
+        mtilde["0"] = integer(randomBits(lmvect))
 
         for key, val in credential.items():
             A = val["A"]
@@ -79,6 +80,7 @@ class Prover:
                 if k in includedAttrs:
                     Rur = Rur * (R[str(i)] ** mtilde[str(k)])
                     i += 1
+            Rur *= R["0"] ** mtilde["0"]
 
             T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
 
@@ -91,6 +93,7 @@ class Prover:
         mvect = {}
         for k, v in Aur.items():
             mvect[str(k)] = mtilde[str(k)] + (c * attrs[str(k)])
+        mvect["0"] = mtilde["0"] + (c * self._ms)
 
         return c, evect, vvect, mvect, Aprime
 

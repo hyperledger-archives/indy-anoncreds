@@ -1,7 +1,7 @@
 from hashlib import sha256
 from random import randint
 
-from charm.core.math.integer import random, isPrime
+from charm.core.math.integer import random, isPrime, integer
 from charm.toolbox.conversion import Conversion
 
 
@@ -39,6 +39,8 @@ def get_tuple_dict(*args):
 
 
 def get_prime_in_range(start, end):
+    # TODO: Remove ina actual code. This is there to avoid unnecessary running time
+    return integer(259344723055062059907025491480697571938277889515152306249728583105665800713306759149981690559193987143012367913206299323899696942213235956742930041765617089060464412844297321155427)
     n = 0
     maxIter = 100000
     while n < maxIter:

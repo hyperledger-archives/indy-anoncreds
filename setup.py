@@ -1,7 +1,6 @@
 import sys
 import os
 from setuptools import setup, find_packages, __version__
-from pip.req import parse_requirements
 
 
 v = sys.version_info
@@ -40,7 +39,7 @@ setup(
     author_email='dev@evernym.us',
     license=__license__,
     keywords='Anonymous credentials',
-    packages=find_packages(exclude=['test', 'test.*', 'docs', 'docs*']) + ['data', ],
+    packages=find_packages(exclude=['docs', 'docs*']),
     package_data={
         '':       ['*.txt',  '*.md', '*.rst', '*.json', '*.conf', '*.html',
                    '*.css', '*.ico', '*.png', 'LICENSE', 'LEGAL']},

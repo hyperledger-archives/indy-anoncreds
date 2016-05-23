@@ -1,7 +1,8 @@
 from charm.core.math.integer import randomPrime, random, integer, randomBits, \
     isPrime
 from protocol.globals import lprime, lvprimeprime, lestart, leendrange
-from protocol.utils import randomQR, get_prime_in_range
+
+from anoncreds.protocol.utils import randomQR, get_prime_in_range
 
 
 class Issuer:

@@ -75,11 +75,9 @@ class Prover:
 
             Rur = 1 % N
 
-            i = 1
             for k, value in Aur.items():
                 if k in includedAttrs:
-                    Rur = Rur * (R[str(i)] ** mtilde[str(k)])
-                    i += 1
+                    Rur = Rur * (R[str(k)] ** mtilde[str(k)])
             Rur *= R["0"] ** mtilde["0"]
 
             T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N

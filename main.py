@@ -16,10 +16,10 @@ encodedAttrs = encodeAttrs(attrs)
 encodedAttrsDict = {"gvt": encodeAttrs(attrs_gvt), "ibm": encodeAttrs(attrs_ibm)}
 
 # Create multiple issuers and get there public key
-issuer_gvt = Issuer(len(attrs_gvt))
+issuer_gvt = Issuer(attrs_gvt)
 pk_i_gvt = issuer_gvt.PK
 
-issuer_ibm = Issuer(len(attrs_ibm))
+issuer_ibm = Issuer(attrs_ibm)
 pk_i_ibm = issuer_ibm.PK
 
 issuers = {"gvt": issuer_gvt, "ibm": issuer_ibm}

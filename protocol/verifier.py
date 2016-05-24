@@ -37,18 +37,15 @@ class Verifier:
 
             x = 1 % N
             Rur = x
-            i = 1
             for k, v in Aur.items():
                 if k in includedAttrs:
-                    Rur *= R[str(i)] ** mvect[str(k)]
-                    i += 1
+                    Rur *= R[str(k)] ** mvect[str(k)]
             Rur *= R["0"] ** mvect["0"]
 
             Rr = x
-            i = 1
             for k, v in Ar.items():
                 if k in includedAttrs:
-                    Rr *= R[str(i)] ** attrs[str(k)]
+                    Rr *= R[str(k)] ** attrs[str(k)]
 
             denom = (Rr * (Aprime[key] ** (2 ** lestart)))
             Tvect1 = (Z / denom) ** (-1 * c)

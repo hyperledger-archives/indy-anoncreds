@@ -5,7 +5,7 @@ from protocol.utils import randomQR, get_prime_in_range
 
 
 class Issuer:
-    def __init__(self, l):
+    def __init__(self, attrs):
         """
         Setup an issuer
         :param l: Number of attributes
@@ -37,14 +37,14 @@ class Issuer:
         Xz = integer(random(n))
         Xr = {}
 
-        for i in range(1, l+1):
-            Xr[str(i)] = integer(random(n))
+        for key, val in attrs.items():
+            Xr[str(key)] = integer(random(n))
 
         Z = (S ** Xz) % n
 
         R = {}
-        for i in range(1, l+1):
-            R[str(i)] = S ** Xr[str(i)]
+        for key, val in attrs.items():
+            R[str(key)] = S ** Xr[str(key)]
         R["0"] = S ** integer(random(n))
 
         self._pk = {'N': n, 'S': S, 'Z': Z, 'R': R}
@@ -78,10 +78,8 @@ class Issuer:
         N = pk["N"]
         Rx = 1 % N
 
-        i = 1
         for k, val in attr.items():
-            Rx = Rx * (R[str(i)] ** attr[str(k)])
-            i += 1
+            Rx = Rx * (R[str(k)] ** attr[str(k)])
 
         if u != 0:
             u = u % N

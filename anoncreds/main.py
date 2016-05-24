@@ -1,7 +1,6 @@
-from protocol.issuer import Issuer
-from protocol.utils import encodeAttrs
-from protocol.verifier import Verifier
-
+from anoncreds.protocol.issuer import Issuer
+from anoncreds.protocol.utils import encodeAttrs
+from anoncreds.protocol.verifier import Verifier
 from anoncreds.protocol.prover import Prover
 
 # Create a dictionary of attributes to share

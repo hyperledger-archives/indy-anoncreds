@@ -1,6 +1,6 @@
 from charm.core.math.integer import integer, randomBits
-from protocol.globals import lestart, lnonce
 
+from anoncreds.protocol.globals import lestart, lnonce
 from anoncreds.protocol.utils import get_hash
 
 

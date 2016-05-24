@@ -1,5 +1,7 @@
 from charm.core.math.integer import randomBits, integer
-from protocol.globals import lvprime, lmvect, lestart, letilde, lvtilde
+
+from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, \
+    lvtilde
 
 from anoncreds.protocol.utils import get_hash
 

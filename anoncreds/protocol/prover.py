@@ -1,7 +1,7 @@
 from charm.core.math.integer import randomBits, integer
 
-from protocol.globals import lvprime, lmvect, lestart, letilde, lvtilde, lms
-from protocol.utils import get_hash, get_tuple_dict
+from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, lvtilde, lms
+from anoncreds.protocol.utils import get_hash, get_tuple_dict
 
 
 class Prover:

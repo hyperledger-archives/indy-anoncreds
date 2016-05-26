@@ -54,13 +54,11 @@ def verifier(issuerPk):
     return Verifier(issuerPk)
 
 
-def testSingleProver(issuer, issuerPk, attrLen, proverAndAttrs1, verifier):
+def testSingleProver(issuer, attrLen, proverAndAttrs1, verifier):
 
     prover, encodedAttrs = proverAndAttrs1
     assert len(encodedAttrs) == attrLen
 
-    # A, e, vprimeprime = issuer.issue(prover.U, encodedAttrs)
-    # v = prover.vprime + vprimeprime
     presentationToken = getPresentationToken(issuer, *proverAndAttrs1)
 
     nonce = verifier.Nonce
@@ -75,7 +73,7 @@ def testSingleProver(issuer, issuerPk, attrLen, proverAndAttrs1, verifier):
     assert verify_status
 
 
-def testMultipleProvers(issuer, issuerPk, attrLen, proverAndAttrs1,
+def testMultipleProvers(issuer, attrLen, proverAndAttrs1,
                         proverAndAttrs2, verifier):
 
     prover1, encodedAttrs1 = proverAndAttrs1

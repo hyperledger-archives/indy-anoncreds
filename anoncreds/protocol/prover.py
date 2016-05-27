@@ -1,7 +1,7 @@
 from charm.core.math.integer import randomBits, integer
 
 from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, lvtilde, lms
-from anoncreds.protocol.utils import get_hash, get_tuple_dict
+from anoncreds.protocol.utils import get_hash, get_values_of_dicts
 
 
 class Prover:
@@ -82,7 +82,7 @@ class Prover:
 
             T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
 
-        c = integer(get_hash(*get_tuple_dict(Aprime, T, {"nonce": nonce})))
+        c = integer(get_hash(*get_values_of_dicts(Aprime, T, {"nonce": nonce})))
 
         for key, val in credential.items():
             evect[key] = etilde[key] + (c * eprime[key])

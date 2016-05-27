@@ -1,7 +1,7 @@
 from hashlib import sha256
 from random import randint
 
-from charm.core.math.integer import random, isPrime, integer
+from charm.core.math.integer import random, isPrime
 from charm.toolbox.conversion import Conversion
 
 
@@ -31,10 +31,10 @@ def get_hash(*args):
     return h_challenge.digest()
 
 
-def get_tuple_dict(*args):
+def get_values_of_dicts(*args):
     l = list()
-    for i, v in enumerate(args):
-        l.extend(list(v.values()))
+    for d in args:
+        l.extend(list(d.values()))
     return l
 
 

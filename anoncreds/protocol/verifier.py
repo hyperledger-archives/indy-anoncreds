@@ -1,6 +1,6 @@
 from charm.core.math.integer import integer, randomBits
 
-from anoncreds.protocol.utils import get_hash, get_tuple_dict
+from anoncreds.protocol.utils import get_hash, get_values_of_dicts
 from anoncreds.protocol.globals import lestart, lnonce
 
 
@@ -54,6 +54,6 @@ class Verifier:
             Tvect3 = (S ** vvect[key])
             Tvect[key] = (Tvect1 * Tvect2 * Rur * Tvect3) % N
 
-        cvect = integer(get_hash(*get_tuple_dict(Aprime, Tvect, {"nonce": nonce})))
+        cvect = integer(get_hash(*get_values_of_dicts(Aprime, Tvect, {"nonce": nonce})))
 
         return c == cvect

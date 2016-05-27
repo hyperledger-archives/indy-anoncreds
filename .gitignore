@@ -1,3 +1,4 @@
 /activate
-/.idea
-/anoncreds/protocol/__pycache__
+.idea/
+__pycache__/
+.cache/

@@ -6,7 +6,7 @@ from anoncreds.protocol.utils import randomQR, get_prime_in_range
 
 
 class Issuer:
-    def __init__(self, attrs):
+    def __init__(self, attrNames):
         """
         Setup an issuer
         :param l: Number of attributes
@@ -34,14 +34,14 @@ class Issuer:
         Xz = integer(random(n))
         Xr = {}
 
-        for key, val in attrs.items():
-            Xr[str(key)] = integer(random(n))
+        for name in attrNames:
+            Xr[str(name)] = integer(random(n))
 
         Z = (S ** Xz) % n
 
         R = {}
-        for key, val in attrs.items():
-            R[str(key)] = S ** Xr[str(key)]
+        for name in attrNames:
+            R[str(name)] = S ** Xr[str(name)]
         R["0"] = S ** integer(random(n))
 
         self._pk = {'N': n, 'S': S, 'Z': Z, 'R': R}
@@ -76,7 +76,7 @@ class Issuer:
         Rx = 1 % N
 
         for k, val in attr.items():
-            Rx = Rx * (R[str(k)] ** attr[str(k)])
+            Rx = Rx * (R[str(k)] ** val)
 
         if u != 0:
             u = u % N

@@ -14,14 +14,14 @@ class Verifier:
 
         return nv
 
-    def verify_proof(self, proof, nonce, attrs, revealed_attrs, encodedAttrsDict):
+    def verify_proof(self, proof, nonce, attrs, revealedAttrs, encodedAttrsDict):
         # Revealed attributes
         Ar = {}
         # Unrevealed attributes
         Aur = {}
 
         for k, value in attrs.items():
-            if k in revealed_attrs:
+            if k in revealedAttrs:
                 Ar[k] = value
             else:
                 Aur[k] = value
@@ -54,6 +54,7 @@ class Verifier:
             Tvect3 = (S ** vvect[key])
             Tvect[key] = (Tvect1 * Tvect2 * Rur * Tvect3) % N
 
-        cvect = integer(get_hash(*get_values_of_dicts(Aprime, Tvect, {"nonce": nonce})))
+        cvect = integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
+                                                      {"nonce": nonce})))
 
         return c == cvect

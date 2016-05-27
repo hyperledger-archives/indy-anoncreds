@@ -28,7 +28,8 @@ class Prover:
     def set_attrs(self, attrs):
         self.m = attrs
 
-    def prepare_proof(self, credential, attrs, revealed_attrs, nonce, encodedAttrsDict):
+    def prepare_proof(self, credential, attrs, revealedAttrs, nonce,
+                      encodedAttrsDict):
         T = {}
         Aprime = {}
         etilde = {}
@@ -44,7 +45,7 @@ class Prover:
         Aur = {}
 
         for key, value in attrs.items():
-            if key in revealed_attrs:
+            if key in revealedAttrs:
                 Ar[key] = value
             else:
                 Aur[key] = value

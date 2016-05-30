@@ -68,14 +68,14 @@ class Issuer:
         sig = self._sign(self._pk, attrs, vprimeprime, u, e)
         return sig["A"], e, vprimeprime
 
-    def _sign(self, pk, attr, v=0, u=0, e=0):
+    def _sign(self, pk, attrs, v=0, u=0, e=0):
         R = pk["R"]
         Z = pk["Z"]
         S = pk["S"]
         N = pk["N"]
         Rx = 1 % N
 
-        for k, val in attr.items():
+        for k, val in attrs.items():
             Rx = Rx * (R[str(k)] ** val)
 
         if u != 0:

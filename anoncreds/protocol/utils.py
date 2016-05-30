@@ -26,8 +26,8 @@ def get_hash(*args):
     :return:
     """
     h_challenge = sha256()
-    for i, val in enumerate(args):
-        h_challenge.update(Conversion.IP2OS(val))
+    for arg in args:
+        h_challenge.update(Conversion.IP2OS(arg))
     return h_challenge.digest()
 
 

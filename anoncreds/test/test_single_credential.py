@@ -14,37 +14,40 @@ def getProver(attrs, pki):
 
 
 def getPresentationToken(issuer, prover, encodedAttrs):
-    A, e, vprimeprime = issuer.issue(prover.U, encodedAttrs)
-    v = prover.vprime + vprimeprime
-    return {"encodedAttrs": encodedAttrs, "A": A, "e": e, "v": v}
+    presentationToken = {}
+    for key, val in prover.U.items():
+        A, e, vprimeprime = issuer.issue(prover.U[key], encodedAttrs)
+        v = prover.vprime[key] + vprimeprime
+        presentationToken[key] = {"A": A, "e": e, "v": v}
+        return presentationToken
 
 
 @pytest.fixture(scope="module")
-def attrLen():
-    return 3
+def attrNames():
+    return 'name', 'age', 'sex'
 
 
 @pytest.fixture(scope="module")
-def issuer(attrLen):
+def issuer(attrNames):
     # Create issuer
-    return Issuer(attrLen)
+    return Issuer(attrNames)
 
 
 @pytest.fixture(scope="module")
 def issuerPk(issuer):
     # Return issuer's public key
-    return issuer.PK
+    return {"gvt": issuer.PK}
 
 
 @pytest.fixture(scope="module")
 def proverAndAttrs1(issuerPk):
-    attrs = {'1': 'Aditya Pratap Singh', '2': '25', '3': 'male'}
+    attrs = {'name': 'Aditya Pratap Singh', 'age': '25', 'sex': 'male'}
     return getProver(attrs, issuerPk)
 
 
 @pytest.fixture(scope="module")
 def proverAndAttrs2(issuerPk):
-    attrs = {'1': 'Jason Law', '2': '42', '3': 'male'}
+    attrs = {'name': 'Jason Law', 'age': '42', 'sex': 'male'}
     return getProver(attrs, issuerPk)
 
 
@@ -54,32 +57,37 @@ def verifier(issuerPk):
     return Verifier(issuerPk)
 
 
-def testSingleProver(issuer, attrLen, proverAndAttrs1, verifier):
+def testSingleProver(issuer, attrNames, proverAndAttrs1, verifier):
 
     prover, encodedAttrs = proverAndAttrs1
-    assert len(encodedAttrs) == attrLen
+    assert len(encodedAttrs) == len(attrNames)
 
     presentationToken = getPresentationToken(issuer, *proverAndAttrs1)
 
     nonce = verifier.Nonce
 
     # Prepare proof
-    revealedAttrs = ['1']
-    proof = prover.prepare_proof(presentationToken, revealedAttrs, nonce)
+    revealedAttrs = ['name']
+    proof = prover.prepare_proof(credential=presentationToken, attrs=encodedAttrs,
+                                 revealedAttrs=revealedAttrs, nonce=nonce,
+                                 encodedAttrsDict={"gvt": encodedAttrs})
 
     # Verify the proof
-    verify_status = verifier.verify_proof(proof, nonce, encodedAttrs)
+    verify_status = verifier.verify_proof(proof=proof, nonce=nonce,
+                                          attrs=encodedAttrs,
+                                          revealedAttrs=revealedAttrs,
+                                          encodedAttrsDict={"gvt": encodedAttrs})
 
     assert verify_status
 
 
-def testMultipleProvers(issuer, attrLen, proverAndAttrs1,
+def testMultipleProvers(issuer, attrNames, proverAndAttrs1,
                         proverAndAttrs2, verifier):
 
     prover1, encodedAttrs1 = proverAndAttrs1
     prover2, encodedAttrs2 = proverAndAttrs2
-    assert len(encodedAttrs1) == attrLen
-    assert len(encodedAttrs2) == attrLen
+    assert len(encodedAttrs1) == len(attrNames)
+    assert len(encodedAttrs2) == len(attrNames)
 
     presentationToken1 = getPresentationToken(issuer, *proverAndAttrs1)
     presentationToken2 = getPresentationToken(issuer, *proverAndAttrs2)
@@ -88,10 +96,20 @@ def testMultipleProvers(issuer, attrLen, proverAndAttrs1,
     nonce2 = verifier.Nonce
 
     # Prepare proofs
-    revealedAttrs = ['1']
-    proof1 = prover1.prepare_proof(presentationToken1, revealedAttrs, nonce1)
-    proof2 = prover2.prepare_proof(presentationToken2, revealedAttrs, nonce2)
+    revealedAttrs = ['name']
+    proof1 = prover1.prepare_proof(credential=presentationToken1, attrs=encodedAttrs1,
+                                   revealedAttrs=revealedAttrs, nonce=nonce1,
+                                   encodedAttrsDict={"gvt": encodedAttrs1})
+    proof2 = prover2.prepare_proof(credential=presentationToken2, attrs=encodedAttrs2,
+                                   revealedAttrs=revealedAttrs, nonce=nonce2,
+                                   encodedAttrsDict={"gvt": encodedAttrs2})
 
-    assert verifier.verify_proof(proof1, nonce1, encodedAttrs1)
-    assert verifier.verify_proof(proof2, nonce2, encodedAttrs2)
+    assert verifier.verify_proof(proof=proof1, nonce=nonce1,
+                                 attrs=encodedAttrs1,
+                                 revealedAttrs=revealedAttrs,
+                                 encodedAttrsDict={"gvt": encodedAttrs1})
+    assert verifier.verify_proof(proof=proof2, nonce=nonce2,
+                                 attrs=encodedAttrs2,
+                                 revealedAttrs=revealedAttrs,
+                                 encodedAttrsDict={"gvt": encodedAttrs2})
 

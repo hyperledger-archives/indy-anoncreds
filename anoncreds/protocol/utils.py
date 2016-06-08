@@ -49,3 +49,18 @@ def get_prime_in_range(start, end):
             return r
         n += 1
     raise Exception("Cannot find prime in {} iterations".format(maxIter))
+
+
+def splitRevealedAttributes(attrs, revealedAttrs):
+    # Revealed attributes
+    Ar = {}
+    # Unrevealed attributes
+    Aur = {}
+
+    for k, value in attrs.items():
+        if k in revealedAttrs:
+            Ar[k] = value
+        else:
+            Aur[k] = value
+    return Ar, Aur
+

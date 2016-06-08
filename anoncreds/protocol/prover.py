@@ -1,7 +1,8 @@
 from charm.core.math.integer import randomBits, integer
 
 from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, lvtilde, lms
-from anoncreds.protocol.utils import get_hash, get_values_of_dicts
+from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
+    splitRevealedAttributes
 
 
 class Prover:
@@ -9,15 +10,21 @@ class Prover:
     def __init__(self, pk_i):
         """
         Create a prover instance
-        :param pk_i: The public key of the Issuer
+        :param pk_i: The public key of the Issuer(s)
         """
         self.m = {}
+
+        # Generate the master secret
         self._ms = integer(randomBits(lms))
+
+        # Set the public key of the issuers
         self.pk_i = pk_i
+
         self._vprime = {}
         for key, val in self.pk_i.items():
             self._vprime[key] = randomBits(lvprime)
 
+        # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
         self._U = {}
         for key, val in self.pk_i.items():
             S = val["S"]
@@ -30,6 +37,16 @@ class Prover:
 
     def prepare_proof(self, credential, attrs, revealedAttrs, nonce,
                       encodedAttrsDict):
+        """
+        Prepare the proof from credentials
+        :param credential: The credential to be used for the proof preparation.
+        This is a dictionary with key as issuer name and value as the credential
+        :param attrs: The encoded attributes dictionary
+        :param revealedAttrs: The revealed attributes list
+        :param nonce: The nonce used to have a commit
+        :param encodedAttrsDict: The dictionary for encoded attributes
+        :return: The proof
+        """
         T = {}
         Aprime = {}
         etilde = {}
@@ -39,16 +56,7 @@ class Prover:
         evect = {}
         vvect = {}
 
-        # Revealed attributes
-        Ar = {}
-        # Unrevealed attributes
-        Aur = {}
-
-        for key, value in attrs.items():
-            if key in revealedAttrs:
-                Ar[key] = value
-            else:
-                Aur[key] = value
+        Ar, Aur = splitRevealedAttributes(attrs, revealedAttrs)
 
         mtilde = {}
         for key, value in Aur.items():
@@ -83,6 +91,8 @@ class Prover:
 
             T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
 
+        # Calculate the `c` value as the hash result of Aprime, T and nonce.
+        # This value will be used to verify the proof against the credential
         c = integer(get_hash(*get_values_of_dicts(Aprime, T, {"nonce": nonce})))
 
         for key, val in credential.items():

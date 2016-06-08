@@ -15,7 +15,7 @@ def encodeAttrs(attrs):
     :param attrs: The attributes to pass in credentials
     :return:
     """
-    return {key: Conversion.bytes2integer(sha256(value.encode()).digest())
+    return {key: Conversion.bytes2integer(sha256(str(value).encode()).digest())
             for key, value in attrs.items()}
 
 

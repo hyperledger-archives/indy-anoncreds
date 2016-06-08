@@ -79,9 +79,9 @@ def testMultipleCredentialSingleProof(issuers, proverAndAttrs1, proverAndAttrs2,
                                  encodedAttrsDict=encodedAttrsDict)
 
     verify_status = verifier1.verify_proof(proof=proof, nonce=nonce,
-                                          attrs=encodeAttrs(attrs),
-                                          revealedAttrs=revealedAttrs,
-                                          encodedAttrsDict=encodedAttrsDict)
+                                           attrs=encodeAttrs(attrs),
+                                           revealedAttrs=revealedAttrs,
+                                           encodedAttrsDict=encodedAttrsDict)
 
     assert verify_status
 

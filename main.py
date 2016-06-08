@@ -5,7 +5,7 @@ from anoncreds.protocol.utils import encodeAttrs
 
 # Create a dictionary of attributes to share
 # {'1': name, '2': age, '3': sex, '4': 'status'}
-attrs_gvt = {'name': 'Aditya Pratap Singh', 'age': '25', 'sex': 'male'}
+attrs_gvt = {'name': 'Aditya Pratap Singh', 'age': 25, 'sex': 'male'}
 attrs_ibm = {'status': 'ACTIVE'}
 attrs = dict(list(attrs_gvt.items()) + list(attrs_ibm.items()))
 
@@ -27,7 +27,7 @@ issuers = {"gvt": issuer_gvt, "ibm": issuer_ibm}
 
 pk_i = {"gvt": pk_i_gvt, "ibm": pk_i_ibm}
 prover = Prover(pk_i=pk_i)
-prover.set_attrs(encodedAttrs)
+prover.set_attrs(attrs)
 
 presentationToken = {}
 for key, val in prover.U.items():

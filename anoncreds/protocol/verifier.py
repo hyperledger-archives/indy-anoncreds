@@ -1,6 +1,7 @@
 from charm.core.math.integer import integer, randomBits
 
-from anoncreds.protocol.utils import get_hash, get_values_of_dicts
+from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
+    splitRevealedAttributes
 from anoncreds.protocol.globals import lestart, lnonce
 
 
@@ -15,18 +16,19 @@ class Verifier:
         return nv
 
     def verify_proof(self, proof, nonce, attrs, revealedAttrs, encodedAttrsDict):
-        # Revealed attributes
-        Ar = {}
-        # Unrevealed attributes
-        Aur = {}
+        """
+        Verify the proof
+        :param attrs: The encoded attributes dictionary
+        :param revealedAttrs: The revealed attributes list
+        :param nonce: The nonce used to have a commit
+        :param encodedAttrsDict: The dictionary for encoded attributes
+        :return: A boolean with the verification status for the proof
+        """
 
-        for k, value in attrs.items():
-            if k in revealedAttrs:
-                Ar[k] = value
-            else:
-                Aur[k] = value
+        Ar, Aur = splitRevealedAttributes(attrs, revealedAttrs)
 
         Tvect = {}
+        # Extract the values from the proof
         c, evect, vvect, mvect, Aprime = proof
 
         for key, val in self.pk_i.items():
@@ -54,6 +56,9 @@ class Verifier:
             Tvect3 = (S ** vvect[key])
             Tvect[key] = (Tvect1 * Tvect2 * Rur * Tvect3) % N
 
+        # Calculate the `cvect` value based on proof.
+        # This value is mathematically proven to be equal to `c`
+        # if proof is created correctly from credentials. Refer 2.8 in document
         cvect = integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
                                                       {"nonce": nonce})))
 

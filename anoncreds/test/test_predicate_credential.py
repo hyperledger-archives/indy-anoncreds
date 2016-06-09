@@ -34,7 +34,6 @@ def verifier(issuerPk):
     # Setup verifier
     return Verifier(issuerPk)
 
-@pytest.mark.skip(reason="no way of currently testing this")
 def testPredicateCredentials(issuer, proverAndAttrs1, verifier):
     prover, encodedAttrs, attrs = proverAndAttrs1
     encodedAttrsDict = {"gvt": encodedAttrs}
@@ -49,7 +48,7 @@ def testPredicateCredentials(issuer, proverAndAttrs1, verifier):
                                          revealedAttrs=revealedAttrs, nonce=nonce,
                                          predicate=predicate, encodedAttrsDict=encodedAttrsDict)
 
-    verify_status = verifier.verify_proof(proof=proof, nonce=nonce,
+    verify_status = verifier.verifyPredicateProof(proof=proof, nonce=nonce,
                                           attrs=encodedAttrs, revealedAttrs=revealedAttrs,
                                           predicate=predicate, encodedAttrsDict=encodedAttrsDict)
 
@@ -63,14 +62,3 @@ def testQuadEquationLagranges():
     assert (u1 ** 2) + (u2 ** 2) + (u3 ** 2) + (u4 ** 2) == delta
 
 
-def testFlattenObjectToList():
-    Tau = {
-        "Aprime": {
-            "gvt": 57624956854567
-        },
-        "T": {
-            "gvt": 789412326851265
-        }
-    }
-
-    a = reduce(lambda x, y: y + x, Tau.items(), [])

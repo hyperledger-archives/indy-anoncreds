@@ -1,5 +1,6 @@
 from charm.core.math.integer import randomBits, integer
 from math import sqrt, floor
+from functools import reduce
 
 from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, \
     lvtilde, lms, lutilde, lrtilde, lalphatilde
@@ -110,12 +111,9 @@ class Prover:
 
     def preparePredicateProof(self, credential, attrs, revealedAttrs, nonce,
                               predicate, encodedAttrsDict):
-        # Revealed attributes
-        Ar = {}
-        # Unrevealed attributes
-        Aur = {}
 
-        Tau = {}
+        TauList = []
+        CList = []
         C = {}
         T = {}
         Aprime = {}
@@ -135,11 +133,7 @@ class Prover:
         alphavect = 0
         iterations = 4
 
-        for key, value in attrs.items():
-            if key in revealedAttrs:
-                Ar[key] = value
-            else:
-                Aur[key] = value
+        Ar, Aur = splitRevealedAttributes(attrs, revealedAttrs)
 
         mtilde = {}
         for key, value in Aur.items():
@@ -174,11 +168,10 @@ class Prover:
 
             T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
 
-            # Tau = updateObject(Tau, key, "T", T)
-            # C = updateObject(C, key, "Aprime", Aprime[key])
-
-        Tau["T"] = T
-        C["Aprime"] = Aprime
+            TauList.append(T[key])
+            CList.append(Aprime[key])
+            #TODO: Remove the hardcoded value for 'Aprime'
+            C["Aprime"] = Aprime[key]
 
         for key, val in predicate.items():
             #TODO: Remove the hardcoded value for 'gvt'
@@ -194,20 +187,22 @@ class Prover:
 
             Tval = {}
             for i in range(0, iterations):
-                Tval[str(i)] = (Z ** u[0]) * (S ** r[str(i)]) % N
+                Tval[str(i)] = (Z ** u[i]) * (S ** r[str(i)]) % N
                 utilde[str(i)] = integer(randomBits(lutilde))
                 rtilde[str(i)] = integer(randomBits(lrtilde))
             Tval["delta"] = (Z ** delta) * (S ** r["delta"]) % N
             rtilde["delta"] = integer(randomBits(lrtilde))
 
-            C["Tval"] = Tval
+            CList.extend(get_values_of_dicts(Tval))
+            #TODO: Remove the hardcoded value for 'Tval'
+            C['Tval'] = Tval
 
             Tbar = {}
             for i in range(0, iterations):
                 Tbar[str(i)] = (Z ** utilde[str(i)]) * (S ** rtilde[str(i)]) % N
             Tbar["delta"] = (Z ** Aur[key]) * (S ** rtilde["delta"]) % N
 
-            Tau["Tbar"] = Tbar
+            TauList.extend(get_values_of_dicts(Tbar))
 
             alphatilde = integer(randomBits(lalphatilde))
 
@@ -216,9 +211,9 @@ class Prover:
                 Q *= Tval[str(i)] ** utilde[str(i)]
             Q *= S ** alphatilde
 
-            Tau["Q"] = Q
+            TauList.append(Q)
 
-        c = integer(get_hash(*get_values_of_dicts(Tau, C, {"nonce": nonce})))
+        c = integer(get_hash(*reduce(lambda x, y: x+y, [TauList, CList, [nonce]])))
 
         for key, val in credential.items():
             evect[key] = etilde[key] + (c * eprime[key])
@@ -234,16 +229,16 @@ class Prover:
         for key, val in predicate.items():
             urproduct = 0
             for i in range(0, iterations):
-                uvect[str(i)] = utilde[str(i)] + c * u[str(i)]
+                uvect[str(i)] = utilde[str(i)] + c * u[i]
                 rvect[str(i)] = rtilde[str(i)] + c * r[str(i)]
-                urproduct += u[str(i)] * r[str(i)]
+                urproduct += u[i] * r[str(i)]
             rvect["delta"] = rtilde["delta"] + c * r["delta"]
 
             alphavect = alphatilde + c * (r["delta"] - urproduct)
 
         subProofPredicate = {"uvect": uvect, "rvect": rvect, "mvect": mvect, "alphavect": alphavect}
 
-        return c, subProofC, subProofPredicate, C
+        return c, subProofC, subProofPredicate, C, CList
 
 
     @property

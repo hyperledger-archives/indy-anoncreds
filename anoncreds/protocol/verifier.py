@@ -1,8 +1,8 @@
 from charm.core.math.integer import integer, randomBits
-
+from functools import reduce
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     splitRevealedAttributes
-from anoncreds.protocol.globals import lestart, lnonce
+from anoncreds.protocol.globals import lestart, lnonce, iterations
 
 
 class Verifier:
@@ -63,3 +63,84 @@ class Verifier:
                                                       {"nonce": nonce})))
 
         return c == cvect
+
+    def verifyPredicateProof(self, proof, nonce, attrs, revealedAttrs,
+                             predicate, encodedAttrsDict):
+        """
+        Verify the proof for Predicate implementation
+        :param proof: The proof which is a combination of sub-proof for credential and proof, C
+        :param nonce: The nonce used
+        :param attrs: The encoded attributes
+        :param revealedAttrs: The list of revealed attributes
+        :param predicate: The predicate to be validated
+        :param encodedAttrsDict: The encoded dictionary for attributes
+        :return:
+        """
+        Tvect = {}
+        Tau = []
+        c, subProofC, subProofPredicate, C, CList = proof
+
+        Aprime = subProofC["Aprime"]
+        evect = subProofC["evect"]
+        mvect = subProofC["mvect"]
+        vvect = subProofC["vvect"]
+        alphavect = subProofPredicate["alphavect"]
+        rvect = subProofPredicate["rvect"]
+        uvect = subProofPredicate["uvect"]
+        Tval = C["Tval"]
+
+        Ar, Aur = splitRevealedAttributes(attrs, revealedAttrs)
+
+        for key, val in self.pk_i.items():
+            Z = self.pk_i[key]["Z"]
+            S = self.pk_i[key]["S"]
+            N = self.pk_i[key]["N"]
+            R = self.pk_i[key]["R"]
+            includedAttrs = encodedAttrsDict[key]
+
+            x = 1 % N
+            Rur = x
+            for k, v in Aur.items():
+                if k in includedAttrs:
+                    Rur *= R[str(k)] ** mvect[str(k)]
+            Rur *= R["0"] ** mvect["0"]
+
+            Rr = x
+            for k, v in Ar.items():
+                if k in includedAttrs:
+                    Rr *= R[str(k)] ** attrs[str(k)]
+
+            denom = (Rr * (Aprime[key] ** (2 ** lestart)))
+            Tvect1 = (Z / denom) ** (-1 * c)
+            Tvect2 = (Aprime[key] ** evect[key])
+            Tvect3 = (S ** vvect[key])
+            Tvect[key] = (Tvect1 * Tvect2 * Rur * Tvect3) % N
+
+            Tau.extend(get_values_of_dicts(Tvect))
+
+        for key, val in predicate.items():
+            Tdeltavect1 = (Tval["delta"] * (Z ** val))
+            Tdeltavect2 = (Z ** attrs[key]) * (S ** rvect["delta"])
+            Tdeltavect = (Tdeltavect1 ** (-1 * c)) * Tdeltavect2 % N
+
+            Tau.append(Tdeltavect)
+
+            Tvalvect = {}
+            Tuproduct = 1 % N
+            for i in range(0, iterations):
+                Tvalvect1 = (Tval[str(i)] ** (-1 * c))
+                Tvalvect2 = (Z ** uvect[str(i)])
+                Tvalvect3 = (S ** rvect[str(i)])
+                Tvalvect[str(i)] = Tvalvect1 * Tvalvect2 * Tvalvect3
+                Tuproduct *= Tvalvect[str(i)] ** uvect[str(i)]
+            Tau.extend(get_values_of_dicts(Tvalvect))
+
+            Qvect1 = (Tval["delta"] ** (-1 * c))
+            Qvect = Qvect1 * Tuproduct * (S ** alphavect) % N
+            Tau.append(Qvect)
+
+        cvect = integer(get_hash(*reduce(lambda x, y: x+y, [Tau, CList, [nonce]])))
+
+        return c == cvect
+
+

@@ -1,4 +1,4 @@
-from charm.core.math.integer import randomPrime, random, integer, randomBits
+from charm.core.math.integer import randomPrime, random, integer, randomBits, isPrime
 
 from anoncreds.protocol.globals import lprime, lvprimeprime, lestart, leendrange
 from anoncreds.protocol.models import IssuerPublicKey

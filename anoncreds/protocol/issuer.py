@@ -1,7 +1,7 @@
-from charm.core.math.integer import randomPrime, random, integer, randomBits, \
-    isPrime
+from charm.core.math.integer import randomPrime, random, integer, randomBits, isPrime
 
 from anoncreds.protocol.globals import lprime, lvprimeprime, lestart, leendrange
+from anoncreds.protocol.models import IssuerPublicKey
 from anoncreds.protocol.utils import randomQR, get_prime_in_range
 
 
@@ -53,11 +53,11 @@ class Issuer:
         # R["0"] is a random number needed corresponding to master secret
         R["0"] = S ** integer(random(n))
 
-        self._pk = {'N': n, 'S': S, 'Z': Z, 'R': R}
+        self._pk = IssuerPublicKey(n, R, S, Z)
         self.sk = {'p': self.p, 'q': self.q}
 
     @property
-    def PK(self):
+    def PK(self) -> IssuerPublicKey:
         """
         Generate key pair for the issuer
         :return: Tuple of public-secret key for the issuer
@@ -82,14 +82,11 @@ class Issuer:
 
         e = get_prime_in_range(estart, eend)
 
-        sig = self._sign(self._pk, attrs, vprimeprime, u, e)
-        return sig["A"], e, vprimeprime
+        A = self._sign(self._pk, attrs, vprimeprime, u, e)
+        return A, e, vprimeprime
 
-    def _sign(self, pk, attrs, v=0, u=0, e=0):
-        R = pk["R"]
-        Z = pk["Z"]
-        S = pk["S"]
-        N = pk["N"]
+    def _sign(self, pk: IssuerPublicKey, attrs, v=0, u=0, e=0):
+        N, R, S, Z, = pk
         Rx = 1 % N
 
         # Get the product sequence for the (R[i] and attrs[i]) combination
@@ -106,4 +103,4 @@ class Issuer:
         Q = Z / (Rx * (S ** v)) % N
         A = Q ** (einverse ** -1) % N
 
-        return {'A': A, 'Q': Q, 'e': e, 'v': v}
+        return A

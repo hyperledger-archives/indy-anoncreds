@@ -1,12 +1,14 @@
 from charm.core.math.integer import integer, randomBits
+from typing import Dict
 
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     splitRevealedAttributes
 from anoncreds.protocol.globals import lestart, lnonce
+from anoncreds.protocol.models import IssuerPublicKey
 
 
 class Verifier:
-    def __init__(self, pk_i):
+    def __init__(self, pk_i: Dict[str, IssuerPublicKey]):
         self.pk_i = pk_i
 
     @property
@@ -32,10 +34,7 @@ class Verifier:
         c, evect, vvect, mvect, Aprime = proof
 
         for key, val in self.pk_i.items():
-            Z = self.pk_i[key]["Z"]
-            S = self.pk_i[key]["S"]
-            N = self.pk_i[key]["N"]
-            R = self.pk_i[key]["R"]
+            N, R, S, Z = val
             includedAttrs = encodedAttrsDict[key]
 
             x = 1 % N

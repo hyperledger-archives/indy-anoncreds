@@ -160,7 +160,6 @@ class Prover:
             vtilde[key] = integer(randomBits(lvtilde))
 
             Rur = 1 % N
-
             for k, value in Aur.items():
                 if k in includedAttrs:
                     Rur = Rur * (R[k] ** mtilde[k])
@@ -170,50 +169,51 @@ class Prover:
 
             TauList.append(T[key])
             CList.append(Aprime[key])
-            #TODO: Remove the hardcoded value for 'Aprime'
-            C["Aprime"] = Aprime[key]
+            updateObject(C, key, "Aprime", Aprime[key])
 
         for key, val in predicate.items():
-            #TODO: Remove the hardcoded value for 'gvt'
-            S = self.pk_i['gvt']["S"]
-            Z = self.pk_i['gvt']["Z"]
+            S = self.pk_i[key]["S"]
+            Z = self.pk_i[key]["Z"]
+            N = self.pk_i[key]["N"]
 
-            delta = self.m[key] - predicate[key]
-            u = fourSquares(delta)
+            # Iterate over the predicates for a given credential(issuer)
+            for k, value in val.items():
 
-            for i in range(0, iterations):
-                r[str(i)] = integer(randomBits(lvprime))
-            r["delta"] = integer(randomBits(lvprime))
+                delta = self.m[k] - value
+                u = fourSquares(delta)
 
-            Tval = {}
-            for i in range(0, iterations):
-                Tval[str(i)] = (Z ** u[i]) * (S ** r[str(i)]) % N
-                utilde[str(i)] = integer(randomBits(lutilde))
-                rtilde[str(i)] = integer(randomBits(lrtilde))
-            Tval["delta"] = (Z ** delta) * (S ** r["delta"]) % N
-            rtilde["delta"] = integer(randomBits(lrtilde))
+                for i in range(0, iterations):
+                    r[str(i)] = integer(randomBits(lvprime))
+                r["delta"] = integer(randomBits(lvprime))
 
-            CList.extend(get_values_of_dicts(Tval))
-            #TODO: Remove the hardcoded value for 'Tval'
-            C['Tval'] = Tval
+                Tval = {}
+                for i in range(0, iterations):
+                    Tval[str(i)] = (Z ** u[i]) * (S ** r[str(i)]) % N
+                    utilde[str(i)] = integer(randomBits(lutilde))
+                    rtilde[str(i)] = integer(randomBits(lrtilde))
+                Tval["delta"] = (Z ** delta) * (S ** r["delta"]) % N
+                rtilde["delta"] = integer(randomBits(lrtilde))
 
-            Tbar = {}
-            for i in range(0, iterations):
-                Tbar[str(i)] = (Z ** utilde[str(i)]) * (S ** rtilde[str(i)]) % N
-            Tbar["delta"] = (Z ** Aur[key]) * (S ** rtilde["delta"]) % N
+                CList.extend(get_values_of_dicts(Tval))
+                updateObject(C, key, "Tval", Tval)
 
-            TauList.extend(get_values_of_dicts(Tbar))
+                Tbar = {}
+                for i in range(0, iterations):
+                    Tbar[str(i)] = (Z ** utilde[str(i)]) * (S ** rtilde[str(i)]) % N
+                Tbar["delta"] = (Z ** mtilde[k]) * (S ** rtilde["delta"]) % N
 
-            alphatilde = integer(randomBits(lalphatilde))
+                TauList.extend(get_values_of_dicts(Tbar))
 
-            Q = 1 % N
-            for i in range(0, iterations):
-                Q *= Tval[str(i)] ** utilde[str(i)]
-            Q *= S ** alphatilde
+                alphatilde = integer(randomBits(lalphatilde))
 
-            TauList.append(Q)
+                Q = 1 % N
+                for i in range(0, iterations):
+                    Q *= Tval[str(i)] ** utilde[str(i)]
+                Q *= S ** alphatilde
 
-        c = integer(get_hash(*reduce(lambda x, y: x+y, [TauList, CList, [nonce]])))
+                TauList.append(Q)
+
+        c = integer(get_hash(nonce, *reduce(lambda x, y: x+y, [TauList, CList])))
 
         for key, val in credential.items():
             evect[key] = etilde[key] + (c * eprime[key])
@@ -227,14 +227,15 @@ class Prover:
         subProofC = {"evect": evect, "vvect": vvect, "mvect": mvect, "Aprime": Aprime}
 
         for key, val in predicate.items():
-            urproduct = 0
-            for i in range(0, iterations):
-                uvect[str(i)] = utilde[str(i)] + c * u[i]
-                rvect[str(i)] = rtilde[str(i)] + c * r[str(i)]
-                urproduct += u[i] * r[str(i)]
-            rvect["delta"] = rtilde["delta"] + c * r["delta"]
+            for a, predicate in val.items():
+                urproduct = 0
+                for i in range(0, iterations):
+                    uvect[str(i)] = utilde[str(i)] + c * u[i]
+                    rvect[str(i)] = rtilde[str(i)] + c * r[str(i)]
+                    urproduct += u[i] * r[str(i)]
+                rvect["delta"] = rtilde["delta"] + c * r["delta"]
 
-            alphavect = alphatilde + c * (r["delta"] - urproduct)
+                alphavect = alphatilde + c * (r["delta"] - urproduct)
 
         subProofPredicate = {"uvect": uvect, "rvect": rvect, "mvect": mvect, "alphavect": alphavect}
 
@@ -267,11 +268,15 @@ def fourSquares(delta):
         raise Exception("Cannot get the four squares for delta {0}".format(delta))
 
 
-def updateObject(obj, parent, key, val):
-    if not parent in obj:
+def updateObject(obj, parentKey, key, val):
+    if parentKey not in obj:
         parentVal = {}
+    else:
+        parentVal = obj[parentKey]
+
     parentVal[key] = val
-    obj[parent] = parentVal
+    obj[parentKey] = parentVal
+
     return obj
 
 

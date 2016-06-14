@@ -3,7 +3,6 @@ from anoncreds.test.helper import getProver, getPresentationToken
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.protocol.prover import fourSquares
-from functools import reduce
 
 
 @pytest.fixture(scope="module")
@@ -43,7 +42,7 @@ def testPredicateCredentials(issuer, proverAndAttrs1, verifier):
     nonce = verifier.Nonce
 
     revealedAttrs = ['name']
-    predicate = {'age': 18}
+    predicate = {'gvt': {'age': 18}}
     proof = prover.preparePredicateProof(credential=presentationToken, attrs=encodedAttrs,
                                          revealedAttrs=revealedAttrs, nonce=nonce,
                                          predicate=predicate, encodedAttrsDict=encodedAttrsDict)

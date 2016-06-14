@@ -87,7 +87,7 @@ class Verifier:
         alphavect = subProofPredicate["alphavect"]
         rvect = subProofPredicate["rvect"]
         uvect = subProofPredicate["uvect"]
-        Tval = C["Tval"]
+
 
         Ar, Aur = splitRevealedAttributes(attrs, revealedAttrs)
 
@@ -119,27 +119,34 @@ class Verifier:
             Tau.extend(get_values_of_dicts(Tvect))
 
         for key, val in predicate.items():
-            Tdeltavect1 = (Tval["delta"] * (Z ** val))
-            Tdeltavect2 = (Z ** attrs[key]) * (S ** rvect["delta"])
-            Tdeltavect = (Tdeltavect1 ** (-1 * c)) * Tdeltavect2 % N
+            S = self.pk_i[key]["S"]
+            Z = self.pk_i[key]["Z"]
+            N = self.pk_i[key]["N"]
+            Tval = C[key]["Tval"]
 
-            Tau.append(Tdeltavect)
+            # Iterate over the predicates for a given credential(issuer)
+            for k, value in val.items():
+                Tdeltavect1 = (Tval["delta"] * (Z ** mvect[k]))
+                Tdeltavect2 = (Z ** attrs[k]) * (S ** rvect["delta"])
+                Tdeltavect = (Tdeltavect1 ** (-1 * c)) * Tdeltavect2 % N
 
-            Tvalvect = {}
-            Tuproduct = 1 % N
-            for i in range(0, iterations):
-                Tvalvect1 = (Tval[str(i)] ** (-1 * c))
-                Tvalvect2 = (Z ** uvect[str(i)])
-                Tvalvect3 = (S ** rvect[str(i)])
-                Tvalvect[str(i)] = Tvalvect1 * Tvalvect2 * Tvalvect3
-                Tuproduct *= Tvalvect[str(i)] ** uvect[str(i)]
-            Tau.extend(get_values_of_dicts(Tvalvect))
+                Tau.append(Tdeltavect)
 
-            Qvect1 = (Tval["delta"] ** (-1 * c))
-            Qvect = Qvect1 * Tuproduct * (S ** alphavect) % N
-            Tau.append(Qvect)
+                Tvalvect = {}
+                Tuproduct = 1 % N
+                for i in range(0, iterations):
+                    Tvalvect1 = (Tval[str(i)] ** (-1 * c))
+                    Tvalvect2 = (Z ** uvect[str(i)])
+                    Tvalvect3 = (S ** rvect[str(i)])
+                    Tvalvect[str(i)] = Tvalvect1 * Tvalvect2 * Tvalvect3
+                    Tuproduct *= Tvalvect[str(i)] ** uvect[str(i)]
+                Tau.extend(get_values_of_dicts(Tvalvect))
 
-        cvect = integer(get_hash(*reduce(lambda x, y: x+y, [Tau, CList, [nonce]])))
+                Qvect1 = (Tval["delta"] ** (-1 * c))
+                Qvect = Qvect1 * Tuproduct * (S ** alphavect) % N
+                Tau.append(Qvect)
+
+        cvect = integer(get_hash(nonce, *reduce(lambda x, y: x+y, [Tau, CList])))
 
         return c == cvect
 

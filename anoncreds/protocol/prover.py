@@ -209,7 +209,7 @@ class Prover:
                 Q = 1 % N
                 for i in range(0, iterations):
                     Q *= Tval[str(i)] ** utilde[str(i)]
-                Q *= S ** alphatilde
+                Q *= S ** alphatilde % N
 
                 TauList.append(Q)
 

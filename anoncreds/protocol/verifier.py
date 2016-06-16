@@ -126,8 +126,8 @@ class Verifier:
 
             # Iterate over the predicates for a given credential(issuer)
             for k, value in val.items():
-                Tdeltavect1 = (Tval["delta"] * (Z ** mvect[k]))
-                Tdeltavect2 = (Z ** attrs[k]) * (S ** rvect["delta"])
+                Tdeltavect1 = (Tval["delta"] * (Z ** value))
+                Tdeltavect2 = (Z ** mvect[k]) * (S ** rvect["delta"])
                 Tdeltavect = (Tdeltavect1 ** (-1 * c)) * Tdeltavect2 % N
 
                 Tau.append(Tdeltavect)

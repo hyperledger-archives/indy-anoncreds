@@ -138,7 +138,7 @@ class Verifier:
                     Tvalvect1 = (Tval[str(i)] ** (-1 * c))
                     Tvalvect2 = (Z ** uvect[str(i)])
                     Tvalvect3 = (S ** rvect[str(i)])
-                    Tvalvect[str(i)] = Tvalvect1 * Tvalvect2 * Tvalvect3
+                    Tvalvect[str(i)] = Tvalvect1 * Tvalvect2 * Tvalvect3 % N
                     Tuproduct *= Tvalvect[str(i)] ** uvect[str(i)]
                 Tau.extend(get_values_of_dicts(Tvalvect))
 

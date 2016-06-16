@@ -253,7 +253,7 @@ class Prover:
 
 
 def findLargestSquareLessThan(x):
-    sqrtx = floor(sqrt(x))
+    sqrtx = int(floor(sqrt(x)))
     return sqrtx
 
 

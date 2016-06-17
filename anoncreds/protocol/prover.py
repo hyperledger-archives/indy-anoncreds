@@ -221,7 +221,7 @@ class Prover:
 
         mvect = {}
         for k, value in Aur.items():
-            mvect[str(k)] = mtilde[str(k)] + (c * attrs[str(k)])
+            mvect[str(k)] = mtilde[str(k)] + (c * self.m[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
         subProofC = {"evect": evect, "vvect": vvect, "mvect": mvect, "Aprime": Aprime}

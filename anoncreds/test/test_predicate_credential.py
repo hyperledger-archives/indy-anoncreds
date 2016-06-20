@@ -1,5 +1,5 @@
 import pytest
-from anoncreds.test.helper import getProver, getPresentationToken
+from anoncreds.protocol.helper import getProver, getPresentationToken
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.protocol.prover import fourSquares

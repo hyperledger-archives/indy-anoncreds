@@ -166,7 +166,6 @@ class Prover:
             Rur *= R["0"] ** mtilde["0"]
 
             T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
-
             TauList.append(T[key])
             CList.append(Aprime[key])
             updateObject(C, key, "Aprime", Aprime[key])
@@ -179,7 +178,7 @@ class Prover:
             # Iterate over the predicates for a given credential(issuer)
             for k, value in val.items():
 
-                delta = self.m[k] - value
+                delta = attrs[k] - value
                 u = fourSquares(delta)
 
                 for i in range(0, iterations):
@@ -201,7 +200,6 @@ class Prover:
                 for i in range(0, iterations):
                     Tbar[str(i)] = (Z ** utilde[str(i)]) * (S ** rtilde[str(i)]) % N
                 Tbar["delta"] = (Z ** mtilde[k]) * (S ** rtilde["delta"]) % N
-
                 TauList.extend(get_values_of_dicts(Tbar))
 
                 alphatilde = integer(randomBits(lalphatilde))
@@ -209,8 +207,8 @@ class Prover:
                 Q = 1 % N
                 for i in range(0, iterations):
                     Q *= Tval[str(i)] ** utilde[str(i)]
-                Q *= S ** alphatilde % N
-
+                Q *= S ** alphatilde
+                Q = Q%N
                 TauList.append(Q)
 
         c = integer(get_hash(nonce, *reduce(lambda x, y: x+y, [TauList, CList])))
@@ -221,7 +219,7 @@ class Prover:
 
         mvect = {}
         for k, value in Aur.items():
-            mvect[str(k)] = mtilde[str(k)] + (c * integer(self.m[str(k)]))
+            mvect[str(k)] = mtilde[str(k)] + (c * attrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
         subProofC = {"evect": evect, "vvect": vvect, "mvect": mvect, "Aprime": Aprime}

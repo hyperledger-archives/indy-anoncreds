@@ -109,13 +109,13 @@ class Verifier:
             for k, v in Ar.items():
                 if k in includedAttrs:
                     Rr *= R[str(k)] ** attrs[str(k)]
+                    #print k,attrs[str(k)]
 
             denom = (Rr * (Aprime[key] ** (2 ** lestart)))
             Tvect1 = (Z / denom) ** (-1 * c)
             Tvect2 = (Aprime[key] ** evect[key])
             Tvect3 = (S ** vvect[key])
             Tvect[key] = (Tvect1 * Tvect2 * Rur * Tvect3) % N
-
             Tau.extend(get_values_of_dicts(Tvect))
 
         for key, val in predicate.items():
@@ -126,13 +126,14 @@ class Verifier:
 
             # Iterate over the predicates for a given credential(issuer)
             for k, value in val.items():
+                Tvalvect = {}
+
                 Tdeltavect1 = (Tval["delta"] * (Z ** value))
                 Tdeltavect2 = (Z ** mvect[k]) * (S ** rvect["delta"])
                 Tdeltavect = (Tdeltavect1 ** (-1 * c)) * Tdeltavect2 % N
+                Tvalvect["delta"] = Tdeltavect
 
 
-
-                Tvalvect = {}
                 Tuproduct = 1 % N
                 for i in range(0, iterations):
                     Tvalvect1 = (Tval[str(i)] ** (-1 * c))
@@ -142,7 +143,6 @@ class Verifier:
                     Tuproduct *= Tval[str(i)] ** uvect[str(i)]
                 Tau.extend(get_values_of_dicts(Tvalvect))
 
-                Tau.append(Tdeltavect)
 
                 Qvect1 = (Tval["delta"] ** (-1 * c))
                 Qvect = Qvect1 * Tuproduct * (S ** alphavect) % N

@@ -1,11 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 sudo apt-get install flex
 sudo apt-get install bison
 sudo apt-get install libssl-dev
 sudo apt-get install libgmp-dev
-sudo apt-get install python3.5-dev
 
 # PBC
 mkdir -p ~/dev/pbc

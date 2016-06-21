@@ -1,6 +1,6 @@
 import pytest
 
-from anoncreds.protocol.issuer import Issuer
+from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.types import GVT, XYZCorp
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.test.helper import getProver
@@ -32,7 +32,7 @@ def attrNames2():
 
 @pytest.fixture(scope="module")
 def issuer1(attrNames1):
-    return Issuer(attrNames1)
+    return CredentialDefinition(attrNames1)
 
 
 @pytest.fixture(scope="module")
@@ -43,7 +43,7 @@ def issuerPk(issuer1):
 
 @pytest.fixture(scope="module")
 def issuer2(attrNames2):
-    return Issuer(attrNames2)
+    return CredentialDefinition(attrNames2)
 
 
 @pytest.fixture(scope="module")

@@ -1,4 +1,4 @@
-from anoncreds.protocol.issuer import Issuer
+from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.types import GVT
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.test.helper import getPresentationToken, getProver
@@ -6,9 +6,9 @@ from anoncreds.test.helper import getPresentationToken, getProver
 
 def testPredicate():
     attrNames = 'name', 'age', 'sex'
-    issuer = Issuer(attrNames)
+    issuer = CredentialDefinition(attrNames)
     issuerPk = {GVT.name: issuer.PK}
-    verifier = Verifier(pk_i=issuerPk)
+    verifier = Verifier()
 
     attribs = GVT.attribs(name='Aditya Pratap Singh',
                           age=25,
@@ -19,7 +19,8 @@ def testPredicate():
 
     presentationToken = getPresentationToken({GVT.name: issuer}, prover, encodedAttrs)
 
-    nonce = verifier.Nonce
+    interactionId = "interaction1"
+    nonce = verifier.generateNonce(interactionId)
 
     revealedAttrs = ['name']
     predicate = {GVT.name: {'age': 18}}

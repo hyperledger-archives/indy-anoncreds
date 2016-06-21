@@ -1,10 +1,10 @@
 from anoncreds.test.helper import getProver, getPresentationToken
-from anoncreds.protocol.issuer import Issuer
+from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.verifier import Verifier
 
 
 attrNames = 'name', 'age', 'sex'
-issuer = Issuer(attrNames)
+issuer = CredentialDefinition(attrNames)
 issuerPk = {GVT.name: issuer.PK}
 verifier = Verifier(pk_i=issuerPk)
 
@@ -14,7 +14,7 @@ encodedAttrsDict = {GVT.name: encodedAttrs}
 
 presentationToken = getPresentationToken({GVT.name: issuer}, prover, encodedAttrsDict)
 
-nonce = verifier.Nonce
+nonce = verifier.generateNonce
 
 revealedAttrs = ['name']
 predicate = {GVT.name: {'age': 18}}

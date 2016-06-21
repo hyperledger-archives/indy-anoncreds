@@ -9,7 +9,7 @@ def testMultipleCredentialSingleProof(issuers, proverAndAttrsForMultiple1, prove
 
     presentationToken = getPresentationToken(issuers, prover, attrs.encoded())
 
-    nonce = verifierMulti1.Nonce
+    nonce = verifierMulti1.generateNonce
 
     revealedAttrs = ['name']
     proof = prover.prepare_proof(credential=presentationToken, attrs=attrs.encoded(),
@@ -33,8 +33,8 @@ def testMultipleCredentialMultipleVerifier(issuers,
 
     presentationToken = getPresentationToken(issuers, prover, attrs.encoded())
 
-    nonce1 = verifierMulti1.Nonce
-    nonce2 = verifierMulti2.Nonce
+    nonce1 = verifierMulti1.generateNonce
+    nonce2 = verifierMulti2.generateNonce
 
     revealedAttrs = ['name']
     proof1 = prover.prepare_proof(credential=presentationToken,

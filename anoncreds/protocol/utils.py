@@ -1,5 +1,6 @@
+import string
 from hashlib import sha256
-from random import randint
+from random import randint, sample
 from typing import Dict
 
 from charm.core.math.integer import random, isPrime
@@ -23,6 +24,15 @@ def randomQR(n):
 #         else:
 #             encoded[attr_type.name] = value
 #     return encoded
+
+def encodeAttrs(attrs):
+    """
+    This function will encode all the attributes to 256 bit integers
+    :param attrs: The attributes to pass in credentials
+    :return:
+    """
+    return {key: Conversion.bytes2integer(sha256(value.encode()).digest())
+            for key, value in attrs.items()}
 
 
 def get_hash(*args):
@@ -70,3 +80,17 @@ def splitRevealedAttributes(attrs, revealedAttrs):
             Aur[k] = value
     return Ar, Aur
 
+
+def randomString(size: int = 20,
+                 chars: str = string.ascii_letters + string.digits) -> str:
+    """
+    Generate a random string of the specified size.
+
+    Ensure that the size is less than the length of chars as this function uses random.choice
+    which uses random sampling without replacement.
+
+    :param size: size of the random string to generate
+    :param chars: the set of characters to use to generate the random string. Uses alphanumerics by default.
+    :return: the random string generated
+    """
+    return ''.join(sample(chars, size))

@@ -3,9 +3,9 @@ from anoncreds.test.helper import getProver, getPresentationToken
 from anoncreds.protocol.verifier import Verifier
 
 
-def testMainPredicate(creddef1):
-    creddef = creddef1
-    issuerPk = {GVT.name: creddef.PK}
+def testMainPredicate(credDef1):
+    credDef = credDef1
+    issuerPk = {GVT.name: credDef.PK}
     verifier = Verifier(pk_i=issuerPk)
 
     attribs = GVT.attribs(name='Aditya Pratap Singh',
@@ -14,7 +14,7 @@ def testMainPredicate(creddef1):
 
     prover, attrs = getProver(attribs.encoded(), issuerPk)
 
-    presentationToken = getPresentationToken({GVT.name: creddef}, prover, attrs)
+    presentationToken = getPresentationToken({GVT.name: credDef}, prover, attrs)
 
     nonce = verifier.Nonce
 

@@ -1,13 +1,13 @@
 from anoncreds.test.helper import getPresentationToken
 
 
-def testMultipleCredentialSingleProof(issuers, proverAndAttrsForMultiple1, proverAndAttrsForMultiple2, verifierMulti1):
+def testMultipleCredentialSingleProof(credDefs, proverAndAttrsForMultiple1, proverAndAttrsForMultiple2, verifierMulti1):
     prover, attrs1 = proverAndAttrsForMultiple1
     prover, attrs2 = proverAndAttrsForMultiple2
 
     attrs = attrs1 + attrs2
 
-    presentationToken = getPresentationToken(issuers, prover, attrs.encoded())
+    presentationToken = getPresentationToken(credDefs, prover, attrs.encoded())
 
     nonce = verifierMulti1.Nonce
 
@@ -22,7 +22,7 @@ def testMultipleCredentialSingleProof(issuers, proverAndAttrsForMultiple1, prove
     assert verify_status
 
 
-def testMultipleCredentialMultipleVerifier(issuers,
+def testMultipleCredentialMultipleVerifier(credDefs,
                                            proverAndAttrsForMultiple1,
                                            proverAndAttrsForMultiple2,
                                            verifierMulti1, verifierMulti2):
@@ -31,7 +31,7 @@ def testMultipleCredentialMultipleVerifier(issuers,
 
     attrs = attrs1 + attrs2
 
-    presentationToken = getPresentationToken(issuers, prover, attrs.encoded())
+    presentationToken = getPresentationToken(credDefs, prover, attrs.encoded())
 
     nonce1 = verifierMulti1.Nonce
     nonce2 = verifierMulti2.Nonce

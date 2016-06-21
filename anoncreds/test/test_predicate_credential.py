@@ -1,4 +1,4 @@
-from anoncreds.protocol.prover import fourSquares
+from anoncreds.protocol.proof import fourSquares
 from anoncreds.protocol.types import GVT
 from anoncreds.test.helper import getPresentationToken, getProver
 

@@ -11,7 +11,7 @@ def testSingleProver(issuer1, attrNames1, proverAndAttrs1, verifier1):
                                              prover,
                                              attrs.encoded())
 
-    nonce = verifier1.Nonce
+    nonce = verifier1.generateNonce
 
     # Prepare proof
     revealedAttrs = ['name']
@@ -40,8 +40,8 @@ def testMultipleProvers(issuer1, attrNames1, proverAndAttrs1,
     presentationToken1 = getPresentationToken({GVT.name: issuer1}, prover1, attrs1.encoded())
     presentationToken2 = getPresentationToken({GVT.name: issuer1}, prover2, attrs2.encoded())
 
-    nonce1 = verifier1.Nonce
-    nonce2 = verifier1.Nonce
+    nonce1 = verifier1.generateNonce
+    nonce2 = verifier1.generateNonce
 
     # Prepare proofs
     revealedAttrs = ['name']

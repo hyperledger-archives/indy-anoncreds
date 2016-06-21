@@ -8,7 +8,7 @@ def testPredicate():
     attrNames = 'name', 'age', 'sex'
     issuer = Issuer(attrNames)
     issuerPk = {GVT.name: issuer.PK}
-    verifier = Verifier(pk_i=issuerPk)
+    verifier = Verifier()
 
     attribs = GVT.attribs(name='Aditya Pratap Singh',
                           age=25,
@@ -19,7 +19,8 @@ def testPredicate():
 
     presentationToken = getPresentationToken({GVT.name: issuer}, prover, encodedAttrs)
 
-    nonce = verifier.Nonce
+    interactionId = "interaction1"
+    nonce = verifier.generateNonce(interactionId)
 
     revealedAttrs = ['name']
     predicate = {GVT.name: {'age': 18}}

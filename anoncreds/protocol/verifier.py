@@ -6,14 +6,42 @@ from anoncreds.protocol.globals import lestart, lnonce, iterations
 
 
 class Verifier:
-    def __init__(self, pk_i):
-        self.pk_i = pk_i
+    def __init__(self):
+        self.interactionDetail = {}  # Dict[String, String]
+        self.credDefs = {}           # Dict[(issuer id, credential name, credential version), Credential Definition]
 
-    @property
-    def Nonce(self):
+    def generateNonce(self, interationId):
         nv = integer(randomBits(lnonce))
-
+        self.interactionDetail[str(nv)] = interationId
         return nv
+
+    def _getFromLocal(self, proof):
+        issuerId = ''  # TODO: get issuerId from proof
+        credName = ''  # TODO: get credName from proof
+        credVersion = ''  # TODO: get credVersion from proof
+        return self.credDefs.get((issuerId, credName, credVersion))
+
+    def _fetchAndUpdateLocalCredDef(self, issuerId, credName, credVersion):
+        pkI = 'a', 'b', 'c', 'd'   #  TODO: replace with correct logic
+        self.credDefs[(issuerId, credName, credVersion)] = pkI
+        return pkI
+
+    def _getIssuerPkByCredDef(self, credDef):
+        keys = credDef['keys']
+        R = {}
+        for key, val in keys['attributes'].items():
+            R[str(key)] = val
+        # R["0"] is a random number needed corresponding to master secret
+        R["0"] = keys['master_secret']
+
+        pk_i = {'N': keys['n'], 'S': keys['S'], 'Z': keys['Z'], 'R': R}
+        return pk_i
+
+    def _getIssuerPk(self, proof):
+        pki = self._getFromLocal(self, proof)
+        if pki is None:
+            pki = self._fetchAndUpdateLocalCredDef(self, proof)
+        return pki
 
     def verify_proof(self, proof, nonce, attrs, revealedAttrs):
         """
@@ -29,15 +57,18 @@ class Verifier:
 
         Ar, Aur = splitRevealedAttributes(flatAttrs, revealedAttrs)
 
+
         Tvect = {}
         # Extract the values from the proof
         c, evect, vvect, mvect, Aprime = proof
 
-        for key, val in self.pk_i.items():
-            Z = self.pk_i[key]["Z"]
-            S = self.pk_i[key]["S"]
-            N = self.pk_i[key]["N"]
-            R = self.pk_i[key]["R"]
+        pk_i = self._getIssuerPk(proof)
+
+        for key, val in pk_i.items():
+            Z = pk_i[key]["Z"]
+            S = pk_i[key]["S"]
+            N = pk_i[key]["N"]
+            R = pk_i[key]["R"]
             includedAttrs = attrs[key]
 
             x = 1 % N
@@ -94,11 +125,13 @@ class Verifier:
 
         Ar, Aur = splitRevealedAttributes(flatAttrs, revealedAttrs)
 
-        for key, val in self.pk_i.items():
-            Z = self.pk_i[key]["Z"]
-            S = self.pk_i[key]["S"]
-            N = self.pk_i[key]["N"]
-            R = self.pk_i[key]["R"]
+        pk_i = self._getIssuerPk(proof)
+
+        for key, val in pk_i.items():
+            Z = pk_i[key]["Z"]
+            S = pk_i[key]["S"]
+            N = pk_i[key]["N"]
+            R = pk_i[key]["R"]
             includedAttrs = attrs[key]
 
             x = 1 % N
@@ -122,9 +155,9 @@ class Verifier:
             Tau.extend(get_values_of_dicts(Tvect))
 
         for key, val in predicate.items():
-            S = self.pk_i[key]["S"]
-            Z = self.pk_i[key]["Z"]
-            N = self.pk_i[key]["N"]
+            S = pk_i[key]["S"]
+            Z = pk_i[key]["Z"]
+            N = pk_i[key]["N"]
             Tval = C[key]["Tval"]
 
             # Iterate over the predicates for a given credential(issuer)

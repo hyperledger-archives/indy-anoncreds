@@ -14,7 +14,7 @@ encodedAttrsDict = {GVT.name: encodedAttrs}
 
 presentationToken = getPresentationToken({GVT.name: issuer}, prover, encodedAttrsDict)
 
-nonce = verifier.Nonce
+nonce = verifier.generateNonce
 
 revealedAttrs = ['name']
 predicate = {GVT.name: {'age': 18}}

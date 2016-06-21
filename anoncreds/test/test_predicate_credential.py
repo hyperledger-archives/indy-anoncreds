@@ -9,7 +9,7 @@ def testPredicateCredentials(issuer1, proverAndAttrs1, verifier1):
     presentationToken = getPresentationToken({GVT.name: issuer1}, prover,
                                              attrs.encoded())
 
-    nonce = verifier1.Nonce
+    nonce = verifier1.generateNonce
 
     revealedAttrs = ['name']
     predicate = {GVT.name: {'age': 18}}

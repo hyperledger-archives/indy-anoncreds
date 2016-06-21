@@ -15,7 +15,7 @@ class Verifier:
 
         return nv
 
-    def verify_proof(self, proof, nonce, attrs, revealedAttrs, encodedAttrsDict):
+    def verify_proof(self, proof, nonce, attrs, revealedAttrs):
         """
         Verify the proof
         :param attrs: The encoded attributes dictionary
@@ -25,7 +25,9 @@ class Verifier:
         :return: A boolean with the verification status for the proof
         """
 
-        Ar, Aur = splitRevealedAttributes(attrs, revealedAttrs)
+        flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
+
+        Ar, Aur = splitRevealedAttributes(flatAttrs, revealedAttrs)
 
         Tvect = {}
         # Extract the values from the proof
@@ -36,7 +38,7 @@ class Verifier:
             S = self.pk_i[key]["S"]
             N = self.pk_i[key]["N"]
             R = self.pk_i[key]["R"]
-            includedAttrs = encodedAttrsDict[key]
+            includedAttrs = attrs[key]
 
             x = 1 % N
             Rur = x
@@ -48,7 +50,7 @@ class Verifier:
             Rr = x
             for k, v in Ar.items():
                 if k in includedAttrs:
-                    Rr *= R[str(k)] ** attrs[str(k)]
+                    Rr *= R[str(k)] ** attrs[key][str(k)]
 
             denom = (Rr * (Aprime[key] ** (2 ** lestart)))
             Tvect1 = (Z / denom) ** (-1 * c)
@@ -65,7 +67,7 @@ class Verifier:
         return c == cvect
 
     def verifyPredicateProof(self, proof, nonce, attrs, revealedAttrs,
-                             predicate, encodedAttrsDict):
+                             predicate):
         """
         Verify the proof for Predicate implementation
         :param proof: The proof which is a combination of sub-proof for credential and proof, C
@@ -88,15 +90,16 @@ class Verifier:
         rvect = subProofPredicate["rvect"]
         uvect = subProofPredicate["uvect"]
 
+        flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
 
-        Ar, Aur = splitRevealedAttributes(attrs, revealedAttrs)
+        Ar, Aur = splitRevealedAttributes(flatAttrs, revealedAttrs)
 
         for key, val in self.pk_i.items():
             Z = self.pk_i[key]["Z"]
             S = self.pk_i[key]["S"]
             N = self.pk_i[key]["N"]
             R = self.pk_i[key]["R"]
-            includedAttrs = encodedAttrsDict[key]
+            includedAttrs = attrs[key]
 
             x = 1 % N
             Rur = x
@@ -108,7 +111,7 @@ class Verifier:
             Rr = x
             for k, v in Ar.items():
                 if k in includedAttrs:
-                    Rr *= R[str(k)] ** attrs[str(k)]
+                    Rr *= R[str(k)] ** attrs[key][str(k)]
                     #print k,attrs[str(k)]
 
             denom = (Rr * (Aprime[key] ** (2 ** lestart)))

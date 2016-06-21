@@ -38,8 +38,7 @@ class Prover:
     def set_attrs(self, attrs):
         self.m = attrs
 
-    def prepare_proof(self, credential, attrs, revealedAttrs, nonce,
-                      encodedAttrsDict):
+    def prepare_proof(self, credential, attrs, revealedAttrs, nonce):
         """
         Prepare the proof from credentials
         :param credential: The credential to be used for the proof preparation.
@@ -59,7 +58,9 @@ class Prover:
         evect = {}
         vvect = {}
 
-        Ar, Aur = splitRevealedAttributes(attrs, revealedAttrs)
+        flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
+
+        Ar, Aur = splitRevealedAttributes(flatAttrs, revealedAttrs)
 
         mtilde = {}
         for key, value in Aur.items():
@@ -70,7 +71,7 @@ class Prover:
             A = val["A"]
             e = val["e"]
             v = val["v"]
-            includedAttrs = encodedAttrsDict[key]
+            includedAttrs = attrs[key]
 
             N = self.pk_i[key]["N"]
             S = self.pk_i[key]["S"]
@@ -104,13 +105,13 @@ class Prover:
 
         mvect = {}
         for k, value in Aur.items():
-            mvect[str(k)] = mtilde[str(k)] + (c * attrs[str(k)])
+            mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
         return c, evect, vvect, mvect, Aprime
 
     def preparePredicateProof(self, credential, attrs, revealedAttrs, nonce,
-                              predicate, encodedAttrsDict):
+                              predicate):
 
         TauList = []
         CList = []
@@ -133,7 +134,9 @@ class Prover:
         alphavect = 0
         iterations = 4
 
-        Ar, Aur = splitRevealedAttributes(attrs, revealedAttrs)
+        flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
+
+        Ar, Aur = splitRevealedAttributes(flatAttrs, revealedAttrs)
 
         mtilde = {}
         for key, value in Aur.items():
@@ -146,7 +149,7 @@ class Prover:
             A = val["A"]
             e = val["e"]
             v = val["v"]
-            includedAttrs = encodedAttrsDict[key]
+            includedAttrs = attrs[key]
 
             N = self.pk_i[key]["N"]
             S = self.pk_i[key]["S"]
@@ -178,7 +181,7 @@ class Prover:
             # Iterate over the predicates for a given credential(issuer)
             for k, value in val.items():
 
-                delta = attrs[k] - value
+                delta = attrs[key][k] - value
                 u = fourSquares(delta)
 
                 for i in range(0, iterations):
@@ -217,7 +220,7 @@ class Prover:
 
         mvect = {}
         for k, value in Aur.items():
-            mvect[str(k)] = mtilde[str(k)] + (c * attrs[str(k)])
+            mvect[str(k)] = mtilde[str(k)] + (c * attrs[key][str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
         subProofC = {"evect": evect, "vvect": vvect, "mvect": mvect, "Aprime": Aprime}

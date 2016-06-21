@@ -20,19 +20,24 @@ class Attribs:
         :param attrs: The attributes to pass in credentials
         :return:
         """
-        encoded = {}
-        for at in self.credType.attr_types:
-            if at.encode:
-                encoded[at.name] = Conversion.bytes2integer(
-                    sha256(str(self.vals[at.name]).encode()).digest())
-            else:
-                encoded[at.name] = self.vals[at.name]
-        return encoded
+        named = {}
+        for i in range(len(self.credType.name_a)):
+            name = self.credType.name_a[i]
+            attr_types = self.credType.attr_types_a[i]
+            encoded = {}
+            for at in attr_types:
+                if at.encode:
+                    encoded[at.name] = Conversion.bytes2integer(
+                        sha256(str(self.vals[at.name]).encode()).digest())
+                else:
+                    encoded[at.name] = self.vals[at.name]
+            named[name] = encoded
+        return named
 
     def __add__(self, other):
         vals = self.vals.copy()
         vals.update(other.vals)
-        return Attribs(self.credType + other.credType, vals)
+        return Attribs(self.credType + other.credType, **vals)
 
 
 class AttribsDef:

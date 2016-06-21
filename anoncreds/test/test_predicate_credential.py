@@ -1,55 +1,52 @@
 import pytest
-from anoncreds.protocol.helper import getProver, getPresentationToken
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.protocol.prover import fourSquares
+from anoncreds.test.helper import getPresentationToken, getProver
 
 
-@pytest.fixture(scope="module")
-def attrNames():
-    return 'name', 'age', 'sex'
+# @pytest.fixture(scope="module")
+# def attrNames():
+#     return 'name', 'age', 'sex'
+#
+#
+#
+#
 
 
-@pytest.fixture(scope="module")
-def issuerPk(issuer):
-    # Return issuer's public key
-    return {"gvt": issuer.PK}
+# @pytest.fixture(scope="module")
+# def issuer(attrNames):
+#     # Create issuer
+#     return Issuer(attrNames)
+#
+#
+# @pytest.fixture(scope="module")
+# def verifier(issuerPk):
+#     # Setup verifier
+#     return Verifier(issuerPk)
 
 
-@pytest.fixture(scope="module")
-def proverAndAttrs1(issuerPk):
-    attrs = {'name': 'Aditya Pratap Singh', 'age': 25, 'sex': 'male'}
-    return getProver(attrs, issuerPk)
+def testPredicateCredentials(issuer1, proverAndAttrs1, verifier1):
+    prover, attrs = proverAndAttrs1
 
+    presentationToken = getPresentationToken({"gvt": issuer1}, prover,
+                                             attrs.encoded())
 
-@pytest.fixture(scope="module")
-def issuer(attrNames):
-    # Create issuer
-    return Issuer(attrNames)
-
-
-@pytest.fixture(scope="module")
-def verifier(issuerPk):
-    # Setup verifier
-    return Verifier(issuerPk)
-
-def testPredicateCredentials(issuer, proverAndAttrs1, verifier):
-    prover, encodedAttrs, attrs = proverAndAttrs1
-    encodedAttrsDict = {"gvt": encodedAttrs}
-
-    presentationToken = getPresentationToken({"gvt": issuer}, prover, encodedAttrsDict)
-
-    nonce = verifier.Nonce
+    nonce = verifier1.Nonce
 
     revealedAttrs = ['name']
     predicate = {'gvt': {'age': 18}}
-    proof = prover.preparePredicateProof(credential=presentationToken, attrs=encodedAttrs,
-                                         revealedAttrs=revealedAttrs, nonce=nonce,
-                                         predicate=predicate, encodedAttrsDict=encodedAttrsDict)
+    proof = prover.preparePredicateProof(credential=presentationToken,
+                                         attrs=attrs.encoded(),
+                                         revealedAttrs=revealedAttrs,
+                                         nonce=nonce,
+                                         predicate=predicate)
 
-    verify_status = verifier.verifyPredicateProof(proof=proof, nonce=nonce,
-                                          attrs=encodedAttrs, revealedAttrs=revealedAttrs,
-                                          predicate=predicate, encodedAttrsDict=encodedAttrsDict)
+    verify_status = verifier1.verifyPredicateProof(proof=proof,
+                                                   nonce=nonce,
+                                                   attrs=attrs.encoded(),
+                                                   revealedAttrs=revealedAttrs,
+                                                   predicate=predicate)
 
     assert verify_status
 

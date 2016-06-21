@@ -6,7 +6,7 @@ from anoncreds.protocol.utils import encodeAttrs
 
 
 class Issuer:
-    def __init__(self, id, attributeRepo: AttributeRepo):
+    def __init__(self, id, attributeRepo: AttributeRepo=None):
         self.id = id
         self.credDefs = {}     # Dict[Tuple, CredentialDefinition]
         self.credDefsForAttribs = {}    # Dict[Tuple, List]
@@ -32,8 +32,8 @@ class Issuer:
         encAttrs = encodeAttrs(attributes)
         return credDef.generateCredential(U, encAttrs)
 
-    def newCredDef(self, attrNames, name, version):
-        credDef = CredentialDefinition(attrNames, name, version)
+    def newCredDef(self, attrNames, name, version, ip=None, port=None):
+        credDef = CredentialDefinition(attrNames, name, version, ip, port)
         self.addCredDef(credDef)
         return credDef
 

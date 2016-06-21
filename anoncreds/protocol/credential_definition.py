@@ -6,7 +6,7 @@ from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString
 
 
 class CredentialDefinition:
-    def __init__(self, attrNames, name=None, version=None):
+    def __init__(self, attrNames, name=None, version=None, ip=None, port=None):
         """
         Setup an issuer
         :param attrNames: List of all attribute names
@@ -14,6 +14,8 @@ class CredentialDefinition:
 
         self.name = name or randomString(6)
         self.version = version or "1.0"
+        self.ip = ip
+        self.port = port
         self.attrNames = attrNames
 
         # Generate 2 large primes `p_prime` and `q_prime` and use them
@@ -120,11 +122,13 @@ class CredentialDefinition:
             "name": self.name,
             "version": self.version,
             "type": "CL",
+            "ip": self.ip,
+            "port": self.port,
             "keys": {
                 "master_secret_rand": pk["R"]["0"],
                 "N": pk["N"],
                 "S": pk["S"],
                 "Z": pk["Z"],
-                "R": pk["R"]
+                "R": pk["R"]        # TODO Master secret rand number, R[0] is still passed, remove that
             }
         }

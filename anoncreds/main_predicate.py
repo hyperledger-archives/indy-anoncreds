@@ -5,19 +5,19 @@ from anoncreds.protocol.verifier import Verifier
 
 attrNames = 'name', 'age', 'sex'
 issuer = Issuer(attrNames)
-issuerPk = {"gvt": issuer.PK}
+issuerPk = {GVT.name: issuer.PK}
 verifier = Verifier(pk_i=issuerPk)
 
 attr_vals = {'name': 'Aditya Pratap Singh', 'age': 25, 'sex': 'male'}
 prover, encodedAttrs, attrs = getProver(attr_vals, issuerPk)
-encodedAttrsDict = {"gvt": encodedAttrs}
+encodedAttrsDict = {GVT.name: encodedAttrs}
 
-presentationToken = getPresentationToken({"gvt": issuer}, prover, encodedAttrsDict)
+presentationToken = getPresentationToken({GVT.name: issuer}, prover, encodedAttrsDict)
 
 nonce = verifier.Nonce
 
 revealedAttrs = ['name']
-predicate = {'gvt': {'age': 18}}
+predicate = {GVT.name: {'age': 18}}
 proof = prover.preparePredicateProof(credential=presentationToken, attrs=encodedAttrs,
                                      revealedAttrs=revealedAttrs, nonce=nonce,
                                      predicate=predicate, encodedAttrsDict=encodedAttrsDict)

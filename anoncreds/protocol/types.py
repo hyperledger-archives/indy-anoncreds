@@ -49,6 +49,10 @@ class AttribsDef:
             self.name_a = name
             self.attr_types_a = attr_types
 
+    @property
+    def name(self):
+        return ', '.join(self.name_a)
+
     def __getattr__(self, item):
         for attr_types in self.attr_types_a:
             for at in attr_types:
@@ -56,12 +60,17 @@ class AttribsDef:
                     return at
             raise AttributeError
 
-    def attribs(self, **vals):
-        return Attribs(self, **vals)
-
     def __add__(self, other):
         return AttribsDef(self.name_a + other.name_a,
                           self.attr_types_a + other.attr_types_a)
+
+    def attribs(self, **vals):
+        return Attribs(self, **vals)
+
+    def getNames(self):
+        return [at.name
+                for attr_types in self.attr_types_a
+                for at in attr_types]
 
 
 GVT = AttribsDef('gvt',
@@ -69,7 +78,7 @@ GVT = AttribsDef('gvt',
                   AttribType('age', encode=False),
                   AttribType('sex', encode=True)])
 
-IBM = AttribsDef('ibm',
-                 [AttribType('status', encode=True)])
+XYZCorp = AttribsDef('xyz',
+                     [AttribType('status', encode=True)])
 
-NASEMP = GVT + IBM
+NASEMP = GVT + XYZCorp

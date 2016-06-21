@@ -1,41 +1,18 @@
-import pytest
-from anoncreds.protocol.issuer import Issuer
-from anoncreds.protocol.verifier import Verifier
 from anoncreds.protocol.prover import fourSquares
+from anoncreds.protocol.types import GVT
 from anoncreds.test.helper import getPresentationToken, getProver
-
-
-# @pytest.fixture(scope="module")
-# def attrNames():
-#     return 'name', 'age', 'sex'
-#
-#
-#
-#
-
-
-# @pytest.fixture(scope="module")
-# def issuer(attrNames):
-#     # Create issuer
-#     return Issuer(attrNames)
-#
-#
-# @pytest.fixture(scope="module")
-# def verifier(issuerPk):
-#     # Setup verifier
-#     return Verifier(issuerPk)
 
 
 def testPredicateCredentials(issuer1, proverAndAttrs1, verifier1):
     prover, attrs = proverAndAttrs1
 
-    presentationToken = getPresentationToken({"gvt": issuer1}, prover,
+    presentationToken = getPresentationToken({GVT.name: issuer1}, prover,
                                              attrs.encoded())
 
     nonce = verifier1.Nonce
 
     revealedAttrs = ['name']
-    predicate = {'gvt': {'age': 18}}
+    predicate = {GVT.name: {'age': 18}}
     proof = prover.preparePredicateProof(credential=presentationToken,
                                          attrs=attrs.encoded(),
                                          revealedAttrs=revealedAttrs,

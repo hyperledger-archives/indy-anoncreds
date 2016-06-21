@@ -7,7 +7,7 @@ from anoncreds.test.helper import getPresentationToken, getProver
 def testPredicate():
     attrNames = 'name', 'age', 'sex'
     issuer = Issuer(attrNames)
-    issuerPk = {"gvt": issuer.PK}
+    issuerPk = {GVT.name: issuer.PK}
     verifier = Verifier(pk_i=issuerPk)
 
     attribs = GVT.attribs(name='Aditya Pratap Singh',
@@ -17,12 +17,12 @@ def testPredicate():
     encodedAttrs = attribs.encoded()
     prover, attrs = getProver(attribs, issuerPk)
 
-    presentationToken = getPresentationToken({"gvt": issuer}, prover, encodedAttrs)
+    presentationToken = getPresentationToken({GVT.name: issuer}, prover, encodedAttrs)
 
     nonce = verifier.Nonce
 
     revealedAttrs = ['name']
-    predicate = {'gvt': {'age': 18}}
+    predicate = {GVT.name: {'age': 18}}
     proof = prover.preparePredicateProof(credential=presentationToken,
                                          attrs=encodedAttrs,
                                          revealedAttrs=revealedAttrs,

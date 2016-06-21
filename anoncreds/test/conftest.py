@@ -1,7 +1,7 @@
 import pytest
 
 from anoncreds.protocol.issuer import Issuer
-from anoncreds.protocol.types import GVT, IBM
+from anoncreds.protocol.types import GVT, XYZCorp
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.test.helper import getProver
 
@@ -9,7 +9,7 @@ from anoncreds.test.helper import getProver
 @pytest.fixture(scope="module")
 def issuers(issuer1, issuer2):
     # Return issuer's public key
-    return {"gvt": issuer1, "ibm": issuer2}
+    return {GVT.name: issuer1, "xyz": issuer2}
 
 
 @pytest.fixture(scope="module")
@@ -22,12 +22,12 @@ def issuersPk(issuers):
 
 @pytest.fixture(scope="module")
 def attrNames1():
-    return 'name', 'age', 'sex'
+    return GVT.getNames()
 
 
 @pytest.fixture(scope="module")
 def attrNames2():
-    return 'status',
+    return XYZCorp.getNames()
 
 
 @pytest.fixture(scope="module")
@@ -38,7 +38,8 @@ def issuer1(attrNames1):
 @pytest.fixture(scope="module")
 def issuerPk(issuer1):
     # Return issuer's public key
-    return {"gvt": issuer1.PK}
+    return {GVT.name: issuer1.PK}
+
 
 @pytest.fixture(scope="module")
 def issuer2(attrNames2):
@@ -80,7 +81,7 @@ def proverAndAttrsForMultiple1(issuersPk):
 
 @pytest.fixture(scope="module")
 def proverAndAttrsForMultiple2(issuersPk):
-    attribs = IBM.attribs(status='ACTIVE')
+    attribs = XYZCorp.attribs(status='ACTIVE')
 
     prover, attrs = getProver(attribs, issuersPk)
 
@@ -100,5 +101,3 @@ def verifierMulti1(issuersPk):
 @pytest.fixture(scope="module")
 def verifierMulti2(issuersPk):
     return Verifier(issuersPk)
-
-

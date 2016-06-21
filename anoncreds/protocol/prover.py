@@ -196,11 +196,9 @@ class Prover:
                 CList.extend(get_values_of_dicts(Tval))
                 updateObject(C, key, "Tval", Tval)
 
-                Tbar = {}
                 for i in range(0, iterations):
-                    Tbar[str(i)] = (Z ** utilde[str(i)]) * (S ** rtilde[str(i)]) % N
-                Tbar["delta"] = (Z ** mtilde[k]) * (S ** rtilde["delta"]) % N
-                TauList.extend(get_values_of_dicts(Tbar))
+                    TauList.append((Z ** utilde[str(i)]) * (S ** rtilde[str(i)]) % N)
+                TauList.append((Z ** mtilde[k]) * (S ** rtilde["delta"]) % N)
 
                 alphatilde = integer(randomBits(lalphatilde))
 

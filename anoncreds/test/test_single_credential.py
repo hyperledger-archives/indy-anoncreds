@@ -4,6 +4,7 @@ from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.test.helper import getPresentationToken, getProver
 
+
 @pytest.fixture(scope="module")
 def attrNames():
     return 'name', 'age', 'sex'

@@ -131,18 +131,16 @@ class Verifier:
                 Tdeltavect1 = (Tval["delta"] * (Z ** value))
                 Tdeltavect2 = (Z ** mvect[k]) * (S ** rvect["delta"])
                 Tdeltavect = (Tdeltavect1 ** (-1 * c)) * Tdeltavect2 % N
-                Tvalvect["delta"] = Tdeltavect
-
 
                 Tuproduct = 1 % N
                 for i in range(0, iterations):
                     Tvalvect1 = (Tval[str(i)] ** (-1 * c))
                     Tvalvect2 = (Z ** uvect[str(i)])
                     Tvalvect3 = (S ** rvect[str(i)])
-                    Tvalvect[str(i)] = Tvalvect1 * Tvalvect2 * Tvalvect3 % N
+                    Tau.append(Tvalvect1 * Tvalvect2 * Tvalvect3 % N)
                     Tuproduct *= Tval[str(i)] ** uvect[str(i)]
-                Tau.extend(get_values_of_dicts(Tvalvect))
 
+                Tau.append(Tdeltavect)
 
                 Qvect1 = (Tval["delta"] ** (-1 * c))
                 Qvect = Qvect1 * Tuproduct * (S ** alphavect) % N

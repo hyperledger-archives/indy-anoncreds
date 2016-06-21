@@ -8,7 +8,8 @@ issuer = Issuer(attrNames)
 issuerPk = {"gvt": issuer.PK}
 verifier = Verifier(pk_i=issuerPk)
 
-prover, encodedAttrs, attrs = getProver({'name': 'Aditya Pratap Singh', 'age': 25, 'sex': 'male'}, issuerPk)
+attr_vals = {'name': 'Aditya Pratap Singh', 'age': 25, 'sex': 'male'}
+prover, encodedAttrs, attrs = getProver(attr_vals, issuerPk)
 encodedAttrsDict = {"gvt": encodedAttrs}
 
 presentationToken = getPresentationToken({"gvt": issuer}, prover, encodedAttrsDict)

@@ -1,8 +1,8 @@
 import pytest
 
 from anoncreds.protocol.issuer import Issuer
+from anoncreds.protocol.types import GVT, IBM
 from anoncreds.protocol.verifier import Verifier
-from anoncreds.protocol.utils import encodeAttrs
 from anoncreds.test.helper import getPresentationToken, getProver
 
 
@@ -42,19 +42,28 @@ def issuer2(attrNames2):
 
 @pytest.fixture(scope="module")
 def proverAndAttrs1(issuerPk):
-    attrs = {'name': 'Aditya Pratap Singh', 'age': '25', 'sex': 'male'}
-    return getProver(attrs, issuerPk)
+    attribs = GVT.attribs(name='Aditya Pratap Singh',
+                          age=25,
+                          sex='male')
+
+    prover, attrs = getProver(attribs, issuerPk)
+
+    return prover, attribs.encoded(), attrs
 
 
 @pytest.fixture(scope="module")
 def proverAndAttrs2(issuerPk):
-    attrs = {'status': 'ACTIVE'}
-    return getProver(attrs, issuerPk)
+    attribs = IBM.attribs(status='ACTIVE')
+
+    prover, attrs = getProver(attribs, issuerPk)
+
+    return prover, attribs.encoded(), attrs
 
 
 @pytest.fixture(scope="module")
 def verifier1(issuerPk):
     return Verifier(issuerPk)
+
 
 @pytest.fixture(scope="module")
 def verifier2(issuerPk):
@@ -74,12 +83,12 @@ def testMultipleCredentialSingleProof(issuers, proverAndAttrs1, proverAndAttrs2,
     nonce = verifier1.Nonce
 
     revealedAttrs = ['name']
-    proof = prover.prepare_proof(credential=presentationToken, attrs=encodeAttrs(attrs),
+    proof = prover.prepare_proof(credential=presentationToken, attrs=attrs.encoded(),
                                  revealedAttrs=revealedAttrs, nonce=nonce,
                                  encodedAttrsDict=encodedAttrsDict)
 
     verify_status = verifier1.verify_proof(proof=proof, nonce=nonce,
-                                           attrs=encodeAttrs(attrs),
+                                           attrs=attrs.encoded(),
                                            revealedAttrs=revealedAttrs,
                                            encodedAttrsDict=encodedAttrsDict)
 
@@ -93,7 +102,10 @@ def testMultipleCredentialMultipleVerifier(issuers, proverAndAttrs1, proverAndAt
 
     encodedAttrsDict = {"gvt": encodedAttrs1,
                         "ibm": encodedAttrs2}
-    attrs = dict(list(attrs1.items()) + list(attrs2.items()))
+
+    x = attrs1 + attrs2
+
+    attrs = dict(list(attrs1.vals.items()) + list(attrs2.vals.items()))
 
     presentationToken = getPresentationToken(issuers, prover, encodedAttrsDict)
 

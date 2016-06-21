@@ -1,5 +1,6 @@
 from hashlib import sha256
 from random import randint
+from typing import Dict
 
 from charm.core.math.integer import random, isPrime
 from charm.toolbox.conversion import Conversion
@@ -9,21 +10,19 @@ def randomQR(n):
     return random(n) ** 2
 
 
-def encodeAttrs(attrs, to_encode):
-    """
-    This function will encode all the attributes to 256 bit integers
-    :param attrs: The attributes to pass in credentials
-    :return:
-    """
-    encoded={}
-    for key, value in attrs.items():
-        if to_encode[key]:
-            encoded[key] = Conversion.bytes2integer(sha256(str(value).encode()).digest())
-        else:
-            encoded[key] = value
-    return encoded
-    #return {key: Conversion.bytes2integer(sha256(str(value).encode()).digest())
-     #       for key, value in attrs.items()}
+# def encodeAttrs(attrs):
+#     """
+#     This function will encode all the attributes to 256 bit integers
+#     :param attrs: The attributes to pass in credentials
+#     :return:
+#     """
+#     encoded = {}
+#     for attr_type, value in attrs.items():
+#         if attr_type.encode:
+#             encoded[attr_type.name] = Conversion.bytes2integer(sha256(str(value).encode()).digest())
+#         else:
+#             encoded[attr_type.name] = value
+#     return encoded
 
 
 def get_hash(*args):

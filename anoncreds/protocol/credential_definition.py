@@ -69,7 +69,7 @@ class CredentialDefinition:
         """
         return self._pk
 
-    def issue(self, u, attrs):
+    def generateCredential(self, u, attrs):
         """
         Issue the credential for the defined attributes
         :param u: The `u` value provided by the prover

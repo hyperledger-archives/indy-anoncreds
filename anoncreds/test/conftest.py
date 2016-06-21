@@ -11,7 +11,7 @@ from anoncreds.test.helper import getProver
 @pytest.fixture(scope="module")
 def issuers(creddef1, issuer2):
     # Return issuer's public key
-    return {GVT.name: creddef1, "xyz": issuer2}
+    return {GVT.name: creddef1, XYZCorp.name: issuer2}
 
 
 @pytest.fixture(scope="module")

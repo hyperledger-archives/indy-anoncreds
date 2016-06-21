@@ -6,7 +6,10 @@ from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString
 
 
 class CredentialDefinition:
-    def __init__(self, attrNames, name=None, version=None):
+    def __init__(self,
+                 attrNames,
+                 name=None, version=None,
+                 p_prime=None, q_prime=None):
         """
         Setup an issuer
         :param attrNames: List of all attribute names
@@ -15,24 +18,21 @@ class CredentialDefinition:
         self.name = name or randomString(6)
         self.version = version or "1.0"
 
-        # Generate 2 large primes `p_prime` and `q_prime` and use them
-        # to generate another 2 primes `p` and `q` of 1024 bits
-        # self.p_prime = randomPrime(lprime)
-        self.p_prime = integer(157329491389375793912190594961134932804032426403110797476730107804356484516061051345332763141806005838436304922612495876180233509449197495032194146432047460167589034147716097417880503952139805241591622353828629383332869425029086898452227895418829799945650973848983901459733426212735979668835984691928193677469)
-        # i = 0
-        # while not isPrime(2 * self.p_prime + 1):
-        #     self.p_prime = randomPrime(lprime)
-        #     i += 1
-        # print("Found prime in {} iteration".format(i))
+        def genPrime():
+            # Generate 2 large primes `p_prime` and `q_prime` and use them
+            # to generate another 2 primes `p` and `q` of 1024 bits
+            prime = randomPrime(lprime)
+            i = 0
+            while not isPrime(2 * prime + 1):
+                prime = randomPrime(lprime)
+                i += 1
+            print("In {} iterations, found prime {}".format(i, prime))
+            return prime
+
+        self.p_prime = p_prime or genPrime()
         self.p = 2 * self.p_prime + 1
 
-        # self.q_prime = randomPrime(lprime)
-        self.q_prime = integer(151323892648373196579515752826519683836764873607632072057591837216698622729557534035138587276594156320800768525825023728398410073692081011811496168877166664537052088207068061172594879398773872352920912390983199416927388688319207946493810449203702100559271439586753256728900713990097168484829574000438573295723)
-        # i = 0
-        # while not isPrime(2 * self.q_prime + 1):
-        #     self.q_prime = randomPrime(lprime)
-        #     i += 1
-        # print("Found prime in {} iteration".format(i))
+        self.q_prime = q_prime or genPrime()
         self.q = 2 * self.q_prime + 1
 
         n = self.p * self.q

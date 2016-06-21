@@ -3,10 +3,10 @@ from anoncreds.protocol.types import GVT
 from anoncreds.test.helper import getPresentationToken, getProver
 
 
-def testPredicateCredentials(issuer1, proverAndAttrs1, verifier1):
+def testPredicateCredentials(creddef1, proverAndAttrs1, verifier1):
     prover, attrs = proverAndAttrs1
 
-    presentationToken = getPresentationToken({GVT.name: issuer1}, prover,
+    presentationToken = getPresentationToken({GVT.name: creddef1}, prover,
                                              attrs.encoded())
 
     nonce = verifier1.Nonce

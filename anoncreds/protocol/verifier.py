@@ -6,25 +6,27 @@ from anoncreds.protocol.globals import lestart, lnonce, iterations
 
 
 class Verifier:
-    def __init__(self):
+    def __init__(self, id):
+        self.id = id
         self.interactionDetail = {}  # Dict[String, String]
         self.credDefs = {}           # Dict[(issuer id, credential name, credential version), Credential Definition]
 
-    def generateNonce(self, interationId):
+    def generateNonce(self, interactionId):
         nv = integer(randomBits(lnonce))
-        self.interactionDetail[str(nv)] = interationId
+        self.interactionDetail[str(nv)] = interactionId
         return nv
 
-    def _getFromLocal(self, proof):
-        issuerId = ''  # TODO: get issuerId from proof
-        credName = ''  # TODO: get credName from proof
-        credVersion = ''  # TODO: get credVersion from proof
-        return self.credDefs.get((issuerId, credName, credVersion))
+    # def _getFromLocal(self, proof):
+    #     issuerId = ''  # TODO: get issuerId from proof
+    #     credName = ''  # TODO: get credName from proof
+    #     credVersion = ''  # TODO: get credVersion from proof
+    #     return self.credDefs.get((issuerId, credName, credVersion))
 
-    def _fetchAndUpdateLocalCredDef(self, issuerId, credName, credVersion):
-        pkI = 'a', 'b', 'c', 'd'   #  TODO: replace with correct logic
-        self.credDefs[(issuerId, credName, credVersion)] = pkI
-        return pkI
+    # def _fetchAndUpdateLocalCredDef(self, issuerId, credName, credVersion):
+    #     credDef = self.fetchCredDef(issuerId, credName, credVersion)
+    #     pk = self._getIssuerPkByCredDef(credDef)
+    #     self.credDefs[(issuerId, credName, credVersion)] = pk
+    #     return pkI
 
     def _getIssuerPkByCredDef(self, credDef):
         keys = credDef['keys']
@@ -32,18 +34,37 @@ class Verifier:
         for key, val in keys['attributes'].items():
             R[str(key)] = val
         # R["0"] is a random number needed corresponding to master secret
-        R["0"] = keys['master_secret']
+        R["0"] = keys['master_secret_rand']
 
         pk_i = {'N': keys['n'], 'S': keys['S'], 'Z': keys['Z'], 'R': R}
         return pk_i
 
-    def _getIssuerPk(self, proof):
-        pki = self._getFromLocal(self, proof)
-        if pki is None:
-            pki = self._fetchAndUpdateLocalCredDef(self, proof)
-        return pki
+    # def _getIssuerPk(self, proof):
+    #     pki = self._getFromLocal(self, proof)
+    #     if pki is None:
+    #         pki = self._fetchAndUpdateLocalCredDef(self, proof)
+    #     return pki
 
-    def verify_proof(self, proof, nonce, attrs, revealedAttrs):
+    def getCredDef(self, issuerId, name, version):
+        key = (issuerId, name, version)
+        credDdef = self.credDefs.get(key)
+        if not credDdef:
+            credDdef = self.fetchCredDef(*key)
+        return credDdef
+
+    def verify(self, issuerId, name, version, proof, nonce, attrs, revealedAttrs):
+        credDef = self.fetchCredDef(issuerId, name, version)
+        pk = self._getIssuerPkByCredDef(credDef)
+        result = self.verify_proof(pk, proof, nonce, attrs, revealedAttrs)
+        return result
+
+    def fetchCredDef(self, issuerId, name, version):
+        raise NotImplementedError
+
+    def sendStatus(self, proverId, status):
+        raise NotImplementedError
+
+    def verify_proof(self, pk_i, proof, nonce, attrs, revealedAttrs):
         """
         Verify the proof
         :param attrs: The encoded attributes dictionary
@@ -61,8 +82,6 @@ class Verifier:
         Tvect = {}
         # Extract the values from the proof
         c, evect, vvect, mvect, Aprime = proof
-
-        pk_i = self._getIssuerPk(proof)
 
         for key, val in pk_i.items():
             Z = pk_i[key]["Z"]
@@ -97,7 +116,7 @@ class Verifier:
 
         return c == cvect
 
-    def verifyPredicateProof(self, proof, nonce, attrs, revealedAttrs,
+    def verifyPredicateProof(self, pk_i, proof, nonce, attrs, revealedAttrs,
                              predicate):
         """
         Verify the proof for Predicate implementation
@@ -124,8 +143,6 @@ class Verifier:
         flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
 
         Ar, Aur = splitRevealedAttributes(flatAttrs, revealedAttrs)
-
-        pk_i = self._getIssuerPk(proof)
 
         for key, val in pk_i.items():
             Z = pk_i[key]["Z"]

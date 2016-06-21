@@ -11,7 +11,6 @@ from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
 
 
 class Proof:
-
     def __init__(self, pk_i):
         """
         Create a proof instance
@@ -47,11 +46,17 @@ class Proof:
     def setCredential(self, credential):
         self.credential = credential
 
-    def revealedAttrs(self, revealedAttrs):
+    def setRevealedAttrs(self, revealedAttrs):
         self.revealedAttrs = revealedAttrs
 
     def setNonce(self, nonce):
         self.nonce = nonce
+
+    def setParams(self, attrs, credential, revealedAttrs, nonce):
+        self.setAttrs(attrs)
+        self.setCredential(credential)
+        self.setRevealedAttrs(revealedAttrs)
+        self.setNonce(nonce)
 
     def prepare_proof(self):
         """
@@ -73,19 +78,20 @@ class Proof:
         evect = {}
         vvect = {}
 
-        flatAttrs = {x: y for z in self.attrs.values() for x, y in z.items()}
-
-        Ar, Aur = splitRevealedAttributes(flatAttrs, self.revealedAttrs)
-
+        # flatAttrs = {x: y for z in self.attrs.values() for x, y in z.items()}
+        #
+        # Ar, Aur = splitRevealedAttributes(flatAttrs, self.revealedAttrs)
+        Ar, Aur = splitRevealedAttributes(self.attrs, self.revealedAttrs)
         mtilde = {}
         for key, value in Aur.items():
             mtilde[str(key)] = integer(randomBits(lmvect))
         mtilde["0"] = integer(randomBits(lmvect))
 
         for key, val in self.credential.items():
-            A = val["A"]
-            e = val["e"]
-            v = val["v"]
+            # A = val["A"]
+            # e = val["e"]
+            # v = val["v"]
+            A, e, v = val
             includedAttrs = self.attrs[key]
 
             N = self.pk_i[key]["N"]
@@ -120,7 +126,8 @@ class Proof:
 
         mvect = {}
         for k, value in Aur.items():
-            mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
+            # mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
+            mvect[str(k)] = mtilde[str(k)] + (c * self.attrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
         return c, evect, vvect, mvect, Aprime

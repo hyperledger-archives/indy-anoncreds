@@ -14,6 +14,7 @@ class CredentialDefinition:
 
         self.name = name or randomString(6)
         self.version = version or "1.0"
+        self.attrNames = attrNames
 
         # Generate 2 large primes `p_prime` and `q_prime` and use them
         # to generate another 2 primes `p` and `q` of 1024 bits

@@ -3,10 +3,10 @@ from typing import Dict
 
 class AttributeRepo:
     def __init__(self):
-        self.attributes = {}    # Dict[str, Dict]
+        self.attributes = {}    # Dict
 
-    def getAttributes(self, proverId: str):
-        self.attributes.get(proverId)
+    def getAttributes(self, proverId):
+        return self.attributes.get(proverId)
 
-    def addAttributes(self, proverId: str, attributes: Dict):
+    def addAttributes(self, proverId, attributes: Dict):
         self.attributes[proverId] = attributes

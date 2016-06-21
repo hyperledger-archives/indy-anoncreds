@@ -6,9 +6,9 @@ from anoncreds.protocol.verifier import Verifier
 
 
 interactionId = 100
-issuerId = 11
-proverId = 12
-verifierId = 13
+issuerId = '11'
+proverId = '12'
+verifierId = '13'
 
 
 class TestIssuer(Issuer):

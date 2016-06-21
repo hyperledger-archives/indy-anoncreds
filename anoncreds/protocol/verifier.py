@@ -55,7 +55,7 @@ class Verifier:
     def verify(self, issuerId, name, version, proof, nonce, attrs, revealedAttrs):
         credDef = self.fetchCredDef(issuerId, name, version)
         pk = self._getIssuerPkByCredDef(credDef)
-        result = self.verify_proof({'rk': pk}, proof, nonce, attrs, revealedAttrs)
+        result = self.verify_proof({issuerId: pk}, proof, nonce, attrs, revealedAttrs)
         return result
 
     def fetchCredDef(self, issuerId, name, version):

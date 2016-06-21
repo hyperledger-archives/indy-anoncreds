@@ -33,7 +33,7 @@ class TestProver(Prover):
         return nonce
 
     def sendProof(self, issuerId, name, version, proof, verifierId):
-        self.verifiers[verifierId].verify(issuerId, name, version, proof.prf,
+        return self.verifiers[verifierId].verify(issuerId, name, version, proof.prf,
                                           proof.nonce, proof.attrs,
                                           proof.revealedAttrs)
 
@@ -86,4 +86,4 @@ def testInteraction():
 
     proof = prover.createProof(issuerId, attrNames, verifierId, encodedAttrs,
                              revealedAttrs)
-    prover.sendProof(issuerId, credName, credVersion, proof, verifierId)
+    assert prover.sendProof(issuerId, credName, credVersion, proof, verifierId)

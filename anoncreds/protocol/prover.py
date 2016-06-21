@@ -27,7 +27,7 @@ class Prover:
         R = credDef["keys"]["R"]
         R["0"] = credDef["keys"]["master_secret_rand"]
         # TODO: Remove this rk asap
-        pk = { 'rk': {
+        pk = {'rk': {
             "N": credDef["keys"]["N"],
             "Z": credDef["keys"]["Z"],
             "S": credDef["keys"]["S"],
@@ -44,7 +44,11 @@ class Prover:
         # TODO: Remove this rk asap
         credential = self.getCredential(issuerId, credDef.name, credDef.version, proof.U['rk'])
         # TODO: Remove this rk asap
-        proof.setParams(encodedAttrs, {'rk': credential}, revealedAttrs, nonce)
+        presentationToken = {
+            'rk': (
+            credential[0], credential[1], proof.vprime['rk'] + credential[2])
+        }
+        proof.setParams({'rk': encodedAttrs}, presentationToken, revealedAttrs, nonce)
         prf = proof.prepare_proof()
         proof.prf = prf
         return proof

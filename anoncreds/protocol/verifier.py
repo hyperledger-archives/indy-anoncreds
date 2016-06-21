@@ -29,14 +29,14 @@ class Verifier:
     #     return pkI
 
     def _getIssuerPkByCredDef(self, credDef):
-        keys = credDef['keys']
+        keys = credDef.get()['keys']
         R = {}
-        for key, val in keys['attributes'].items():
+        for key, val in keys['R'].items():
             R[str(key)] = val
         # R["0"] is a random number needed corresponding to master secret
-        R["0"] = keys['master_secret_rand']
+        # R["0"] = keys['master_secret_rand']
 
-        pk_i = {'N': keys['n'], 'S': keys['S'], 'Z': keys['Z'], 'R': R}
+        pk_i = {'N': keys['N'], 'S': keys['S'], 'Z': keys['Z'], 'R': R}
         return pk_i
 
     # def _getIssuerPk(self, proof):
@@ -55,7 +55,7 @@ class Verifier:
     def verify(self, issuerId, name, version, proof, nonce, attrs, revealedAttrs):
         credDef = self.fetchCredDef(issuerId, name, version)
         pk = self._getIssuerPkByCredDef(credDef)
-        result = self.verify_proof(pk, proof, nonce, attrs, revealedAttrs)
+        result = self.verify_proof({'rk': pk}, proof, nonce, attrs, revealedAttrs)
         return result
 
     def fetchCredDef(self, issuerId, name, version):

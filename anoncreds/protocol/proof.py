@@ -78,10 +78,9 @@ class Proof:
         evect = {}
         vvect = {}
 
-        # flatAttrs = {x: y for z in self.attrs.values() for x, y in z.items()}
-        #
-        # Ar, Aur = splitRevealedAttributes(flatAttrs, self.revealedAttrs)
-        Ar, Aur = splitRevealedAttributes(self.attrs, self.revealedAttrs)
+        flatAttrs = {x: y for z in self.attrs.values() for x, y in z.items()}
+        Ar, Aur = splitRevealedAttributes(flatAttrs, self.revealedAttrs)
+
         mtilde = {}
         for key, value in Aur.items():
             mtilde[str(key)] = integer(randomBits(lmvect))
@@ -126,8 +125,7 @@ class Proof:
 
         mvect = {}
         for k, value in Aur.items():
-            # mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
-            mvect[str(k)] = mtilde[str(k)] + (c * self.attrs[str(k)])
+            mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
         return c, evect, vvect, mvect, Aprime

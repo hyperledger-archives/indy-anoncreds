@@ -112,3 +112,18 @@ class CredentialDefinition:
         A = Q ** (einverse ** -1) % N
 
         return {'A': A, 'Q': Q, 'e': e, 'v': v}
+
+    def get(self):
+        pk = self.PK
+        return {
+            "name": self.name,
+            "version": self.version,
+            "type": "CL",
+            "keys": {
+                "master_secret_rand": pk["R"]["0"],
+                "N": pk["N"],
+                "S": pk["S"],
+                "Z": pk["Z"],
+                "R": pk["R"]
+            }
+        }

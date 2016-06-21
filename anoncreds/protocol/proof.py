@@ -1,3 +1,5 @@
+import uuid
+
 from charm.core.math.integer import randomBits, integer
 from math import sqrt, floor
 from functools import reduce
@@ -15,7 +17,11 @@ class Proof:
         Create a proof instance
         :param pk_i: The public key of the Issuer(s)
         """
-        self.m = {}
+        self.id = str(uuid.uuid4())
+        self.credential = None
+        self.attrs = None
+        self.revealedAttrs = None
+        self.nonce = None
 
         # Generate the master secret
         self._ms = integer(randomBits(lms))
@@ -35,10 +41,19 @@ class Proof:
             R = val["R"]
             self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % n
 
-    def set_attrs(self, attrs):
-        self.m = attrs
+    def setAttrs(self, attrs):
+        self.attrs = attrs
 
-    def prepare_proof(self, credential, attrs, revealedAttrs, nonce):
+    def setCredential(self, credential):
+        self.credential = credential
+
+    def revealedAttrs(self, revealedAttrs):
+        self.revealedAttrs = revealedAttrs
+
+    def setNonce(self, nonce):
+        self.nonce = nonce
+
+    def prepare_proof(self):
         """
         Prepare the proof from credentials
         :param credential: The credential to be used for the proof preparation.
@@ -58,20 +73,20 @@ class Proof:
         evect = {}
         vvect = {}
 
-        flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
+        flatAttrs = {x: y for z in self.attrs.values() for x, y in z.items()}
 
-        Ar, Aur = splitRevealedAttributes(flatAttrs, revealedAttrs)
+        Ar, Aur = splitRevealedAttributes(flatAttrs, self.revealedAttrs)
 
         mtilde = {}
         for key, value in Aur.items():
             mtilde[str(key)] = integer(randomBits(lmvect))
         mtilde["0"] = integer(randomBits(lmvect))
 
-        for key, val in credential.items():
+        for key, val in self.credential.items():
             A = val["A"]
             e = val["e"]
             v = val["v"]
-            includedAttrs = attrs[key]
+            includedAttrs = self.attrs[key]
 
             N = self.pk_i[key]["N"]
             S = self.pk_i[key]["S"]
@@ -97,9 +112,9 @@ class Proof:
 
         # Calculate the `c` value as the hash result of Aprime, T and nonce.
         # This value will be used to verify the proof against the credential
-        c = integer(get_hash(*get_values_of_dicts(Aprime, T, {"nonce": nonce})))
+        c = integer(get_hash(*get_values_of_dicts(Aprime, T, {"nonce": self.nonce})))
 
-        for key, val in credential.items():
+        for key, val in self.credential.items():
             evect[key] = etilde[key] + (c * eprime[key])
             vvect[key] = vtilde[key] + (c * vprime[key])
 

@@ -1,3 +1,4 @@
+import logging
 import string
 from hashlib import sha256
 from random import randint, sample
@@ -60,7 +61,7 @@ def get_prime_in_range(start, end):
     while n < maxIter:
         r = randint(start, end)
         if isPrime(r):
-            print("Found prime in {} iteration between {} and {}".
+            logging.debug("Found prime in {} iteration between {} and {}".
                   format(n, start, end))
             return r
         n += 1

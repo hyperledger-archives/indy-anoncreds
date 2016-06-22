@@ -2,7 +2,6 @@ from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.protocol.utils import encodeAttrs
-from anoncreds.protocol.models import Credential
 
 # Create a dictionary of attributes to share
 # {'1': name, '2': age, '3': sex, '4': 'status'}
@@ -35,7 +34,7 @@ for key, val in prover.U.items():
     issuer = issuers[key]
     A, e, vprimeprime = issuer.issue(val, encodedAttrsDict[key])
     v = prover.vprime[key] + vprimeprime
-    presentationToken[key] = Credential(A, e, v)
+    presentationToken[key] = {"A": A, "e": e, "v": v}
 
 # Setup verifier
 verifier = Verifier(pk_i=pk_i)

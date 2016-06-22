@@ -1,15 +1,13 @@
 from charm.core.math.integer import randomBits, integer
-from typing import Dict
 
 from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, lvtilde, lms
-from anoncreds.protocol.models import Credential, IssuerPublicKey
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     splitRevealedAttributes
 
 
 class Prover:
 
-    def __init__(self, pk_i: Dict[str, IssuerPublicKey]):
+    def __init__(self, pk_i):
         """
         Create a prover instance
         :param pk_i: The public key of the Issuer(s)
@@ -29,13 +27,15 @@ class Prover:
         # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
         self._U = {}
         for key, val in self.pk_i.items():
-            N, R, S, Z = val
-            self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % N
+            S = val["S"]
+            n = val["N"]
+            R = val["R"]
+            self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % n
 
     def set_attrs(self, attrs):
         self.m = attrs
 
-    def prepare_proof(self, credential: Dict[str, Credential], attrs, revealedAttrs, nonce,
+    def prepare_proof(self, credential, attrs, revealedAttrs, nonce,
                       encodedAttrsDict):
         """
         Prepare the proof from credentials
@@ -64,9 +64,14 @@ class Prover:
         mtilde["0"] = integer(randomBits(lmvect))
 
         for key, val in credential.items():
-            A, e, v = val
-            N, R, S, Z = self.pk_i[key]
+            A = val["A"]
+            e = val["e"]
+            v = val["v"]
             includedAttrs = encodedAttrsDict[key]
+
+            N = self.pk_i[key]["N"]
+            S = self.pk_i[key]["S"]
+            R = self.pk_i[key]["R"]
 
             Ra = integer(randomBits(lvprime))
 

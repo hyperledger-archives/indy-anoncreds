@@ -1,5 +1,30 @@
 import pytest
+
+from anoncreds.protocol.issuer import Issuer
+from anoncreds.protocol.verifier import Verifier
 from anoncreds.test.helper import getPresentationToken, getProver
+
+@pytest.fixture(scope="module")
+def attrNames():
+    return 'name', 'age', 'sex'
+
+
+@pytest.fixture(scope="module")
+def issuer(attrNames):
+    # Create issuer
+    return Issuer(attrNames)
+
+
+@pytest.fixture(scope="module")
+def issuerPk(issuer):
+    # Return issuer's public key
+    return {"gvt": issuer.PK}
+
+
+@pytest.fixture(scope="module")
+def proverAndAttrs1(issuerPk):
+    attrs = {'name': 'Aditya Pratap Singh', 'age': '25', 'sex': 'male'}
+    return getProver(attrs, issuerPk)
 
 
 @pytest.fixture(scope="module")
@@ -8,9 +33,15 @@ def proverAndAttrs2(issuerPk):
     return getProver(attrs, issuerPk)
 
 
-def testSingleProver(issuer, attrNames, proverAndAttrs, verifier):
+@pytest.fixture(scope="module")
+def verifier(issuerPk):
+    # Setup verifier
+    return Verifier(issuerPk)
 
-    prover, encodedAttrs, attrs = proverAndAttrs
+
+def testSingleProver(issuer, attrNames, proverAndAttrs1, verifier):
+
+    prover, encodedAttrs, attrs = proverAndAttrs1
     assert len(encodedAttrs) == len(attrNames)
     encodedAttrsDict = {"gvt": encodedAttrs}
 
@@ -33,10 +64,10 @@ def testSingleProver(issuer, attrNames, proverAndAttrs, verifier):
     assert verify_status
 
 
-def testMultipleProvers(issuer, attrNames, proverAndAttrs,
+def testMultipleProvers(issuer, attrNames, proverAndAttrs1,
                         proverAndAttrs2, verifier):
 
-    prover1, encodedAttrs1, attrs1 = proverAndAttrs
+    prover1, encodedAttrs1, attrs1 = proverAndAttrs1
     prover2, encodedAttrs2, attrs2 = proverAndAttrs2
     assert len(encodedAttrs1) == len(attrNames)
     assert len(encodedAttrs2) == len(attrNames)

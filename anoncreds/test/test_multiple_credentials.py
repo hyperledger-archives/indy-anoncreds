@@ -7,16 +7,22 @@ from anoncreds.test.helper import getPresentationToken, getProver
 
 
 @pytest.fixture(scope="module")
-def issuers(issuer, issuer2):
-    return {"gvt": issuer, "ibm": issuer2}
+def issuers(issuer1, issuer2):
+    # Return issuer's public key
+    return {"gvt": issuer1, "ibm": issuer2}
 
 
 @pytest.fixture(scope="module")
-def issuersPk(issuers):
+def issuerPk(issuers):
     pk_i = {}
     for k, v in issuers.items():
         pk_i[k] = v.PK
     return pk_i
+
+
+@pytest.fixture(scope="module")
+def attrNames1():
+    return 'name', 'age', 'sex'
 
 
 @pytest.fixture(scope="module")
@@ -25,28 +31,38 @@ def attrNames2():
 
 
 @pytest.fixture(scope="module")
+def issuer1(attrNames1):
+    return Issuer(attrNames1)
+
+
+@pytest.fixture(scope="module")
 def issuer2(attrNames2):
     return Issuer(attrNames2)
 
 
 @pytest.fixture(scope="module")
-def proverAndAttrs2(issuersPk):
+def proverAndAttrs1(issuerPk):
+    attrs = {'name': 'Aditya Pratap Singh', 'age': '25', 'sex': 'male'}
+    return getProver(attrs, issuerPk)
+
+
+@pytest.fixture(scope="module")
+def proverAndAttrs2(issuerPk):
     attrs = {'status': 'ACTIVE'}
-    return getProver(attrs, issuersPk)
+    return getProver(attrs, issuerPk)
 
 
 @pytest.fixture(scope="module")
-def verifier1(issuersPk):
-    return Verifier(issuersPk)
-
+def verifier1(issuerPk):
+    return Verifier(issuerPk)
 
 @pytest.fixture(scope="module")
-def verifier2(issuersPk):
-    return Verifier(issuersPk)
+def verifier2(issuerPk):
+    return Verifier(issuerPk)
 
 
-def testMultipleCredentialSingleProof(issuers, proverAndAttrs, proverAndAttrs2, verifier1):
-    prover, encodedAttrs1, attrs1 = proverAndAttrs
+def testMultipleCredentialSingleProof(issuers, proverAndAttrs1, proverAndAttrs2, verifier1):
+    prover, encodedAttrs1, attrs1 = proverAndAttrs1
     prover, encodedAttrs2, attrs2 = proverAndAttrs2
 
     encodedAttrsDict = {"gvt": encodedAttrs1,
@@ -70,9 +86,9 @@ def testMultipleCredentialSingleProof(issuers, proverAndAttrs, proverAndAttrs2, 
     assert verify_status
 
 
-def testMultipleCredentialMultipleVerifier(issuers, proverAndAttrs, proverAndAttrs2,
+def testMultipleCredentialMultipleVerifier(issuers, proverAndAttrs1, proverAndAttrs2,
                                            verifier1, verifier2):
-    prover, encodedAttrs1, attrs1 = proverAndAttrs
+    prover, encodedAttrs1, attrs1 = proverAndAttrs1
     prover, encodedAttrs2, attrs2 = proverAndAttrs2
 
     encodedAttrsDict = {"gvt": encodedAttrs1,

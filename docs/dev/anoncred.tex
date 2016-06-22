@@ -178,7 +178,7 @@ generate random 592-bit numbers $\widetilde{u_1},\widetilde{u_2},\widetilde{u_3}
  \overline{T_4} &\leftarrow Z^{\widetilde{u_4}}S^{\widetilde{r_4}}\pmod{n}\\
 \overline{T_{\Delta}} &\leftarrow  Z^{\widetilde{m_j}}S^{\widetilde{r_{\Delta}}} \pmod{n};
 \end{align}
-and add this values to $\mathcal{T}$.
+and add this values to $\mathcal{T}$ in the order $\overline{T_1},\overline{T_2},\overline{T_3},\overline{T_4}, \overline{T_{\Delta}}$.
 \item Generate random 2787-bit number $\widetilde{\alpha}$ and compute 
 $$
 Q \leftarrow T_1^{\widetilde{u_1}}T_2^{\widetilde{u_2}}
@@ -215,7 +215,9 @@ Then $(c,\{Pr_C\},\{Pr_p\},\mathcal{C})$ is the full proof sent to the Verifier.
 
 \subsection{Verification}
 Verifier uses all Issuer public key $pk_I$ involved into the credential generation and  the received $(c,\widehat{e},\widehat{v},\{\widehat{m}_i\},A')$. He also uses revealed 
-$m_i$ for $i\in A_r$.
+$m_i$ for $i\in A_r$. He initiates $\widehat{\mathcal{T}}$ as empty set.
+
+
 
 \begin{enumerate}
 \item For each credential $C$ consider the  attributes $I$ used in $C$ and take sub-proof $(\widehat{e},\widehat{v},A')$. Then compute 
@@ -236,12 +238,12 @@ Add $\widehat{T}$ to $\widehat{\mathcal{T}}$.
 \begin{enumerate}
 \item Using $Pr_p$ and $\mathcal{C}$ compute 
 \begin{align}
-\widehat{T_{\Delta}} &\leftarrow \left(T_{\Delta}Z^{z_j}\right)^{-c}Z^{\widehat{m_j}}S^{\widehat{r_{\Delta}}}\pmod{n};\label{eq:pr1}\\
 \widehat{T_i} &\leftarrow T_i^{-c}Z^{\widehat{u_i}} S^{\widehat{r_i}}\pmod{n} \quad \text{for }1\leq i \leq 4;\label{eq:pr2}\\
+\widehat{T_{\Delta}} &\leftarrow \left(T_{\Delta}Z^{z_j}\right)^{-c}Z^{\widehat{m_j}}S^{\widehat{r_{\Delta}}}\pmod{n};\label{eq:pr1}\\
 \widehat{Q}&\leftarrow (T_{\Delta})^{-c}T_1^{\widehat{u_1}}T_2^{\widehat{u_2}}T_3^{\widehat{u_3}}T_4^{\widehat{u_4}}
 S^{\widehat{\alpha}}\pmod{n}\label{eq:pr3},
 \end{align}
-and add these values to  $\widehat{\mathcal{T}}$.
+and add these values to  $\widehat{\mathcal{T}}$ in the order $\widehat{T_1},\widehat{T_2} ,\widehat{T_3},\widehat{T_4},\widehat{T_{\Delta}}    $.
 \end{enumerate}
 \item Compute $$
 \widehat{c} \leftarrow H(\widehat{\mathcal{T}},\mathcal{C},n_1);

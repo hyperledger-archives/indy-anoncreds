@@ -1,4 +1,3 @@
-from anoncreds.protocol.utils import encodeAttrs
 from anoncreds.protocol.prover import Prover
 
 
@@ -13,7 +12,6 @@ def getPresentationToken(issuers, prover, encodedAttrs):
 
 
 def getProver(attrs, pki):
-    encodedAttrs = encodeAttrs(attrs)
     prover = Prover(pki)
-    prover.set_attrs(encodedAttrs)
-    return prover, encodedAttrs, attrs
+    prover.set_attrs(attrs)
+    return prover, attrs

@@ -1,3 +1,5 @@
+from copy import copy
+
 from charm.core.math.integer import randomPrime, random, integer, randomBits, \
     isPrime
 
@@ -117,7 +119,8 @@ class CredentialDefinition:
         return {'A': A, 'Q': Q, 'e': e, 'v': v}
 
     def get(self):
-        pk = self.PK
+        pk = copy(self.PK)
+        R = copy(pk["R"])
         return {
             "name": self.name,
             "version": self.version,
@@ -125,10 +128,10 @@ class CredentialDefinition:
             "ip": self.ip,
             "port": self.port,
             "keys": {
-                "master_secret_rand": pk["R"]["0"],
+                "master_secret_rand": R["0"],
                 "N": pk["N"],
                 "S": pk["S"],
                 "Z": pk["Z"],
-                "R": pk["R"]        # TODO Master secret rand number, R[0] is still passed, remove that
+                "R": R        # TODO Master secret rand number, R[0] is still passed, remove that
             }
         }

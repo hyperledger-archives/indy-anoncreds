@@ -1,3 +1,4 @@
+from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.proof import Proof
 
 
@@ -22,16 +23,22 @@ class Prover:
         # self.credentials[key] = cred
         return cred
 
-    def initProof(self, issuerId, attrNames):
-        credDef = self.getCredentialDefinition(issuerId, attrNames).get()
+    @staticmethod
+    def getPkFromCredDef(credDef: CredentialDefinition):
+        credDef = credDef.get()
         R = credDef["keys"]["R"]
         R["0"] = credDef["keys"]["master_secret_rand"]
-        pk = {issuerId : {
+        return {
             "N": credDef["keys"]["N"],
             "Z": credDef["keys"]["Z"],
             "S": credDef["keys"]["S"],
             "R": R
-        }}
+        }
+
+    def initProof(self, issuerId, attrNames):
+        credDef = self.getCredentialDefinition(issuerId, attrNames)
+        pk = self.getPkFromCredDef(credDef)
+        pk = {issuerId : pk}
         proof = Proof(pk)
         self.proofs[proof.id] = proof
         return proof

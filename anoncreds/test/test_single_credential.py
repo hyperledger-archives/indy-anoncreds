@@ -2,7 +2,7 @@ from anoncreds.protocol.types import GVT
 from anoncreds.test.helper import getPresentationToken
 
 
-def testSingleProver(issuer1, attrNames1, proverAndAttrs1, verifier1):
+def testSinglePArover(issuer1, attrNames1, proverAndAttrs1, verifier1):
 
     prover, attrs = proverAndAttrs1
     assert len(attrs.encoded()[GVT.name]) == len(attrNames1)

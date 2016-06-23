@@ -1,4 +1,4 @@
-from anoncreds.protocol.issuer import Issuer
+from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.types import GVT
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.test.helper import getPresentationToken, getProver
@@ -6,7 +6,7 @@ from anoncreds.test.helper import getPresentationToken, getProver
 
 def testPredicate():
     attrNames = 'name', 'age', 'sex'
-    issuer = Issuer(attrNames)
+    issuer = CredentialDefinition(attrNames)
     issuerPk = {GVT.name: issuer.PK}
     verifier = Verifier(pk_i=issuerPk)
 

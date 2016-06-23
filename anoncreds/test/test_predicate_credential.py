@@ -1,12 +1,12 @@
 from anoncreds.protocol.prover import fourSquares
 from anoncreds.protocol.types import GVT
-from anoncreds.test.helper import getPresentationToken, getProver
+from anoncreds.test.helper import getPresentationToken
 
 
-def testPredicateCredentials(issuer1, proverAndAttrs1, verifier1):
+def testPredicateCredentials(credDef1, proverAndAttrs1, verifier1):
     prover, attrs = proverAndAttrs1
 
-    presentationToken = getPresentationToken({GVT.name: issuer1}, prover,
+    presentationToken = getPresentationToken({GVT.name: credDef1}, prover,
                                              attrs.encoded())
 
     nonce = verifier1.Nonce

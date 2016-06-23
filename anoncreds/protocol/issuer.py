@@ -2,6 +2,7 @@ from typing import Sequence
 
 from anoncreds.protocol.attribute_repo import AttributeRepo
 from anoncreds.protocol.credential_definition import CredentialDefinition
+from anoncreds.protocol.utils import encodeAttrs
 
 
 class Issuer:
@@ -20,10 +21,11 @@ class Issuer:
     def addCredDef(self, credDef: CredentialDefinition):
         self.credDefs[(credDef.name, credDef.version)] = credDef
 
-    def createCredential(self, proverId, name, version):
+    def createCredential(self, proverId, U, name, version):
+        credDef = self.getCredDef(name, version)
         attributes = self.attributeRepo.getAttributes(proverId)
-
-
+        encAttrs = encodeAttrs(attributes)
+        return credDef.generateCredential(U, encAttrs)
 
 
 

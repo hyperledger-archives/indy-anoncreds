@@ -2,12 +2,12 @@ from anoncreds.protocol.types import GVT
 from anoncreds.test.helper import getPresentationToken
 
 
-def testSinglePArover(issuer1, attrNames1, proverAndAttrs1, verifier1):
+def testSingleProver(credDef1, attrNames1, proverAndAttrs1, verifier1):
 
     prover, attrs = proverAndAttrs1
     assert len(attrs.encoded()[GVT.name]) == len(attrNames1)
 
-    presentationToken = getPresentationToken({GVT.name: issuer1},
+    presentationToken = getPresentationToken({GVT.name: credDef1},
                                              prover,
                                              attrs.encoded())
 
@@ -29,7 +29,7 @@ def testSinglePArover(issuer1, attrNames1, proverAndAttrs1, verifier1):
     assert verify_status
 
 
-def testMultipleProvers(issuer1, attrNames1, proverAndAttrs1,
+def testMultipleProvers(credDef1, attrNames1, proverAndAttrs1,
                         proverAndAttrs2, verifier1):
 
     prover1, attrs1 = proverAndAttrs1
@@ -37,8 +37,8 @@ def testMultipleProvers(issuer1, attrNames1, proverAndAttrs1,
     assert len(attrs1.encoded()[GVT.name]) == len(attrNames1)
     assert len(attrs2.encoded()[GVT.name]) == len(attrNames1)
 
-    presentationToken1 = getPresentationToken({GVT.name: issuer1}, prover1, attrs1.encoded())
-    presentationToken2 = getPresentationToken({GVT.name: issuer1}, prover2, attrs2.encoded())
+    presentationToken1 = getPresentationToken({GVT.name: credDef1}, prover1, attrs1.encoded())
+    presentationToken2 = getPresentationToken({GVT.name: credDef1}, prover2, attrs2.encoded())
 
     nonce1 = verifier1.Nonce
     nonce2 = verifier1.Nonce

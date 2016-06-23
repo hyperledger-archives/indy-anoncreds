@@ -106,7 +106,7 @@ class Prover:
             # Iterate over the predicates for a given credential(issuer)
             for k, value in val.items():
 
-                delta = attrs[key][k] - value
+                delta = flatAttrs[k] - value
                 u = fourSquares(delta)
 
                 for i in range(0, iterations):
@@ -150,7 +150,7 @@ class Prover:
         subProofC = {"evect": evect, "vvect": vvect, "mvect": mvect, "Aprime": Aprime}
 
         for key, val in predicate.items():
-            for a, predicate in val.items():
+            for a, p in val.items():
                 urproduct = 0
                 for i in range(0, iterations):
                     uvect[str(i)] = utilde[str(i)] + c * u[i]

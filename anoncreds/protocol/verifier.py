@@ -15,7 +15,7 @@ class Verifier:
 
         return nv
 
-    def verify_proof(self, proof, nonce, attrs, revealedAttrs):
+    def verifyProof(self, proof, nonce, attrs, revealedAttrs):
         """
         Verify the proof
         :param attrs: The encoded attributes dictionary
@@ -46,6 +46,7 @@ class Verifier:
         """
         Tau = []
         c, subProofC, subProofPredicate, C, CList = proof
+
 
         Aprime = subProofC["Aprime"]
         evect = subProofC["evect"]

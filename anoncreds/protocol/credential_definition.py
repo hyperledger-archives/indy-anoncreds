@@ -18,6 +18,9 @@ class CredentialDefinition:
         self.name = name or randomString(6)
         self.version = version or "1.0"
 
+        if not attrNames and isinstance(attrNames, list):
+            raise ValueError("List of attribute names is required to setup credential definition")
+
         def genPrime():
             # Generate 2 large primes `p_prime` and `q_prime` and use them
             # to generate another 2 primes `p` and `q` of 1024 bits

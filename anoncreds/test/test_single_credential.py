@@ -21,7 +21,7 @@ def testSingleProver(credDef1, attrNames1, proverAndAttrs1, verifier1):
                                  nonce=nonce)
 
     # Verify the proof
-    verify_status = verifier1.verify_proof(proof=proof,
+    verify_status = verifier1.verifyProof(proof=proof,
                                            nonce=nonce,
                                            attrs=attrs.encoded(),
                                            revealedAttrs=revealedAttrs)
@@ -54,10 +54,38 @@ def testMultipleProvers(credDef1, attrNames1, proverAndAttrs1,
                                    revealedAttrs=revealedAttrs,
                                    nonce=nonce2)
 
-    assert verifier1.verify_proof(proof=proof1, nonce=nonce1,
+    assert verifier1.verifyProof(proof=proof1, nonce=nonce1,
                                   attrs=attrs1.encoded(),
                                   revealedAttrs=revealedAttrs)
-    assert verifier1.verify_proof(proof=proof2, nonce=nonce2,
+    assert verifier1.verifyProof(proof=proof2, nonce=nonce2,
                                   attrs=attrs2.encoded(),
                                   revealedAttrs=revealedAttrs)
+
+
+def testNonceShouldBeSame(credDef1, proverAndAttrs1, verifier1, verifierMulti2):
+    prover, attrs = proverAndAttrs1
+
+    presentationToken = getPresentationToken({GVT.name: credDef1},
+                                             prover,
+                                             attrs.encoded())
+
+    nonce1 = verifier1.Nonce
+    nonce2 = verifierMulti2.Nonce
+
+    # Prepare proof
+    revealedAttrs = ['name']
+    proof = prover.prepareProof(credential=presentationToken,
+                                attrs=attrs.encoded(),
+                                revealedAttrs=revealedAttrs,
+                                nonce=nonce1)
+
+    # Verify the proof
+    verify_status = verifier1.verifyProof(proof=proof,
+                                           nonce=nonce2,
+                                           attrs=attrs.encoded(),
+                                           revealedAttrs=revealedAttrs)
+
+    # The verification status should be false when using different nonce for
+    # generating and verifying proof
+    assert not verify_status
 

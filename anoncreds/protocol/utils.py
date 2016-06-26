@@ -94,3 +94,11 @@ def randomString(size: int = 20,
     :return: the random string generated
     """
     return ''.join(sample(chars, size))
+
+
+def getUnrevealedAttrs(attrs, revealedAttrsList):
+    flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
+
+    revealedAttrs, unrevealedAttrs = splitRevealedAttributes(flatAttrs, revealedAttrsList)
+
+    return flatAttrs, unrevealedAttrs

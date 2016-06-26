@@ -3,9 +3,9 @@ from math import sqrt, floor
 from functools import reduce
 
 from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, \
-    lvtilde, lms, lutilde, lrtilde, lalphatilde
+    lvtilde, lms, lutilde, lrtilde, lalphatilde, iterations
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
-    splitRevealedAttributes
+    getUnrevealedAttrs
 
 
 class Prover:
@@ -35,10 +35,10 @@ class Prover:
             R = val["R"]
             self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % n
 
-    def set_attrs(self, attrs):
+    def setAttrs(self, attrs):
         self.m = attrs
 
-    def prepare_proof(self, credential, attrs, revealedAttrs, nonce):
+    def prepareProof(self, credential, attrs, revealedAttrs, nonce):
         """
         Prepare the proof from credentials
         :param credential: The credential to be used for the proof preparation.
@@ -46,54 +46,15 @@ class Prover:
         :param attrs: The encoded attributes dictionary
         :param revealedAttrs: The revealed attributes list
         :param nonce: The nonce used to have a commit
-        :param encodedAttrsDict: The dictionary for encoded attributes
         :return: The proof
         """
-        T = {}
-        Aprime = {}
-        etilde = {}
-        eprime = {}
-        vtilde = {}
-        vprime = {}
         evect = {}
         vvect = {}
 
-        flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
-
-        Ar, Aur = splitRevealedAttributes(flatAttrs, revealedAttrs)
-
-        mtilde = {}
-        for key, value in Aur.items():
-            mtilde[str(key)] = integer(randomBits(lmvect))
-        mtilde["0"] = integer(randomBits(lmvect))
-
-        for key, val in credential.items():
-            A = val["A"]
-            e = val["e"]
-            v = val["v"]
-            includedAttrs = attrs[key]
-
-            N = self.pk_i[key]["N"]
-            S = self.pk_i[key]["S"]
-            R = self.pk_i[key]["R"]
-
-            Ra = integer(randomBits(lvprime))
-
-            Aprime[key] = A * (S ** Ra) % N
-            vprime[key] = (v - e * Ra)
-            eprime[key] = e - (2 ** lestart)
-
-            etilde[key] = integer(randomBits(letilde))
-            vtilde[key] = integer(randomBits(lvtilde))
-
-            Rur = 1 % N
-
-            for k, value in Aur.items():
-                if k in includedAttrs:
-                    Rur = Rur * (R[str(k)] ** mtilde[str(k)])
-            Rur *= R["0"] ** mtilde["0"]
-
-            T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
+        flatAttrs, unrevealedAttrs = getUnrevealedAttrs(attrs, revealedAttrs)
+        tildeValues, primeValues, T = findSecretValues(attrs, unrevealedAttrs, credential, self.pk_i)
+        mtilde, etilde, vtilde = tildeValues
+        Aprime, vprime, eprime = primeValues
 
         # Calculate the `c` value as the hash result of Aprime, T and nonce.
         # This value will be used to verify the proof against the credential
@@ -104,7 +65,7 @@ class Prover:
             vvect[key] = vtilde[key] + (c * vprime[key])
 
         mvect = {}
-        for k, value in Aur.items():
+        for k, value in unrevealedAttrs.items():
             mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
@@ -116,59 +77,23 @@ class Prover:
         TauList = []
         CList = []
         C = {}
-        T = {}
-        Aprime = {}
-        vprime = {}
-        eprime = {}
-        etilde = {}
-        vtilde = {}
         evect = {}
         vvect = {}
-        uvect = {}
         u = {}
         utilde = {}
+        uvect = {}
         r = {}
-        rtilde = {}
         rvect = {}
+        rtilde = {}
         alphatilde = 0
         alphavect = 0
-        iterations = 4
 
-        flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
-
-        Ar, Aur = splitRevealedAttributes(flatAttrs, revealedAttrs)
-
-        mtilde = {}
-        for key, value in Aur.items():
-            mtilde[key] = integer(randomBits(lmvect))
-        mtilde["0"] = integer(randomBits(lmvect))
+        flatAttrs, unrevealedAttrs = getUnrevealedAttrs(attrs, revealedAttrs)
+        tildeValues, primeValues, T = findSecretValues(attrs, unrevealedAttrs, credential, self.pk_i)
+        mtilde, etilde, vtilde = tildeValues
+        Aprime, vprime, eprime = primeValues
 
         for key, val in credential.items():
-            Ra = integer(randomBits(lvprime))
-
-            A = val["A"]
-            e = val["e"]
-            v = val["v"]
-            includedAttrs = attrs[key]
-
-            N = self.pk_i[key]["N"]
-            S = self.pk_i[key]["S"]
-            R = self.pk_i[key]["R"]
-
-            Aprime[key] = A * (S ** Ra) % N
-            vprime[key] = (v - e * Ra)
-            eprime[key] = e - (2 ** lestart)
-
-            etilde[key] = integer(randomBits(letilde))
-            vtilde[key] = integer(randomBits(lvtilde))
-
-            Rur = 1 % N
-            for k, value in Aur.items():
-                if k in includedAttrs:
-                    Rur = Rur * (R[k] ** mtilde[k])
-            Rur *= R["0"] ** mtilde["0"]
-
-            T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
             TauList.append(T[key])
             CList.append(Aprime[key])
             updateObject(C, key, "Aprime", Aprime[key])
@@ -208,8 +133,7 @@ class Prover:
                 Q = 1 % N
                 for i in range(0, iterations):
                     Q *= Tval[str(i)] ** utilde[str(i)]
-                Q *= S ** alphatilde
-                Q = Q%N
+                Q *= S ** alphatilde % N
                 TauList.append(Q)
 
         c = integer(get_hash(nonce, *reduce(lambda x, y: x+y, [TauList, CList])))
@@ -219,7 +143,7 @@ class Prover:
             vvect[key] = vtilde[key] + (c * vprime[key])
 
         mvect = {}
-        for k, value in Aur.items():
+        for k, value in unrevealedAttrs.items():
             mvect[str(k)] = mtilde[str(k)] + (c * attrs[key][str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
@@ -249,6 +173,49 @@ class Prover:
     @property
     def vprime(self):
         return self._vprime
+
+
+def findSecretValues(attrs, unrevealedAttrs, credential, pk):
+    Aprime = {}
+    vprime = {}
+    eprime = {}
+    etilde = {}
+    vtilde = {}
+    T ={}
+
+    mtilde = {}
+    for key, value in unrevealedAttrs.items():
+        mtilde[key] = integer(randomBits(lmvect))
+    mtilde["0"] = integer(randomBits(lmvect))
+
+    for key, val in credential.items():
+        Ra = integer(randomBits(lvprime))
+
+        A = val["A"]
+        e = val["e"]
+        v = val["v"]
+        includedAttrs = attrs[key]
+
+        N = pk[key]["N"]
+        S = pk[key]["S"]
+        R = pk[key]["R"]
+
+        Aprime[key] = A * (S ** Ra) % N
+        vprime[key] = (v - e * Ra)
+        eprime[key] = e - (2 ** lestart)
+
+        etilde[key] = integer(randomBits(letilde))
+        vtilde[key] = integer(randomBits(lvtilde))
+
+        Rur = 1 % N
+        for k, value in unrevealedAttrs.items():
+            if k in includedAttrs:
+                Rur = Rur * (R[k] ** mtilde[k])
+        Rur *= R["0"] ** mtilde["0"]
+
+        T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
+
+    return (mtilde, etilde, vtilde), (Aprime, vprime, eprime), T
 
 
 def findLargestSquareLessThan(x):

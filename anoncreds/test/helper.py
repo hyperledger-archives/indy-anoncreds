@@ -13,5 +13,5 @@ def getPresentationToken(issuers, prover, encodedAttrs):
 
 def getProver(attrs, pki):
     prover = Prover(pki)
-    prover.set_attrs(attrs)
+    prover.setAttrs(attrs)
     return prover, attrs

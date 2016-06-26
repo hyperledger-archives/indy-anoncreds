@@ -12,7 +12,7 @@ def testMultipleCredentialSingleProof(credDefs, proverAndAttrsForMultiple1, prov
     nonce = verifierMulti1.Nonce
 
     revealedAttrs = ['name']
-    proof = prover.prepare_proof(credential=presentationToken, attrs=attrs.encoded(),
+    proof = prover.prepareProof(credential=presentationToken, attrs=attrs.encoded(),
                                  revealedAttrs=revealedAttrs, nonce=nonce)
 
     verify_status = verifierMulti1.verify_proof(proof=proof, nonce=nonce,
@@ -37,7 +37,7 @@ def testMultipleCredentialMultipleVerifier(credDefs,
     nonce2 = verifierMulti2.Nonce
 
     revealedAttrs = ['name']
-    proof1 = prover.prepare_proof(credential=presentationToken,
+    proof1 = prover.prepareProof(credential=presentationToken,
                                   attrs=attrs.encoded(),
                                   revealedAttrs=revealedAttrs,
                                   nonce=nonce1)
@@ -47,7 +47,7 @@ def testMultipleCredentialMultipleVerifier(credDefs,
                                                  attrs=attrs.encoded(),
                                                  revealedAttrs=revealedAttrs)
 
-    proof2 = prover.prepare_proof(credential=presentationToken,
+    proof2 = prover.prepareProof(credential=presentationToken,
                                   attrs=attrs.encoded(),
                                   revealedAttrs=revealedAttrs,
                                   nonce=nonce2)

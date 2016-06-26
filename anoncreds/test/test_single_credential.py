@@ -15,7 +15,7 @@ def testSingleProver(credDef1, attrNames1, proverAndAttrs1, verifier1):
 
     # Prepare proof
     revealedAttrs = ['name']
-    proof = prover.prepare_proof(credential=presentationToken,
+    proof = prover.prepareProof(credential=presentationToken,
                                  attrs=attrs.encoded(),
                                  revealedAttrs=revealedAttrs,
                                  nonce=nonce)
@@ -45,11 +45,11 @@ def testMultipleProvers(credDef1, attrNames1, proverAndAttrs1,
 
     # Prepare proofs
     revealedAttrs = ['name']
-    proof1 = prover1.prepare_proof(credential=presentationToken1,
+    proof1 = prover1.prepareProof(credential=presentationToken1,
                                    attrs=attrs1.encoded(),
                                    revealedAttrs=revealedAttrs,
                                    nonce=nonce1)
-    proof2 = prover2.prepare_proof(credential=presentationToken2,
+    proof2 = prover2.prepareProof(credential=presentationToken2,
                                    attrs=attrs2.encoded(),
                                    revealedAttrs=revealedAttrs,
                                    nonce=nonce2)

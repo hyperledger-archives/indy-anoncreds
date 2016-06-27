@@ -11,20 +11,6 @@ def randomQR(n):
     return random(n) ** 2
 
 
-# def encodeAttrs(attrs):
-#     """
-#     This function will encode all the attributes to 256 bit integers
-#     :param attrs: The attributes to pass in credentials
-#     :return:
-#     """
-#     encoded = {}
-#     for attr_type, value in attrs.items():
-#         if attr_type.encode:
-#             encoded[attr_type.name] = Conversion.bytes2integer(sha256(str(value).encode()).digest())
-#         else:
-#             encoded[attr_type.name] = value
-#     return encoded
-
 def encodeAttrs(attrs):
     """
     This function will encode all the attributes to 256 bit integers

@@ -1,7 +1,9 @@
 from charm.core.math.integer import randomBits, integer
 from math import sqrt, floor
 from functools import reduce
+from typing import Dict
 
+from anoncreds.protocol.types import Credential
 from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, \
     lvtilde, lms, lutilde, lrtilde, lalphatilde, iterations
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
@@ -38,7 +40,8 @@ class Prover:
     def setAttrs(self, attrs):
         self.m = attrs
 
-    def prepareProof(self, credential, attrs, revealedAttrs, nonce):
+    def prepareProof(self, credential: Dict[str, Credential],
+                     attrs, revealedAttrs, nonce):
         """
         Prepare the proof from credentials
         :param credential: The credential to be used for the proof preparation.
@@ -71,8 +74,8 @@ class Prover:
 
         return c, evect, vvect, mvect, Aprime
 
-    def preparePredicateProof(self, credential, attrs, revealedAttrs, nonce,
-                              predicate):
+    def preparePredicateProof(self, credential: Dict[str, Credential],
+                              attrs, revealedAttrs, nonce, predicate):
 
         TauList = []
         CList = []
@@ -164,18 +167,16 @@ class Prover:
 
         return c, subProofC, subProofPredicate, C, CList
 
-
     @property
     def U(self):
         return self._U
-
 
     @property
     def vprime(self):
         return self._vprime
 
 
-def findSecretValues(attrs, unrevealedAttrs, credential, pk):
+def findSecretValues(attrs, unrevealedAttrs, credential: Dict[str, Credential], pk):
     Aprime = {}
     vprime = {}
     eprime = {}
@@ -191,9 +192,7 @@ def findSecretValues(attrs, unrevealedAttrs, credential, pk):
     for key, val in credential.items():
         Ra = integer(randomBits(lvprime))
 
-        A = val["A"]
-        e = val["e"]
-        v = val["v"]
+        A, e, v = val
         includedAttrs = attrs[key]
 
         N = pk[key]["N"]
@@ -235,11 +234,7 @@ def fourSquares(delta):
 
 
 def updateObject(obj, parentKey, key, val):
-    if parentKey not in obj:
-        parentVal = {}
-    else:
-        parentVal = obj[parentKey]
-
+    parentVal = obj.get(parentKey, {})
     parentVal[key] = val
     obj[parentKey] = parentVal
 

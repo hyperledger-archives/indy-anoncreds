@@ -1,7 +1,7 @@
 from hashlib import sha256
 
 from charm.toolbox.conversion import Conversion
-
+from collections import namedtuple
 
 class AttribType:
     def __init__(self, name: str, encode: bool):
@@ -82,3 +82,5 @@ XYZCorp = AttribsDef('xyz',
                      [AttribType('status', encode=True)])
 
 NASEMP = GVT + XYZCorp
+
+Credential = namedtuple("Credential", ["A", "e", "v"])

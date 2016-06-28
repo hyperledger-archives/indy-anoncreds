@@ -90,10 +90,10 @@ class CredentialDefinition:
 
         e = get_prime_in_range(estart, eend)
 
-        sig = self._sign(self._pk, attrs, vprimeprime, u, e)
-        return sig["A"], e, vprimeprime
+        A = self._sign(self._pk, attrs, vprimeprime, u, e)
+        return A, e, vprimeprime
 
-    def _sign(self, pk, attrs, v=0, u=0, e=0):
+    def _sign(self, pk, attrs, v, u, e):
         R = pk["R"]
         Z = pk["Z"]
         S = pk["S"]
@@ -114,4 +114,4 @@ class CredentialDefinition:
         Q = Z / (Rx * (S ** v)) % N
         A = Q ** (einverse ** -1) % N
 
-        return {'A': A, 'Q': Q, 'e': e, 'v': v}
+        return A

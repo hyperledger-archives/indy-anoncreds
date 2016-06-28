@@ -1,5 +1,5 @@
 from anoncreds.protocol.prover import Prover
-
+from anoncreds.protocol.types import Credential
 
 def getPresentationToken(issuers, prover, encodedAttrs):
     presentationToken = {}
@@ -7,7 +7,7 @@ def getPresentationToken(issuers, prover, encodedAttrs):
         issuer = issuers[key]
         A, e, vprimeprime = issuer.generateCredential(prover.U[key], encodedAttrs[key])
         v = prover.vprime[key] + vprimeprime
-        presentationToken[key] = {"A": A, "e": e, "v": v}
+        presentationToken[key] = Credential(A, e, v)
     return presentationToken
 
 

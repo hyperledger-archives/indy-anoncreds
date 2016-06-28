@@ -1,12 +1,15 @@
 from charm.core.math.integer import integer, randomBits
 from functools import reduce
+from typing import Dict, Sequence
+
+from anoncreds.protocol.types import IssuerPublicKey, Proof, PredicateProof, T
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     splitRevealedAttributes
 from anoncreds.protocol.globals import lestart, lnonce, iterations
 
 
 class Verifier:
-    def __init__(self, pk_i):
+    def __init__(self, pk_i: Dict[str, IssuerPublicKey]):
         self.pk_i = pk_i
 
     @property
@@ -15,7 +18,9 @@ class Verifier:
 
         return nv
 
-    def verifyProof(self, proof, nonce, attrs, revealedAttrs):
+    def verifyProof(self, proof: Proof, nonce,
+                    attrs: Dict[str, Dict[str, T]],
+                    revealedAttrs: Sequence[str]):
         """
         Verify the proof
         :param attrs: The encoded attributes dictionary
@@ -33,8 +38,10 @@ class Verifier:
 
         return c == cvect
 
-    def verifyPredicateProof(self, proof, nonce, attrs, revealedAttrs,
-                             predicate):
+    def verifyPredicateProof(self, proof: PredicateProof, nonce,
+                             attrs: Dict[str, Dict[str, T]],
+                             revealedAttrs: Sequence[str],
+                             predicate: Dict[str, Sequence[str]]):
         """
         Verify the proof for Predicate implementation
         :param proof: The proof which is a combination of sub-proof for credential and proof, C
@@ -45,27 +52,18 @@ class Verifier:
         :return:
         """
         Tau = []
-        c, subProofC, subProofPredicate, C, CList = proof
+        subProofC, subProofPredicate, C, CList = proof
 
+        # Get all the random and prime numbers for verifying the proof
+        c, evect, mvect, vvect, Aprime = subProofC
+        alphavect, rvect, uvect = subProofPredicate
 
-        Aprime = subProofC["Aprime"]
-        evect = subProofC["evect"]
-        mvect = subProofC["mvect"]
-        vvect = subProofC["vvect"]
-        alphavect = subProofPredicate["alphavect"]
-        rvect = subProofPredicate["rvect"]
-        uvect = subProofPredicate["uvect"]
-
-        subProof = c, evect, vvect, mvect, Aprime
-
-        Aprime, c, Tvect = getProofParams(subProof, self.pk_i, attrs, revealedAttrs)
+        Aprime, c, Tvect = getProofParams(subProofC, self.pk_i, attrs, revealedAttrs)
 
         Tau.extend(get_values_of_dicts(Tvect))
 
         for key, val in predicate.items():
-            S = self.pk_i[key]["S"]
-            Z = self.pk_i[key]["Z"]
-            N = self.pk_i[key]["N"]
+            N, R, S, Z = self.pk_i[key]
             Tval = C[key]["Tval"]
 
             # Iterate over the predicates for a given credential(issuer)
@@ -94,20 +92,18 @@ class Verifier:
         return c == cvect
 
 
-def getProofParams(proof, pkIssuer, attrs, revealedAttrs):
+def getProofParams(proof, pkIssuer: Dict[str, IssuerPublicKey],
+                   attrs, revealedAttrs):
     flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
 
     Ar, unrevealedAttrs = splitRevealedAttributes(flatAttrs, revealedAttrs)
 
     Tvect = {}
     # Extract the values from the proof
-    c, evect, vvect, mvect, Aprime = proof
+    c, evect, mvect, vvect, Aprime = proof
 
     for key, val in pkIssuer.items():
-        Z = pkIssuer[key]["Z"]
-        S = pkIssuer[key]["S"]
-        N = pkIssuer[key]["N"]
-        R = pkIssuer[key]["R"]
+        N, R, S, Z = pkIssuer[key]
         includedAttrs = attrs[key]
 
         x = 1 % N

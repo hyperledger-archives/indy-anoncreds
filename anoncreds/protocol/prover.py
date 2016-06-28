@@ -1,9 +1,10 @@
 from charm.core.math.integer import randomBits, integer
 from math import sqrt, floor
 from functools import reduce
-from typing import Dict
+from typing import Dict, Sequence
 
-from anoncreds.protocol.types import Credential
+from anoncreds.protocol.types import Credential, IssuerPublicKey, Proof, \
+    PredicateProof, SubProofPredicate, T
 from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, \
     lvtilde, lms, lutilde, lrtilde, lalphatilde, iterations
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
@@ -12,7 +13,7 @@ from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
 
 class Prover:
 
-    def __init__(self, pk_i):
+    def __init__(self, pk_i: Dict[str, IssuerPublicKey]):
         """
         Create a prover instance
         :param pk_i: The public key of the Issuer(s)
@@ -32,16 +33,15 @@ class Prover:
         # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
         self._U = {}
         for key, val in self.pk_i.items():
-            S = val["S"]
-            n = val["N"]
-            R = val["R"]
-            self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % n
+            N, R, S, Z = val
+            self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % N
 
     def setAttrs(self, attrs):
         self.m = attrs
 
     def prepareProof(self, credential: Dict[str, Credential],
-                     attrs, revealedAttrs, nonce):
+                     attrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
+                     nonce) -> Proof:
         """
         Prepare the proof from credentials
         :param credential: The credential to be used for the proof preparation.
@@ -72,10 +72,11 @@ class Prover:
             mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
-        return c, evect, vvect, mvect, Aprime
+        return Proof(c, evect, mvect, vvect, Aprime)
 
     def preparePredicateProof(self, credential: Dict[str, Credential],
-                              attrs, revealedAttrs, nonce, predicate):
+                              attrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
+                              nonce, predicate: Dict[str, Sequence[str]]) -> PredicateProof:
 
         TauList = []
         CList = []
@@ -102,9 +103,7 @@ class Prover:
             updateObject(C, key, "Aprime", Aprime[key])
 
         for key, val in predicate.items():
-            S = self.pk_i[key]["S"]
-            Z = self.pk_i[key]["Z"]
-            N = self.pk_i[key]["N"]
+            N, R, S, Z = self.pk_i[key]
 
             # Iterate over the predicates for a given credential(issuer)
             for k, value in val.items():
@@ -150,7 +149,7 @@ class Prover:
             mvect[str(k)] = mtilde[str(k)] + (c * attrs[key][str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
-        subProofC = {"evect": evect, "vvect": vvect, "mvect": mvect, "Aprime": Aprime}
+        subProofC = Proof(c, evect, mvect, vvect, Aprime)
 
         for key, val in predicate.items():
             for a, p in val.items():
@@ -163,9 +162,9 @@ class Prover:
 
                 alphavect = alphatilde + c * (r["delta"] - urproduct)
 
-        subProofPredicate = {"uvect": uvect, "rvect": rvect, "mvect": mvect, "alphavect": alphavect}
+        subProofPredicate = SubProofPredicate(alphavect, rvect, uvect)
 
-        return c, subProofC, subProofPredicate, C, CList
+        return PredicateProof(subProofC, subProofPredicate, C, CList)
 
     @property
     def U(self):
@@ -176,7 +175,8 @@ class Prover:
         return self._vprime
 
 
-def findSecretValues(attrs, unrevealedAttrs, credential: Dict[str, Credential], pk):
+def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Sequence[str],
+                     credential: Dict[str, Credential], pk: Dict[str, IssuerPublicKey]):
     Aprime = {}
     vprime = {}
     eprime = {}
@@ -194,10 +194,7 @@ def findSecretValues(attrs, unrevealedAttrs, credential: Dict[str, Credential], 
 
         A, e, v = val
         includedAttrs = attrs[key]
-
-        N = pk[key]["N"]
-        S = pk[key]["S"]
-        R = pk[key]["R"]
+        N, R, S, Z = pk[key]
 
         Aprime[key] = A * (S ** Ra) % N
         vprime[key] = (v - e * Ra)
@@ -217,12 +214,12 @@ def findSecretValues(attrs, unrevealedAttrs, credential: Dict[str, Credential], 
     return (mtilde, etilde, vtilde), (Aprime, vprime, eprime), T
 
 
-def findLargestSquareLessThan(x):
+def findLargestSquareLessThan(x: int):
     sqrtx = int(floor(sqrt(x)))
     return sqrtx
 
 
-def fourSquares(delta):
+def fourSquares(delta: int):
     u1 = findLargestSquareLessThan(delta)
     u2 = findLargestSquareLessThan(delta - (u1 ** 2))
     u3 = findLargestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2))
@@ -233,7 +230,8 @@ def fourSquares(delta):
         raise Exception("Cannot get the four squares for delta {0}".format(delta))
 
 
-def updateObject(obj, parentKey, key, val):
+def updateObject(obj: Dict[str, Dict[str, T]], parentKey: str,
+                 key: str, val: any):
     parentVal = obj.get(parentKey, {})
     parentVal[key] = val
     obj[parentKey] = parentVal

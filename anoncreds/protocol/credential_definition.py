@@ -1,6 +1,7 @@
 from charm.core.math.integer import randomPrime, random, integer, randomBits, \
     isPrime
 
+from anoncreds.protocol.types import IssuerPublicKey
 from anoncreds.protocol.globals import lprime, lvprimeprime, lestart, leendrange
 from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString
 
@@ -61,11 +62,11 @@ class CredentialDefinition:
         # R["0"] is a random number needed corresponding to master secret
         R["0"] = S ** integer(random(n))
 
-        self._pk = {'N': n, 'S': S, 'Z': Z, 'R': R}
+        self._pk = IssuerPublicKey(n, R, S, Z)
         self.sk = {'p': self.p, 'q': self.q}
 
     @property
-    def PK(self):
+    def PK(self) -> IssuerPublicKey:
         """
         Generate key pair for the issuer
         :return: Tuple of public-secret key for the issuer
@@ -94,10 +95,7 @@ class CredentialDefinition:
         return A, e, vprimeprime
 
     def _sign(self, pk, attrs, v, u, e):
-        R = pk["R"]
-        Z = pk["Z"]
-        S = pk["S"]
-        N = pk["N"]
+        N, R, S, Z = pk
         Rx = 1 % N
 
         # Get the product sequence for the (R[i] and attrs[i]) combination

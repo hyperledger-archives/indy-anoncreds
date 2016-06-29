@@ -146,7 +146,7 @@ class Prover:
 
         mvect = {}
         for k, value in unrevealedAttrs.items():
-            mvect[str(k)] = mtilde[str(k)] + (c * attrs[key][str(k)])
+            mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
         subProofC = Proof(c, evect, mvect, vvect, Aprime)

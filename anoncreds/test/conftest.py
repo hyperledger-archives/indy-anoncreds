@@ -57,6 +57,16 @@ def primes2():
 
 
 @pytest.fixture(scope="module")
+def attrsList1():
+    return GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
+
+
+@pytest.fixture(scope="module")
+def attrsList2():
+    return XYZCorp.attribs(status='ACTIVE')
+
+
+@pytest.fixture(scope="module")
 def credDef1(attrNames1, primes1):
     return CredentialDefinition(attrNames1, **primes1)
 
@@ -96,6 +106,12 @@ def proverAndAttrsForMultiple1(credDefsPk):
 def proverAndAttrsForMultiple2(credDefsPk):
     attribs = XYZCorp.attribs(status='ACTIVE')
     prover, attrs = getProver(attribs, credDefsPk)
+    return prover, attrs
+
+@pytest.fixture(scope="module")
+def proverAndAttrsMapForMultipleIssuers(credDefsPk, attrsList1, attrsList2):
+    attributeList = attrsList1 + attrsList2
+    prover, attrs = getProver(attributeList, credDefsPk)
     return prover, attrs
 
 

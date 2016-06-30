@@ -109,6 +109,9 @@ class Prover:
             for k, value in val.items():
 
                 delta = flatAttrs[k] - value
+                if delta < 0:
+                    raise ValueError("Predicate is not satified")
+
                 u = fourSquares(delta)
 
                 for i in range(0, iterations):

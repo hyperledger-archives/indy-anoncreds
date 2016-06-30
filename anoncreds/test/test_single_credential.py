@@ -1,3 +1,5 @@
+import pytest
+
 from anoncreds.protocol.types import GVT
 from anoncreds.test.helper import getPresentationToken
 
@@ -81,11 +83,24 @@ def testNonceShouldBeSame(credDef1, proverAndAttrs1, verifier1, verifierMulti2):
 
     # Verify the proof
     verify_status = verifier1.verifyProof(proof=proof,
-                                           nonce=nonce2,
-                                           attrs=attrs.encoded(),
-                                           revealedAttrs=revealedAttrs)
+                                          nonce=nonce2,
+                                          attrs=attrs.encoded(),
+                                          revealedAttrs=revealedAttrs)
 
     # The verification status should be false when using different nonce for
     # generating and verifying proof
     assert not verify_status
+
+
+def testGenerateCredentialMustBePassedParameters(proverAndAttrs1, credDef1):
+    prover, attrs = proverAndAttrs1
+
+    # Manually override prover.U
+    prover._U = {GVT.name: ''}
+
+    # This should fail as we are not passing prover.U
+    with pytest.raises(ValueError):
+        presentationToken = getPresentationToken({GVT.name: credDef1},
+                                             prover,
+                                             attrs.encoded())
 

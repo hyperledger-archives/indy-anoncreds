@@ -80,6 +80,9 @@ class CredentialDefinition:
         :param attrs: The attributes for which the credential needs to be generated
         :return: The presentation token as a combination of (A, e, vprimeprime)
         """
+        if not u:
+            raise ValueError("u must be provided to issue a credential")
+
         # Generate a random prime and
         # Set the Most-significant-bit to 1
         vprimeprime = integer(randomBits(lvprimeprime) |

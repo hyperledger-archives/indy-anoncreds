@@ -1,7 +1,8 @@
 from hashlib import sha256
 
 from charm.toolbox.conversion import Conversion
-
+from collections import namedtuple
+from typing import  TypeVar
 
 class AttribType:
     def __init__(self, name: str, encode: bool):
@@ -82,3 +83,16 @@ XYZCorp = AttribsDef('xyz',
                      [AttribType('status', encode=True)])
 
 NASEMP = GVT + XYZCorp
+
+# Named tuples
+T = TypeVar('T')
+
+Credential = namedtuple("Credential", ["A", "e", "v"])
+
+IssuerPublicKey = namedtuple("IssuerPublicKey", ["N", "R", "S", "Z"])
+
+Proof = namedtuple('Proof', ["c", "evect", "mvect", "vvect", "Aprime"])
+
+SubProofPredicate = namedtuple('SubProofPredicate', ["alphavect", "rvect", "uvect"])
+
+PredicateProof = namedtuple('PredicateProof', ["subProofC", "subProofPredicate", "C", "CList"])

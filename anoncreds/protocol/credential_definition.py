@@ -3,12 +3,17 @@ from copy import copy
 from charm.core.math.integer import randomPrime, random, integer, randomBits, \
     isPrime
 
+from anoncreds.protocol.types import IssuerPublicKey
 from anoncreds.protocol.globals import lprime, lvprimeprime, lestart, leendrange
 from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString
 
 
 class CredentialDefinition:
-    def __init__(self, attrNames, name=None, version=None, ip=None, port=None):
+    def __init__(self,
+                 attrNames,
+                 name=None, version=None,
+                 p_prime=None, q_prime=None,
+                 ip=None, port=None):
         """
         Setup an issuer
         :param attrNames: List of all attribute names
@@ -20,24 +25,24 @@ class CredentialDefinition:
         self.port = port
         self.attrNames = attrNames
 
-        # Generate 2 large primes `p_prime` and `q_prime` and use them
-        # to generate another 2 primes `p` and `q` of 1024 bits
-        # self.p_prime = randomPrime(lprime)
-        self.p_prime = integer(157329491389375793912190594961134932804032426403110797476730107804356484516061051345332763141806005838436304922612495876180233509449197495032194146432047460167589034147716097417880503952139805241591622353828629383332869425029086898452227895418829799945650973848983901459733426212735979668835984691928193677469)
-        # i = 0
-        # while not isPrime(2 * self.p_prime + 1):
-        #     self.p_prime = randomPrime(lprime)
-        #     i += 1
-        # print("Found prime in {} iteration".format(i))
+        if not attrNames and isinstance(attrNames, list):
+            raise ValueError("List of attribute names is required to setup credential definition")
+
+        def genPrime():
+            # Generate 2 large primes `p_prime` and `q_prime` and use them
+            # to generate another 2 primes `p` and `q` of 1024 bits
+            prime = randomPrime(lprime)
+            i = 0
+            while not isPrime(2 * prime + 1):
+                prime = randomPrime(lprime)
+                i += 1
+            print("In {} iterations, found prime {}".format(i, prime))
+            return prime
+
+        self.p_prime = p_prime or genPrime()
         self.p = 2 * self.p_prime + 1
 
-        # self.q_prime = randomPrime(lprime)
-        self.q_prime = integer(151323892648373196579515752826519683836764873607632072057591837216698622729557534035138587276594156320800768525825023728398410073692081011811496168877166664537052088207068061172594879398773872352920912390983199416927388688319207946493810449203702100559271439586753256728900713990097168484829574000438573295723)
-        # i = 0
-        # while not isPrime(2 * self.q_prime + 1):
-        #     self.q_prime = randomPrime(lprime)
-        #     i += 1
-        # print("Found prime in {} iteration".format(i))
+        self.q_prime = q_prime or genPrime()
         self.q = 2 * self.q_prime + 1
 
         n = self.p * self.q
@@ -63,11 +68,11 @@ class CredentialDefinition:
         # R["0"] is a random number needed corresponding to master secret
         R["0"] = S ** integer(random(n))
 
-        self._pk = {'N': n, 'S': S, 'Z': Z, 'R': R}
+        self._pk = IssuerPublicKey(n, R, S, Z)
         self.sk = {'p': self.p, 'q': self.q}
 
     @property
-    def PK(self):
+    def PK(self) -> IssuerPublicKey:
         """
         Generate key pair for the issuer
         :return: Tuple of public-secret key for the issuer
@@ -81,6 +86,9 @@ class CredentialDefinition:
         :param attrs: The attributes for which the credential needs to be generated
         :return: The presentation token as a combination of (A, e, vprimeprime)
         """
+        if not u:
+            raise ValueError("u must be provided to issue a credential")
+
         # Generate a random prime and
         # Set the Most-significant-bit to 1
         vprimeprime = integer(randomBits(lvprimeprime) |
@@ -92,14 +100,11 @@ class CredentialDefinition:
 
         e = get_prime_in_range(estart, eend)
 
-        sig = self._sign(self._pk, attrs, vprimeprime, u, e)
-        return sig["A"], e, vprimeprime
+        A = self._sign(self._pk, attrs, vprimeprime, u, e)
+        return A, e, vprimeprime
 
-    def _sign(self, pk, attrs, v=0, u=0, e=0):
-        R = pk["R"]
-        Z = pk["Z"]
-        S = pk["S"]
-        N = pk["N"]
+    def _sign(self, pk, attrs, v, u, e):
+        N, R, S, Z = pk
         Rx = 1 % N
 
         # Get the product sequence for the (R[i] and attrs[i]) combination
@@ -116,7 +121,7 @@ class CredentialDefinition:
         Q = Z / (Rx * (S ** v)) % N
         A = Q ** (einverse ** -1) % N
 
-        return {'A': A, 'Q': Q, 'e': e, 'v': v}
+        return A
 
     def get(self):
         pk = copy(self.PK)

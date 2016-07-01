@@ -3,24 +3,23 @@ import uuid
 from charm.core.math.integer import randomBits, integer
 from math import sqrt, floor
 from functools import reduce
+from typing import Dict, Sequence
 
+from anoncreds.protocol.types import Credential, IssuerPublicKey, Proof, \
+    PredicateProof, SubProofPredicate, T
 from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, \
-    lvtilde, lms, lutilde, lrtilde, lalphatilde
+    lvtilde, lms, lutilde, lrtilde, lalphatilde, iterations
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
-    splitRevealedAttributes
+    splitRevealedAttributes, getUnrevealedAttrs
 
 
 class Proof:
-    def __init__(self, pk_i):
+    def __init__(self, pk_i: Dict[str, IssuerPublicKey]):
         """
         Create a proof instance
         :param pk_i: The public key of the Issuer(s)
         """
-        self.id = str(uuid.uuid4())
-        self.credential = None
-        self.attrs = None
-        self.revealedAttrs = None
-        self.nonce = None
+        self.m = {}
 
         # Generate the master secret
         self._ms = integer(randomBits(lms))
@@ -35,30 +34,15 @@ class Proof:
         # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
         self._U = {}
         for key, val in self.pk_i.items():
-            S = val["S"]
-            n = val["N"]
-            R = val["R"]
-            self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % n
+            N, R, S, Z = val
+            self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % N
 
     def setAttrs(self, attrs):
-        self.attrs = attrs
+        self.m = attrs
 
-    def setCredential(self, credential):
-        self.credential = credential
-
-    def setRevealedAttrs(self, revealedAttrs):
-        self.revealedAttrs = revealedAttrs
-
-    def setNonce(self, nonce):
-        self.nonce = nonce
-
-    def setParams(self, attrs, credential, revealedAttrs, nonce):
-        self.setAttrs(attrs)
-        self.setCredential(credential)
-        self.setRevealedAttrs(revealedAttrs)
-        self.setNonce(nonce)
-
-    def prepare_proof(self):
+    def prepareProof(self, credential: Dict[str, Credential],
+                     attrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
+                     nonce) -> Proof:
         """
         Prepare the proof from credentials
         :param credential: The credential to be used for the proof preparation.
@@ -66,142 +50,69 @@ class Proof:
         :param attrs: The encoded attributes dictionary
         :param revealedAttrs: The revealed attributes list
         :param nonce: The nonce used to have a commit
-        :param encodedAttrsDict: The dictionary for encoded attributes
         :return: The proof
         """
-        T = {}
-        Aprime = {}
-        etilde = {}
-        eprime = {}
-        vtilde = {}
-        vprime = {}
         evect = {}
         vvect = {}
 
-        flatAttrs = {x: y for z in self.attrs.values() for x, y in z.items()}
-        Ar, Aur = splitRevealedAttributes(flatAttrs, self.revealedAttrs)
-
-        mtilde = {}
-        for key, value in Aur.items():
-            mtilde[str(key)] = integer(randomBits(lmvect))
-        mtilde["0"] = integer(randomBits(lmvect))
-
-        for key, val in self.credential.items():
-            # A = val["A"]
-            # e = val["e"]
-            # v = val["v"]
-            A, e, v = val
-            includedAttrs = self.attrs[key]
-
-            N = self.pk_i[key]["N"]
-            S = self.pk_i[key]["S"]
-            R = self.pk_i[key]["R"]
-
-            Ra = integer(randomBits(lvprime))
-
-            Aprime[key] = A * (S ** Ra) % N
-            vprime[key] = (v - e * Ra)
-            eprime[key] = e - (2 ** lestart)
-
-            etilde[key] = integer(randomBits(letilde))
-            vtilde[key] = integer(randomBits(lvtilde))
-
-            Rur = 1 % N
-
-            for k, value in Aur.items():
-                if k in includedAttrs:
-                    Rur = Rur * (R[str(k)] ** mtilde[str(k)])
-            Rur *= R["0"] ** mtilde["0"]
-
-            T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
+        flatAttrs, unrevealedAttrs = getUnrevealedAttrs(attrs, revealedAttrs)
+        tildeValues, primeValues, T = findSecretValues(attrs, unrevealedAttrs, credential, self.pk_i)
+        mtilde, etilde, vtilde = tildeValues
+        Aprime, vprime, eprime = primeValues
 
         # Calculate the `c` value as the hash result of Aprime, T and nonce.
         # This value will be used to verify the proof against the credential
-        c = integer(get_hash(*get_values_of_dicts(Aprime, T, {"nonce": self.nonce})))
+        c = integer(get_hash(*get_values_of_dicts(Aprime, T, {"nonce": nonce})))
 
-        for key, val in self.credential.items():
+        for key, val in credential.items():
             evect[key] = etilde[key] + (c * eprime[key])
             vvect[key] = vtilde[key] + (c * vprime[key])
 
         mvect = {}
-        for k, value in Aur.items():
+        for k, value in unrevealedAttrs.items():
             mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
-        return c, evect, vvect, mvect, Aprime
+        return Proof(c, evect, mvect, vvect, Aprime)
 
-    def preparePredicateProof(self, credential, attrs, revealedAttrs, nonce,
-                              predicate):
+    def preparePredicateProof(self, credential: Dict[str, Credential],
+                              attrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
+                              nonce, predicate: Dict[str, Sequence[str]]) -> PredicateProof:
 
         TauList = []
         CList = []
         C = {}
-        T = {}
-        Aprime = {}
-        vprime = {}
-        eprime = {}
-        etilde = {}
-        vtilde = {}
         evect = {}
         vvect = {}
-        uvect = {}
         u = {}
         utilde = {}
+        uvect = {}
         r = {}
-        rtilde = {}
         rvect = {}
+        rtilde = {}
         alphatilde = 0
         alphavect = 0
-        iterations = 4
 
-        flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
-
-        Ar, Aur = splitRevealedAttributes(flatAttrs, revealedAttrs)
-
-        mtilde = {}
-        for key, value in Aur.items():
-            mtilde[key] = integer(randomBits(lmvect))
-        mtilde["0"] = integer(randomBits(lmvect))
+        flatAttrs, unrevealedAttrs = getUnrevealedAttrs(attrs, revealedAttrs)
+        tildeValues, primeValues, T = findSecretValues(attrs, unrevealedAttrs, credential, self.pk_i)
+        mtilde, etilde, vtilde = tildeValues
+        Aprime, vprime, eprime = primeValues
 
         for key, val in credential.items():
-            Ra = integer(randomBits(lvprime))
-
-            A = val["A"]
-            e = val["e"]
-            v = val["v"]
-            includedAttrs = attrs[key]
-
-            N = self.pk_i[key]["N"]
-            S = self.pk_i[key]["S"]
-            R = self.pk_i[key]["R"]
-
-            Aprime[key] = A * (S ** Ra) % N
-            vprime[key] = (v - e * Ra)
-            eprime[key] = e - (2 ** lestart)
-
-            etilde[key] = integer(randomBits(letilde))
-            vtilde[key] = integer(randomBits(lvtilde))
-
-            Rur = 1 % N
-            for k, value in Aur.items():
-                if k in includedAttrs:
-                    Rur = Rur * (R[k] ** mtilde[k])
-            Rur *= R["0"] ** mtilde["0"]
-
-            T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
             TauList.append(T[key])
             CList.append(Aprime[key])
             updateObject(C, key, "Aprime", Aprime[key])
 
         for key, val in predicate.items():
-            S = self.pk_i[key]["S"]
-            Z = self.pk_i[key]["Z"]
-            N = self.pk_i[key]["N"]
+            N, R, S, Z = self.pk_i[key]
 
             # Iterate over the predicates for a given credential(issuer)
             for k, value in val.items():
 
-                delta = attrs[key][k] - value
+                delta = flatAttrs[k] - value
+                if delta < 0:
+                    raise ValueError("Predicate is not satified")
+
                 u = fourSquares(delta)
 
                 for i in range(0, iterations):
@@ -228,8 +139,7 @@ class Proof:
                 Q = 1 % N
                 for i in range(0, iterations):
                     Q *= Tval[str(i)] ** utilde[str(i)]
-                Q *= S ** alphatilde
-                Q = Q%N
+                Q *= S ** alphatilde % N
                 TauList.append(Q)
 
         c = integer(get_hash(nonce, *reduce(lambda x, y: x+y, [TauList, CList])))
@@ -239,14 +149,14 @@ class Proof:
             vvect[key] = vtilde[key] + (c * vprime[key])
 
         mvect = {}
-        for k, value in Aur.items():
-            mvect[str(k)] = mtilde[str(k)] + (c * attrs[key][str(k)])
+        for k, value in unrevealedAttrs.items():
+            mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
-        subProofC = {"evect": evect, "vvect": vvect, "mvect": mvect, "Aprime": Aprime}
+        subProofC = Proof(c, evect, mvect, vvect, Aprime)
 
         for key, val in predicate.items():
-            for a, predicate in val.items():
+            for a, p in val.items():
                 urproduct = 0
                 for i in range(0, iterations):
                     uvect[str(i)] = utilde[str(i)] + c * u[i]
@@ -256,27 +166,64 @@ class Proof:
 
                 alphavect = alphatilde + c * (r["delta"] - urproduct)
 
-        subProofPredicate = {"uvect": uvect, "rvect": rvect, "mvect": mvect, "alphavect": alphavect}
+        subProofPredicate = SubProofPredicate(alphavect, rvect, uvect)
 
-        return c, subProofC, subProofPredicate, C, CList
-
+        return PredicateProof(subProofC, subProofPredicate, C, CList)
 
     @property
     def U(self):
         return self._U
-
 
     @property
     def vprime(self):
         return self._vprime
 
 
-def findLargestSquareLessThan(x):
+def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Sequence[str],
+                     credential: Dict[str, Credential], pk: Dict[str, IssuerPublicKey]):
+    Aprime = {}
+    vprime = {}
+    eprime = {}
+    etilde = {}
+    vtilde = {}
+    T ={}
+
+    mtilde = {}
+    for key, value in unrevealedAttrs.items():
+        mtilde[key] = integer(randomBits(lmvect))
+    mtilde["0"] = integer(randomBits(lmvect))
+
+    for key, val in credential.items():
+        Ra = integer(randomBits(lvprime))
+
+        A, e, v = val
+        includedAttrs = attrs[key]
+        N, R, S, Z = pk[key]
+
+        Aprime[key] = A * (S ** Ra) % N
+        vprime[key] = (v - e * Ra)
+        eprime[key] = e - (2 ** lestart)
+
+        etilde[key] = integer(randomBits(letilde))
+        vtilde[key] = integer(randomBits(lvtilde))
+
+        Rur = 1 % N
+        for k, value in unrevealedAttrs.items():
+            if k in includedAttrs:
+                Rur = Rur * (R[k] ** mtilde[k])
+        Rur *= R["0"] ** mtilde["0"]
+
+        T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
+
+    return (mtilde, etilde, vtilde), (Aprime, vprime, eprime), T
+
+
+def findLargestSquareLessThan(x: int):
     sqrtx = int(floor(sqrt(x)))
     return sqrtx
 
 
-def fourSquares(delta):
+def fourSquares(delta: int):
     u1 = findLargestSquareLessThan(delta)
     u2 = findLargestSquareLessThan(delta - (u1 ** 2))
     u3 = findLargestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2))
@@ -287,12 +234,9 @@ def fourSquares(delta):
         raise Exception("Cannot get the four squares for delta {0}".format(delta))
 
 
-def updateObject(obj, parentKey, key, val):
-    if parentKey not in obj:
-        parentVal = {}
-    else:
-        parentVal = obj[parentKey]
-
+def updateObject(obj: Dict[str, Dict[str, T]], parentKey: str,
+                 key: str, val: any):
+    parentVal = obj.get(parentKey, {})
     parentVal[key] = val
     obj[parentKey] = parentVal
 

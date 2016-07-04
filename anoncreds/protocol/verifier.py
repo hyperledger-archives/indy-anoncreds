@@ -2,10 +2,30 @@ from charm.core.math.integer import integer, randomBits
 from functools import reduce
 from typing import Dict, Sequence
 
-from anoncreds.protocol.types import IssuerPublicKey, Proof, PredicateProof, T
+from anoncreds.protocol.types import PredicateProof, T
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     splitRevealedAttributes
 from anoncreds.protocol.globals import lestart, lnonce, iterations
+from anoncreds.protocol.types import IssuerPublicKey
+
+
+def verify_proof(pk_i, proof, nonce, attrs, revealedAttrs):
+    """
+    Verify the proof
+    :param attrs: The encoded attributes dictionary
+    :param revealedAttrs: The revealed attributes list
+    :param nonce: The nonce used to have a commit
+    :return: A boolean with the verification status for the proof
+    """
+    Aprime, c, Tvect = getProofParams(proof, pk_i, attrs, revealedAttrs)
+
+    # Calculate the `cvect` value based on proof.
+    # This value is mathematically proven to be equal to `c`
+    # if proof is created correctly from credentials. Refer 2.8 in document
+    cvect = integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
+                                                  {"nonce": nonce})))
+
+    return c == cvect
 
 
 class Verifier:
@@ -31,15 +51,14 @@ class Verifier:
     #     self.credDefs[(issuerId, credName, credVersion)] = pk
     #     return pkI
 
-    def _getIssuerPkByCredDef(self, credDef):
+    def _getIssuerPkByCredDef(self, credDef) -> IssuerPublicKey:
         keys = credDef.get()['keys']
         R = {}
         for key, val in keys['R'].items():
             R[str(key)] = val
         # R["0"] is a random number needed corresponding to master secret
         # R["0"] = keys['master_secret_rand']
-
-        pk_i = {'N': keys['N'], 'S': keys['S'], 'Z': keys['Z'], 'R': R}
+        pk_i = IssuerPublicKey(keys['N'], R, keys['S'], keys['Z'])
         return pk_i
 
     # def _getIssuerPk(self, proof):
@@ -58,7 +77,7 @@ class Verifier:
     def verify(self, issuerId, name, version, proof, nonce, attrs, revealedAttrs):
         credDef = self.fetchCredDef(issuerId, name, version)
         pk = self._getIssuerPkByCredDef(credDef)
-        result = self.verify_proof({issuerId: pk}, proof, nonce, attrs, revealedAttrs)
+        result = verify_proof({issuerId: pk}, proof, nonce, attrs, revealedAttrs)
         return result
 
     def fetchCredDef(self, issuerId, name, version):
@@ -67,25 +86,7 @@ class Verifier:
     def sendStatus(self, proverId, status):
         raise NotImplementedError
 
-    def verify_proof(self, pk_i, proof, nonce, attrs, revealedAttrs):
-        """
-        Verify the proof
-        :param attrs: The encoded attributes dictionary
-        :param revealedAttrs: The revealed attributes list
-        :param nonce: The nonce used to have a commit
-        :return: A boolean with the verification status for the proof
-        """
-        Aprime, c, Tvect = getProofParams(proof, self.pk_i, attrs, revealedAttrs)
-
-        # Calculate the `cvect` value based on proof.
-        # This value is mathematically proven to be equal to `c`
-        # if proof is created correctly from credentials. Refer 2.8 in document
-        cvect = integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
-                                                      {"nonce": nonce})))
-
-        return c == cvect
-
-    def verifyPredicateProof(self, proof: PredicateProof, nonce,
+    def verifyPredicateProof(self, proof: PredicateProof, pk_i, nonce,
                              attrs: Dict[str, Dict[str, T]],
                              revealedAttrs: Sequence[str],
                              predicate: Dict[str, Sequence[str]]):
@@ -105,12 +106,12 @@ class Verifier:
         c, evect, mvect, vvect, Aprime = subProofC
         alphavect, rvect, uvect = subProofPredicate
 
-        Aprime, c, Tvect = getProofParams(subProofC, self.pk_i, attrs, revealedAttrs)
+        Aprime, c, Tvect = getProofParams(subProofC, pk_i, attrs, revealedAttrs)
 
         Tau.extend(get_values_of_dicts(Tvect))
 
         for key, val in predicate.items():
-            N, R, S, Z = self.pk_i[key]
+            N, R, S, Z = pk_i[key]
             Tval = C[key]["Tval"]
 
             # Iterate over the predicates for a given credential(issuer)

@@ -3,6 +3,7 @@ from typing import Sequence
 from anoncreds.protocol.attribute_repo import AttributeRepo
 from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.utils import encodeAttrs
+from test.helper import getPresentationToken
 
 
 class Issuer:
@@ -27,13 +28,16 @@ class Issuer:
         self.credDefsForAttribs[key].append(credDef)
 
     def createCredential(self, proverId, name, version, U):
+        # This method works for one credDef only.
         credDef = self.getCredDef(name, version)
         attributes = self.attributeRepo.getAttributes(proverId)
-        encAttrs = encodeAttrs(attributes)
-        return credDef.generateCredential(U, encAttrs)
+        encAttrs = attributes.encoded()
+        return credDef.generateCredential(U, next(iter(encAttrs.values())))
 
-    def newCredDef(self, attrNames, name, version, ip=None, port=None):
-        credDef = CredentialDefinition(attrNames, name, version, ip, port)
+    def newCredDef(self, attrNames, name, version,
+                   p_prime=None, q_prime=None, ip=None, port=None):
+        credDef = CredentialDefinition(attrNames, name, version,
+                                       p_prime, q_prime, ip, port)
         self.addCredDef(credDef)
         return credDef
 

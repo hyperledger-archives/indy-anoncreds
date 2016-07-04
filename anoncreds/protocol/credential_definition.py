@@ -5,7 +5,8 @@ from charm.core.math.integer import randomPrime, random, integer, randomBits, \
 
 from anoncreds.protocol.types import IssuerPublicKey
 from anoncreds.protocol.globals import lprime, lvprimeprime, lestart, leendrange
-from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString
+from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString, \
+    flattenAttrs
 
 
 class CredentialDefinition:
@@ -16,6 +17,7 @@ class CredentialDefinition:
                  ip=None, port=None):
         """
         Setup an issuer
+
         :param attrNames: List of all attribute names
         """
 
@@ -75,6 +77,7 @@ class CredentialDefinition:
     def PK(self) -> IssuerPublicKey:
         """
         Generate key pair for the issuer
+
         :return: Tuple of public-secret key for the issuer
         """
         return self._pk
@@ -82,50 +85,42 @@ class CredentialDefinition:
     def generateCredential(self, u, attrs):
         """
         Issue the credential for the defined attributes
+
         :param u: The `u` value provided by the prover
         :param attrs: The attributes for which the credential needs to be generated
         :return: The presentation token as a combination of (A, e, vprimeprime)
         """
         if not u:
             raise ValueError("u must be provided to issue a credential")
-
         # Generate a random prime and
         # Set the Most-significant-bit to 1
         vprimeprime = integer(randomBits(lvprimeprime) |
                               (2 ** (lvprimeprime - 1)))
-
         # Generate prime number in the range (2^596, 2^596 + 2^119)
         estart = 2 ** lestart
         eend = (estart + 2 ** leendrange)
-
         e = get_prime_in_range(estart, eend)
-
         A = self._sign(self._pk, attrs, vprimeprime, u, e)
         return A, e, vprimeprime
 
     def _sign(self, pk, attrs, v, u, e):
         N, R, S, Z = pk
         Rx = 1 % N
-
         # Get the product sequence for the (R[i] and attrs[i]) combination
         for k, val in attrs.items():
             Rx = Rx * (R[str(k)] ** val)
-
         if u != 0:
             u = u % N
             Rx *= u
-
         nprime = self.p_prime * self.q_prime
         einverse = e % nprime
-
         Q = Z / (Rx * (S ** v)) % N
         A = Q ** (einverse ** -1) % N
-
         return A
 
     def get(self):
         pk = copy(self.PK)
-        R = copy(pk["R"])
+        R = copy(pk.R)
         return {
             "name": self.name,
             "version": self.version,
@@ -134,9 +129,9 @@ class CredentialDefinition:
             "port": self.port,
             "keys": {
                 "master_secret_rand": R["0"],
-                "N": pk["N"],
-                "S": pk["S"],
-                "Z": pk["Z"],
-                "R": R        # TODO Master secret rand number, R[0] is still passed, remove that
+                "N": pk.N,
+                "S": pk.S,
+                "Z": pk.Z,
+                "R": R  # TODO Master secret rand number, R[0] is still passed, remove that
             }
         }

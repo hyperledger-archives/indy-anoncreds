@@ -1,5 +1,6 @@
 from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.proof import Proof
+from anoncreds.protocol.types import IssuerPublicKey
 
 
 class Prover:
@@ -28,33 +29,39 @@ class Prover:
         credDef = credDef.get()
         R = credDef["keys"]["R"]
         R["0"] = credDef["keys"]["master_secret_rand"]
-        return {
-            "N": credDef["keys"]["N"],
-            "Z": credDef["keys"]["Z"],
-            "S": credDef["keys"]["S"],
-            "R": R
-        }
+        return IssuerPublicKey(
+            credDef["keys"]["N"],
+            R,
+            credDef["keys"]["S"],
+            credDef["keys"]["Z"],
+        )
 
     def initProof(self, issuerId, attrNames):
         credDef = self.getCredentialDefinition(issuerId, attrNames)
         pk = self.getPkFromCredDef(credDef)
-        pk = {issuerId : pk}
+        pk = {issuerId: pk}
         proof = Proof(pk)
         self.proofs[proof.id] = proof
         return proof
 
-    def createProof(self, issuerId, attrNames, verifierId, encodedAttrs, revealedAttrs):
+    def createProof(self, issuerId, attrNames, verifierId,
+                    encodedAttrs, revealedAttrs):
         credDef = self.getCredentialDefinition(issuerId, attrNames)
         proof = self.initProof(issuerId, attrNames)
         nonce = self.fetchNonce(verifierId)
-        credential = self.getCredential(issuerId, credDef.name, credDef.version, proof.U[issuerId])
+        credential = self.getCredential(issuerId, credDef.name,
+                                        credDef.version, proof.U[issuerId])
         presentationToken = {
             issuerId: (
-            credential[0], credential[1], proof.vprime[issuerId] + credential[2])
+            credential[0], credential[1],
+            proof.vprime[issuerId] + credential[2])
         }
-        proof.setParams({issuerId: encodedAttrs}, presentationToken, revealedAttrs, nonce)
-        prf = proof.prepare_proof()
-        proof.prf = prf
+        proof.setParams(encodedAttrs, presentationToken,
+                        revealedAttrs, nonce)
+        prf = proof.prepareProof(credential=presentationToken,
+                                 attrs=encodedAttrs,
+                                 revealedAttrs=revealedAttrs, nonce=nonce)
+        proof.prf = prf  # JN - Why is this required?
         return proof
 
     def fetchNonce(self, verifierId):

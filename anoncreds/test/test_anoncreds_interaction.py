@@ -1,12 +1,13 @@
 from anoncreds.protocol.attribute_repo import AttributeRepo
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
+from anoncreds.temp_primes import P_PRIME, Q_PRIME
 from anoncreds.protocol.utils import encodeAttrs
 from anoncreds.protocol.verifier import Verifier
-
+from protocol.types import GVT
 
 interactionId = 100
-issuerId = '11'
+issuerId = GVT.name
 proverId = '12'
 verifierId = '13'
 
@@ -33,15 +34,17 @@ class TestProver(Prover):
         return nonce
 
     def sendProof(self, issuerId, name, version, proof, verifierId):
-        return self.verifiers[verifierId].verify(issuerId, name, version, proof.prf,
-                                          proof.nonce, proof.attrs,
-                                          proof.revealedAttrs)
+        return self.verifiers[verifierId].verify(issuerId, name, version,
+                                                 proof.prf,
+                                                 proof.nonce, proof.attrs,
+                                                 proof.revealedAttrs)
 
     def fetchCredentialDefinition(self, issuerId, attributes):
         return self.issuers[issuerId].getCredDef(attributes=attributes)
 
     def fetchCredential(self, issuerId, credName, credVersion, U):
-        return self.issuers[issuerId].createCredential(self.id, credName, credVersion, U)
+        return self.issuers[issuerId].createCredential(self.id, credName,
+                                                       credVersion, U)
 
 
 class TestVerifier(Verifier):
@@ -65,17 +68,18 @@ class TestVerifier(Verifier):
 
 def testInteraction():
     attrRepo = AttributeRepo()
-    attrs = {'name': 'Aditya Pratap Singh', 'age': '25', 'sex': 'male'}
+    attrs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
     attrNames = tuple(attrs.keys())
     revealedAttrs = ["age", ]
-    encodedAttrs = encodeAttrs(attrs)
+    encodedAttrs = attrs.encoded()
 
     credName = "Profile"
     credVersion = "1.0"
     attrRepo.addAttributes(proverId, attrs)
 
     issuer = TestIssuer(issuerId, attrRepo)
-    issuer.newCredDef(attrNames, credName, credVersion)
+    issuer.newCredDef(attrNames, credName, credVersion,
+                      p_prime=P_PRIME, q_prime=Q_PRIME)
     prover = TestProver(proverId)
     verifier = TestVerifier(verifierId)
 
@@ -84,6 +88,7 @@ def testInteraction():
     verifier.setProver(prover)
     verifier.setIssuer(issuer)
 
-    proof = prover.createProof(issuerId, attrNames, verifierId, encodedAttrs,
-                             revealedAttrs)
-    assert prover.sendProof(issuerId, credName, credVersion, proof, verifierId)
+    proof = prover.createProof(issuerId, attrNames, verifierId,
+                               encodedAttrs, revealedAttrs)
+    assert prover.sendProof(issuerId, credName, credVersion,
+                            proof, verifierId)

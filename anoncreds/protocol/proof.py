@@ -1,25 +1,32 @@
 import uuid
 
-from charm.core.math.integer import randomBits, integer
-from math import sqrt, floor
 from functools import reduce
+from math import sqrt, floor
 from typing import Dict, Sequence
 
-from anoncreds.protocol.types import Credential, IssuerPublicKey, Proof, \
-    PredicateProof, SubProofPredicate, T
+from charm.core.math.integer import randomBits, integer
+
 from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, \
     lvtilde, lms, lutilde, lrtilde, lalphatilde, iterations
+from anoncreds.protocol.types import Credential, IssuerPublicKey,\
+    PredicateProof, SubProofPredicate, T, Attribs
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
-    splitRevealedAttributes, getUnrevealedAttrs
+    getUnrevealedAttrs
+from protocol import types
 
 
 class Proof:
     def __init__(self, pk_i: Dict[str, IssuerPublicKey]):
         """
         Create a proof instance
+
         :param pk_i: The public key of the Issuer(s)
         """
-        self.m = {}
+        self.id = str(uuid.uuid4())
+        self.credential = None
+        self.revealedAttrs = None
+        self.nonce = None
+        self.attrs = {}
 
         # Generate the master secret
         self._ms = integer(randomBits(lms))
@@ -38,13 +45,29 @@ class Proof:
             self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % N
 
     def setAttrs(self, attrs):
-        self.m = attrs
+        self.attrs = attrs
+
+    def setCredential(self, credential):
+        self.credential = credential
+
+    def setRevealedAttrs(self, revealedAttrs):
+        self.revealedAttrs = revealedAttrs
+
+    def setNonce(self, nonce):
+        self.nonce = nonce
+
+    def setParams(self, attrs, credential, revealedAttrs, nonce):
+        self.setAttrs(attrs)
+        self.setCredential(credential)
+        self.setRevealedAttrs(revealedAttrs)
+        self.setNonce(nonce)
 
     def prepareProof(self, credential: Dict[str, Credential],
                      attrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
-                     nonce) -> Proof:
+                     nonce) -> types.Proof:
         """
         Prepare the proof from credentials
+
         :param credential: The credential to be used for the proof preparation.
         This is a dictionary with key as issuer name and value as the credential
         :param attrs: The encoded attributes dictionary
@@ -73,7 +96,7 @@ class Proof:
             mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
-        return Proof(c, evect, mvect, vvect, Aprime)
+        return types.Proof(c, evect, mvect, vvect, Aprime)
 
     def preparePredicateProof(self, credential: Dict[str, Credential],
                               attrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
@@ -111,7 +134,7 @@ class Proof:
 
                 delta = flatAttrs[k] - value
                 if delta < 0:
-                    raise ValueError("Predicate is not satified")
+                    raise ValueError("Predicate is not satisfied")
 
                 u = fourSquares(delta)
 
@@ -153,7 +176,7 @@ class Proof:
             mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * self._ms)
 
-        subProofC = Proof(c, evect, mvect, vvect, Aprime)
+        subProofC = types.Proof(c, evect, mvect, vvect, Aprime)
 
         for key, val in predicate.items():
             for a, p in val.items():
@@ -186,7 +209,7 @@ def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Sequence[str],
     eprime = {}
     etilde = {}
     vtilde = {}
-    T ={}
+    T = {}
 
     mtilde = {}
     for key, value in unrevealedAttrs.items():

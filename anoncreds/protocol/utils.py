@@ -2,7 +2,6 @@ import logging
 import string
 from hashlib import sha256
 from random import randint, sample
-from typing import Dict
 
 from charm.core.math.integer import random, isPrime
 from charm.toolbox.conversion import Conversion
@@ -84,8 +83,13 @@ def randomString(size: int = 20,
 
 
 def getUnrevealedAttrs(attrs, revealedAttrsList):
-    flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
+    flatAttrs = flattenAttrs(attrs)
 
     revealedAttrs, unrevealedAttrs = splitRevealedAttributes(flatAttrs, revealedAttrsList)
 
     return flatAttrs, unrevealedAttrs
+
+
+def flattenAttrs(attrs):
+    return {x: y for z in attrs.values()
+            for x, y in z.items()}

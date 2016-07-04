@@ -2,7 +2,8 @@ from hashlib import sha256
 
 from charm.toolbox.conversion import Conversion
 from collections import namedtuple
-from typing import  TypeVar
+from typing import TypeVar
+
 
 class AttribType:
     def __init__(self, name: str, encode: bool):
@@ -18,6 +19,7 @@ class Attribs:
     def encoded(self):
         """
         This function will encode all the attributes to 256 bit integers
+
         :param attrs: The attributes to pass in credentials
         :return:
         """
@@ -39,6 +41,24 @@ class Attribs:
         vals = self.vals.copy()
         vals.update(other.vals)
         return Attribs(self.credType + other.credType, **vals)
+
+    def __iter__(self):
+        return self.vals.__iter__()
+
+    # def __getitem__(self, item):
+    #     return self.vals.get(item)
+    #
+    # def __len__(self):
+    #     return self.vals.__len__()
+
+    def keys(self):
+        return self.vals.keys()
+
+    def values(self):
+        return self.vals.values()
+
+    def items(self):
+        return self.vals.items()
 
 
 class AttribsDef:

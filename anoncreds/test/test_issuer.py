@@ -2,7 +2,7 @@ import pytest
 from anoncreds.protocol.attribute_repo import AttributeRepo
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.credential_definition import CredentialDefinition
-from anoncreds.protocol.types import GVT, XYZCorp
+from anoncreds.protocol.types import GVT
 
 
 def testIssuerShouldBePassedAttributesList():

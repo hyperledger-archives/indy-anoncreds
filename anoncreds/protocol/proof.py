@@ -1,5 +1,4 @@
 import uuid
-
 from functools import reduce
 from math import sqrt, floor
 from typing import Dict, Sequence
@@ -9,7 +8,7 @@ from charm.core.math.integer import randomBits, integer
 from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, \
     lvtilde, lms, lutilde, lrtilde, lalphatilde, iterations
 from anoncreds.protocol.types import Credential, IssuerPublicKey,\
-    PredicateProof, SubProofPredicate, T, Attribs
+    PredicateProof, SubProofPredicate, T
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     getUnrevealedAttrs
 from protocol import types

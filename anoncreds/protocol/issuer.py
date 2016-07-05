@@ -2,8 +2,6 @@ from typing import Sequence
 
 from anoncreds.protocol.attribute_repo import AttributeRepo
 from anoncreds.protocol.credential_definition import CredentialDefinition
-from anoncreds.protocol.utils import encodeAttrs
-from test.helper import getPresentationToken
 
 
 class Issuer:

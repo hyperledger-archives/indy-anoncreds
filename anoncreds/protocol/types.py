@@ -1,8 +1,8 @@
+from collections import namedtuple
 from hashlib import sha256
+from typing import TypeVar
 
 from charm.toolbox.conversion import Conversion
-from collections import namedtuple
-from typing import TypeVar
 
 
 class AttribType:

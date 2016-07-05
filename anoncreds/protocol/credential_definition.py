@@ -3,10 +3,9 @@ from copy import copy
 from charm.core.math.integer import randomPrime, random, integer, randomBits, \
     isPrime
 
-from anoncreds.protocol.types import IssuerPublicKey
 from anoncreds.protocol.globals import lprime, lvprimeprime, lestart, leendrange
-from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString, \
-    flattenAttrs
+from anoncreds.protocol.types import IssuerPublicKey
+from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString
 
 
 class CredentialDefinition:

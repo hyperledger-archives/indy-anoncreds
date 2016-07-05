@@ -1,12 +1,13 @@
-from charm.core.math.integer import integer, randomBits
 from functools import reduce
 from typing import Dict, Sequence
 
+from charm.core.math.integer import integer, randomBits
+
+from anoncreds.protocol.globals import lestart, lnonce, iterations
+from anoncreds.protocol.types import IssuerPublicKey
 from anoncreds.protocol.types import PredicateProof, T
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     splitRevealedAttributes
-from anoncreds.protocol.globals import lestart, lnonce, iterations
-from anoncreds.protocol.types import IssuerPublicKey
 
 
 def verify_proof(pk_i, proof, nonce, attrs, revealedAttrs):

@@ -11,7 +11,7 @@ from anoncreds.protocol.types import Credential, IssuerPublicKey,\
     PredicateProof, SubProofPredicate, T
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     getUnrevealedAttrs
-from protocol import types
+from anoncreds.protocol import types
 
 
 class Proof:

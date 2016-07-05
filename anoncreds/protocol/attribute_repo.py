@@ -1,6 +1,6 @@
 from typing import Dict
 
-from protocol.types import Attribs
+from anoncreds.protocol.types import Attribs
 
 
 class AttributeRepo:

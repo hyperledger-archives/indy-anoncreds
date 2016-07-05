@@ -83,13 +83,13 @@ def randomString(size: int = 20,
 
 
 def getUnrevealedAttrs(attrs, revealedAttrsList):
-    flatAttrs = flattenAttrs(attrs)
+    flatAttrs = flattenDict(attrs)
 
     revealedAttrs, unrevealedAttrs = splitRevealedAttributes(flatAttrs, revealedAttrsList)
 
     return flatAttrs, unrevealedAttrs
 
 
-def flattenAttrs(attrs):
+def flattenDict(attrs):
     return {x: y for z in attrs.values()
             for x, y in z.items()}

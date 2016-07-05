@@ -134,3 +134,15 @@ class CredentialDefinition:
                 "R": R  # TODO Master secret rand number, R[0] is still passed, remove that
             }
         }
+
+    def getSerializable(self):
+        data = self.get()
+        # converting integer to Python 3 int
+        for k, v in data['keys'].items():
+            if isinstance(v, integer):
+                # This works with Python 3 only.
+                # for Python 2, charm's serialization api must be used.
+                data['keys'][k] = int(v)
+            if k == 'R':
+                data['keys'][k] = {key: int(val) for key, val in v.items()}
+        return data

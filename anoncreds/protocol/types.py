@@ -11,8 +11,41 @@ class AttribType:
         self.encode = encode
 
 
+class AttribsDef:
+    def __init__(self, name, attr_types):
+        if isinstance(name, str):
+            self.name_a = [name]
+            self.attr_types_a = [attr_types]
+        else:
+            self.name_a = name
+            self.attr_types_a = attr_types
+
+    @property
+    def name(self):
+        return ', '.join(self.name_a)
+
+    def __getattr__(self, item):
+        for attr_types in self.attr_types_a:
+            for at in attr_types:
+                if item == at.name:
+                    return at
+            raise AttributeError
+
+    def __add__(self, other):
+        return AttribsDef(self.name_a + other.name_a,
+                          self.attr_types_a + other.attr_types_a)
+
+    def attribs(self, **vals):
+        return Attribs(self, **vals)
+
+    def getNames(self):
+        return [at.name
+                for attr_types in self.attr_types_a
+                for at in attr_types]
+
+
 class Attribs:
-    def __init__(self, credType, **vals):
+    def __init__(self, credType: AttribsDef, **vals):
         self.credType = credType
         self.vals = vals
 
@@ -59,39 +92,6 @@ class Attribs:
 
     def items(self):
         return self.vals.items()
-
-
-class AttribsDef:
-    def __init__(self, name, attr_types):
-        if isinstance(name, str):
-            self.name_a = [name]
-            self.attr_types_a = [attr_types]
-        else:
-            self.name_a = name
-            self.attr_types_a = attr_types
-
-    @property
-    def name(self):
-        return ', '.join(self.name_a)
-
-    def __getattr__(self, item):
-        for attr_types in self.attr_types_a:
-            for at in attr_types:
-                if item == at.name:
-                    return at
-            raise AttributeError
-
-    def __add__(self, other):
-        return AttribsDef(self.name_a + other.name_a,
-                          self.attr_types_a + other.attr_types_a)
-
-    def attribs(self, **vals):
-        return Attribs(self, **vals)
-
-    def getNames(self):
-        return [at.name
-                for attr_types in self.attr_types_a
-                for at in attr_types]
 
 
 GVT = AttribsDef('gvt',

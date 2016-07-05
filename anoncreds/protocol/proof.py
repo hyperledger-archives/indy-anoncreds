@@ -98,8 +98,9 @@ class Proof:
         return types.Proof(c, evect, mvect, vvect, Aprime)
 
     def preparePredicateProof(self, credential: Dict[str, Credential],
-                              attrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
-                              nonce, predicate: Dict[str, Sequence[str]]) -> PredicateProof:
+                              attrs: Dict[str, Dict[str, T]],
+                              revealedAttrs: Sequence[str],
+                              nonce, predicate: Dict[str, Dict]) -> PredicateProof:
 
         TauList = []
         CList = []
@@ -201,8 +202,9 @@ class Proof:
         return self._vprime
 
 
-def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Sequence[str],
-                     credential: Dict[str, Credential], pk: Dict[str, IssuerPublicKey]):
+def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Dict,
+                     credential: Dict[str, Credential],
+                     pk: Dict[str, IssuerPublicKey]):
     Aprime = {}
     vprime = {}
     eprime = {}

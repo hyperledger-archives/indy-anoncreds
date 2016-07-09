@@ -4,7 +4,7 @@ from charm.core.math.integer import randomPrime, random, integer, randomBits, \
     isPrime
 
 from anoncreds.protocol.globals import lprime, lvprimeprime, lestart, leendrange
-from anoncreds.protocol.types import IssuerPublicKey
+from anoncreds.protocol.types import IssuerPublicKey, CredDefSecretKey
 from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString
 
 
@@ -81,7 +81,17 @@ class CredentialDefinition:
         """
         return self._pk
 
-    def generateCredential(self, u, attrs):
+    @property
+    def SK(self) -> CredDefSecretKey:
+        """
+        Generate key pair for the issuer
+
+        :return: Tuple of public-secret key for the issuer
+        """
+        return self.sk
+
+    @classmethod
+    def generateCredential(cls, u, attrs, pk, p_prime, q_prime):
         """
         Issue the credential for the defined attributes
 
@@ -99,10 +109,11 @@ class CredentialDefinition:
         estart = 2 ** lestart
         eend = (estart + 2 ** leendrange)
         e = get_prime_in_range(estart, eend)
-        A = self._sign(self._pk, attrs, vprimeprime, u, e)
+        A = cls._sign(pk, attrs, vprimeprime, u, e, p_prime, q_prime)
         return A, e, vprimeprime
 
-    def _sign(self, pk, attrs, v, u, e):
+    @classmethod
+    def _sign(cls, pk, attrs, v, u, e, p_prime, q_prime):
         N, R, S, Z = pk
         Rx = 1 % N
         # Get the product sequence for the (R[i] and attrs[i]) combination
@@ -111,7 +122,7 @@ class CredentialDefinition:
         if u != 0:
             u = u % N
             Rx *= u
-        nprime = self.p_prime * self.q_prime
+        nprime = p_prime * q_prime
         einverse = e % nprime
         Q = Z / (Rx * (S ** v)) % N
         A = Q ** (einverse ** -1) % N
@@ -131,7 +142,8 @@ class CredentialDefinition:
                 "N": pk.N,
                 "S": pk.S,
                 "Z": pk.Z,
-                "R": R  # TODO Master secret rand number, R[0] is still passed, remove that
+                "R": R  # TODO Master secret rand number, R[0] is still passed,
+                #  remove that
             }
         }
 

@@ -30,7 +30,9 @@ class Issuer:
         credDef = self.getCredDef(name, version)
         attributes = self.attributeRepo.getAttributes(proverId)
         encAttrs = attributes.encoded()
-        return credDef.generateCredential(U, next(iter(encAttrs.values())))
+        return CredentialDefinition.generateCredential(
+            U, next(iter(encAttrs.values())), credDef.PK, credDef.p_prime,
+            credDef.q_prime)
 
     def newCredDef(self, attrNames, name, version,
                    p_prime=None, q_prime=None, ip=None, port=None):

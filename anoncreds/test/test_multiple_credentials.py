@@ -1,5 +1,5 @@
 from anoncreds.test.helper import getPresentationToken
-from protocol.verifier import verify_proof
+from anoncreds.protocol.verifier import verify_proof
 
 
 def testMultipleCredentialSingleProof(credDefs,

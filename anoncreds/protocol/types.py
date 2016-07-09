@@ -110,6 +110,7 @@ T = TypeVar('T')
 Credential = namedtuple("Credential", ["A", "e", "v"])
 
 IssuerPublicKey = namedtuple("IssuerPublicKey", ["N", "R", "S", "Z"])
+CredDefSecretKey = namedtuple("CredDefSecretKey", ["p", "q"])
 
 Proof = namedtuple('Proof', ["c", "evect", "mvect", "vvect", "Aprime"])
 

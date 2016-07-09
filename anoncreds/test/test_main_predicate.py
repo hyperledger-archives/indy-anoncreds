@@ -1,7 +1,6 @@
 import pytest
 from anoncreds.protocol.types import GVT
 from anoncreds.test.helper import getProof, getPresentationToken
-from anoncreds.protocol.verifier import Verifier
 from anoncreds.protocol.proof import fourSquares
 
 

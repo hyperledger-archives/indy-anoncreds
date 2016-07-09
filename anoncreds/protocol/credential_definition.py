@@ -75,20 +75,37 @@ class CredentialDefinition:
     @property
     def PK(self) -> IssuerPublicKey:
         """
-        Generate key pair for the issuer
+        Generate public key of credential definition
 
-        :return: Tuple of public-secret key for the issuer
+        :return: Public key for the credential definition
         """
         return self._pk
 
     @property
     def SK(self) -> CredDefSecretKey:
         """
-        Generate key pair for the issuer
+        Generate secret key of credential definition
 
-        :return: Tuple of public-secret key for the issuer
+        :return: Secret key for the credential definition
         """
-        return self.sk
+        return CredDefSecretKey(**self.sk)
+
+    @property
+    def serializedSK(self) -> str:
+        return "{},{}".format(int(self.p), int(self.q))
+
+    @classmethod
+    def getDeserializedSK(cls, serializedSK) -> CredDefSecretKey:
+        p, q = serializedSK.split(",")
+        return CredDefSecretKey(integer(int(p)), integer(int(q)))
+
+    @classmethod
+    def getPPrime(cls, sk: CredDefSecretKey):
+        return (sk.p - 1) / 2
+
+    @classmethod
+    def getQPrime(cls, sk: CredDefSecretKey):
+        return (sk.q - 1) / 2
 
     @classmethod
     def generateCredential(cls, u, attrs, pk, p_prime, q_prime):

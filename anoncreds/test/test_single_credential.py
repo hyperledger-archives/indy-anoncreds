@@ -3,7 +3,7 @@ import pytest
 from anoncreds.protocol.types import GVT
 from anoncreds.test.helper import getPresentationToken
 from anoncreds.protocol.verifier import verify_proof
-from protocol import verifier
+from anoncreds.protocol import verifier
 
 
 def testSingleProver(credDef1, attrNames1, proverAndAttrs1, credDefPk,

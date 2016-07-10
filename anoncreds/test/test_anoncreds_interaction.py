@@ -3,7 +3,7 @@ from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
 from anoncreds.temp_primes import P_PRIME, Q_PRIME
 from anoncreds.protocol.verifier import Verifier
-from anoncreds.protocol.types import GVT
+from anoncreds.test.helper import GVT
 
 interactionId = 100
 issuerId = GVT.name

@@ -1,7 +1,6 @@
 import pytest
 
-from anoncreds.protocol.types import GVT
-from anoncreds.test.helper import getPresentationToken
+from anoncreds.test.helper import getPresentationToken, GVT
 from anoncreds.protocol.verifier import verify_proof
 from anoncreds.protocol import verifier
 

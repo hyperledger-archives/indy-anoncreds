@@ -1,6 +1,6 @@
 from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.prover import Proof
-from anoncreds.protocol.types import Credential
+from anoncreds.protocol.types import Credential, AttribsDef, AttribType
 
 
 def getPresentationToken(credDefs, proof, encodedAttrs):
@@ -22,3 +22,12 @@ def getProof(attrs, pki):
     proof = Proof(pki)
     proof.setAttrs(attrs)
     return proof, attrs
+
+
+GVT = AttribsDef('gvt',
+                 [AttribType('name', encode=True),
+                  AttribType('age', encode=False),
+                  AttribType('sex', encode=True)])
+XYZCorp = AttribsDef('xyz',
+                     [AttribType('status', encode=True)])
+NASEMP = GVT + XYZCorp

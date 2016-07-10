@@ -94,26 +94,19 @@ class Attribs:
         return self.vals.items()
 
 
-GVT = AttribsDef('gvt',
-                 [AttribType('name', encode=True),
-                  AttribType('age', encode=False),
-                  AttribType('sex', encode=True)])
-
-XYZCorp = AttribsDef('xyz',
-                     [AttribType('status', encode=True)])
-
-NASEMP = GVT + XYZCorp
-
 # Named tuples
 T = TypeVar('T')
 
 Credential = namedtuple("Credential", ["A", "e", "v"])
 
 IssuerPublicKey = namedtuple("IssuerPublicKey", ["N", "R", "S", "Z"])
+
 CredDefSecretKey = namedtuple("CredDefSecretKey", ["p", "q"])
 
 Proof = namedtuple('Proof', ["c", "evect", "mvect", "vvect", "Aprime"])
 
-SubProofPredicate = namedtuple('SubProofPredicate', ["alphavect", "rvect", "uvect"])
+SubProofPredicate = namedtuple('SubProofPredicate', ["alphavect", "rvect",
+                                                     "uvect"])
 
-PredicateProof = namedtuple('PredicateProof', ["subProofC", "subProofPredicate", "C", "CList"])
+PredicateProof = namedtuple('PredicateProof', ["subProofC", "subProofPredicate",
+                                               "C", "CList"])

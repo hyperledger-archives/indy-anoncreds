@@ -1,6 +1,7 @@
 import pytest
 
-from anoncreds.protocol.attribute_repo import AttributeRepo
+from anoncreds.protocol.attribute_repo import AttributeRepo, \
+    InMemoryAttributeRepo
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.types import GVT, XYZCorp
@@ -11,7 +12,7 @@ from anoncreds.test.helper import getProof
 
 @pytest.fixture(scope="module")
 def attrRepo1():
-    attrRepo = AttributeRepo()
+    attrRepo = InMemoryAttributeRepo()
     attrRepo.addAttributes('prover1', GVT.attribs.vals)
     return attrRepo
 

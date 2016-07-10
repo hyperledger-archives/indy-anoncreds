@@ -1,4 +1,4 @@
-from anoncreds.protocol.attribute_repo import AttributeRepo
+from anoncreds.protocol.attribute_repo import InMemoryAttributeRepo
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
 from anoncreds.temp_primes import P_PRIME, Q_PRIME
@@ -66,7 +66,7 @@ class TestVerifier(Verifier):
 
 
 def testInteraction():
-    attrRepo = AttributeRepo()
+    attrRepo = InMemoryAttributeRepo()
     attrs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
     attrNames = tuple(attrs.keys())
     revealedAttrs = ["age", ]

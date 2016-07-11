@@ -1,4 +1,5 @@
 from collections import namedtuple
+from enum import Enum
 from hashlib import sha256
 from typing import TypeVar
 
@@ -110,3 +111,9 @@ SubProofPredicate = namedtuple('SubProofPredicate', ["alphavect", "rvect",
 
 PredicateProof = namedtuple('PredicateProof', ["subProofC", "subProofPredicate",
                                                "C", "CList"])
+
+
+class SerFmt(Enum):
+    charmInteger = 1
+    py3Int = 2
+    base58 = 3

@@ -1,10 +1,13 @@
+import base58
+
 from copy import copy
 
 from charm.core.math.integer import randomPrime, random, integer, randomBits, \
     isPrime
 
+from functools import singledispatch
 from anoncreds.protocol.globals import lprime, lvprimeprime, lestart, leendrange
-from anoncreds.protocol.types import IssuerPublicKey, CredDefSecretKey
+from anoncreds.protocol.types import IssuerPublicKey, CredDefSecretKey, SerFmt
 from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString
 
 
@@ -145,10 +148,10 @@ class CredentialDefinition:
         A = Q ** (einverse ** -1) % N
         return A
 
-    def get(self):
+    def get(self, serFmt: SerFmt=SerFmt.charmInteger):
         pk = copy(self.PK)
         R = copy(pk.R)
-        return {
+        data = {
             "name": self.name,
             "version": self.version,
             "type": "CL",
@@ -163,15 +166,25 @@ class CredentialDefinition:
                 #  remove that
             }
         }
+        serFuncs = {
+            serFmt.py3Int: int,
+            serFmt.charmInteger: integer,
+            serFmt.base58: base58encode,
+        }
+        return serialize(data, serFuncs[serFmt])
 
-    def getSerializable(self):
-        data = self.get()
-        # converting integer to Python 3 int
-        for k, v in data['keys'].items():
-            if isinstance(v, integer):
-                # This works with Python 3 only.
-                # for Python 2, charm's serialization api must be used.
-                data['keys'][k] = int(v)
-            if k == 'R':
-                data['keys'][k] = {key: int(val) for key, val in v.items()}
-        return data
+
+def serialize(data, serfunc):
+    for k, v in data['keys'].items():
+        if isinstance(v, integer):
+            # int casting works with Python 3 only.
+            # for Python 2, charm's serialization api must be used.
+            data['keys'][k] = serfunc(v)
+        if k == 'R':
+            data['keys'][k] = {key: serfunc(val) for key, val in v.items()}
+    return data
+
+
+def base58encode(i):
+    return base58.b58encode(str(i).encode())
+

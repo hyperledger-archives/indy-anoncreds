@@ -4,6 +4,7 @@ from copy import copy
 
 from charm.core.math.integer import randomPrime, random, integer, randomBits, \
     isPrime
+from charm.toolbox.conversion import Conversion
 
 from functools import singledispatch
 from anoncreds.protocol.globals import lprime, lvprimeprime, lestart, leendrange
@@ -188,3 +189,11 @@ def serialize(data, serfunc):
 def base58encode(i):
     return base58.b58encode(str(i).encode())
 
+
+def base58decode(i):
+    return base58.b58decode(str(i)).decode()
+
+
+def base58decodedInt(i):
+    # TODO: DO exception handling
+    return int(base58.b58decode(str(i)).decode())

@@ -58,7 +58,8 @@ class Prover:
         }
         proof.setParams(encodedAttrs, presentationToken,
                         revealedAttrs, nonce)
-        prf = proof.prepareProof(credential=presentationToken,
+        prf = Proof.prepareProof(proof.pk_i, proof.masterSecret,
+                                 credential=presentationToken,
                                  attrs=encodedAttrs,
                                  revealedAttrs=revealedAttrs, nonce=nonce)
         proof.prf = prf  # JN - Why is this required?

@@ -15,7 +15,7 @@ from anoncreds.protocol import types
 
 
 class Proof:
-    def __init__(self, pk_i: Dict[str, IssuerPublicKey]):
+    def __init__(self, pk_i: Dict[str, IssuerPublicKey], masterSecret=None):
         """
         Create a proof instance
 
@@ -28,7 +28,7 @@ class Proof:
         self.attrs = {}
 
         # Generate the master secret
-        self._ms = integer(randomBits(lms))
+        self._ms = masterSecret or integer(randomBits(lms))
 
         # Set the public key of the issuers
         self.pk_i = pk_i
@@ -42,6 +42,10 @@ class Proof:
         for key, val in self.pk_i.items():
             N, R, S, Z = val
             self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % N
+
+    @property
+    def masterSecret(self):
+        return self._ms
 
     def setAttrs(self, attrs):
         self.attrs = attrs
@@ -61,7 +65,8 @@ class Proof:
         self.setRevealedAttrs(revealedAttrs)
         self.setNonce(nonce)
 
-    def prepareProof(self, credential: Dict[str, Credential],
+    @staticmethod
+    def prepareProof(pk_i, masterSecret, credential: Dict[str, Credential],
                      attrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
                      nonce) -> types.Proof:
         """
@@ -78,7 +83,7 @@ class Proof:
         vvect = {}
 
         flatAttrs, unrevealedAttrs = getUnrevealedAttrs(attrs, revealedAttrs)
-        tildeValues, primeValues, T = findSecretValues(attrs, unrevealedAttrs, credential, self.pk_i)
+        tildeValues, primeValues, T = findSecretValues(attrs, unrevealedAttrs, credential, pk_i)
         mtilde, etilde, vtilde = tildeValues
         Aprime, vprime, eprime = primeValues
 
@@ -93,7 +98,7 @@ class Proof:
         mvect = {}
         for k, value in unrevealedAttrs.items():
             mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
-        mvect["0"] = mtilde["0"] + (c * self._ms)
+        mvect["0"] = mtilde["0"] + (c * masterSecret)
 
         return types.Proof(c, evect, mvect, vvect, Aprime)
 

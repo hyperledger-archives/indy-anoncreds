@@ -1,3 +1,4 @@
+from anoncreds.protocol.proof import Proof
 from anoncreds.test.helper import getPresentationToken
 from anoncreds.protocol.verifier import verify_proof
 
@@ -17,7 +18,8 @@ def testMultipleCredentialSingleProof(credDefs,
     nonce = verifierMulti1.generateNonce(interactionId=1)
 
     revealedAttrs = ['name']
-    proof = prover.prepareProof(credential=presentationToken,
+    proof = Proof.prepareProof(prover.pk_i, prover.masterSecret,
+                               credential=presentationToken,
                                 attrs=attrs.encoded(),
                                 revealedAttrs=revealedAttrs,
                                 nonce=nonce)
@@ -47,7 +49,8 @@ def testMultipleCredentialMultipleVerifier(credDefs,
     nonce2 = verifierMulti2.generateNonce(interactionId=2)
 
     revealedAttrs = ['name']
-    proof1 = prover.prepareProof(credential=presentationToken,
+    proof1 = Proof.prepareProof(prover.pk_i, prover.masterSecret,
+                                credential=presentationToken,
                                  attrs=attrs.encoded(),
                                  revealedAttrs=revealedAttrs,
                                  nonce=nonce1)
@@ -58,7 +61,8 @@ def testMultipleCredentialMultipleVerifier(credDefs,
                                   attrs=attrs.encoded(),
                                   revealedAttrs=revealedAttrs)
 
-    proof2 = prover.prepareProof(credential=presentationToken,
+    proof2 = Proof.prepareProof(prover.pk_i, prover.masterSecret,
+                                credential=presentationToken,
                                  attrs=attrs.encoded(),
                                  revealedAttrs=revealedAttrs,
                                  nonce=nonce2)

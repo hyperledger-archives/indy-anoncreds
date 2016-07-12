@@ -1,5 +1,6 @@
 import pytest
 
+from anoncreds.protocol.proof import Proof
 from anoncreds.test.helper import getPresentationToken, GVT
 from anoncreds.protocol.verifier import verify_proof
 from anoncreds.protocol import verifier
@@ -14,7 +15,8 @@ def testSingleProver(credDef1, attrNames1, proverAndAttrs1, credDefPk,
     nonce = verifier1.generateNonce(interactionId=1)
     # Prepare proof
     revealedAttrs = ['name']
-    prf = proof.prepareProof(credential=presentationToken,
+    prf = Proof.prepareProof(proof.pk_i, proof.masterSecret,
+                             credential=presentationToken,
                              attrs=attrs.encoded(),
                              revealedAttrs=revealedAttrs,
                              nonce=nonce)
@@ -41,11 +43,13 @@ def testMultipleProvers(credDef1, attrNames1, proverAndAttrs1, proverAndAttrs2,
     nonce2 = verifier1.generateNonce(interactionId=3)
     # Prepare proofs
     revealedAttrs = ['name']
-    proof1 = prover1.prepareProof(credential=presentationToken1,
+    proof1 = Proof.prepareProof(prover1.pk_i, prover1.masterSecret,
+                                credential=presentationToken1,
                                   attrs=attrs1.encoded(),
                                   revealedAttrs=revealedAttrs,
                                   nonce=nonce1)
-    proof2 = prover2.prepareProof(credential=presentationToken2,
+    proof2 = Proof.prepareProof(prover2.pk_i, prover2.masterSecret,
+                                credential=presentationToken2,
                                   attrs=attrs2.encoded(),
                                   revealedAttrs=revealedAttrs,
                                   nonce=nonce2)
@@ -68,7 +72,8 @@ def testNonceShouldBeSame(credDef1, credDefPk, proverAndAttrs1, verifier1,
     nonce2 = verifierMulti2.generateNonce(interactionId=5)
     # Prepare proof
     revealedAttrs = ['name']
-    prf = proof.prepareProof(credential=presentationToken,
+    prf = Proof.prepareProof(proof.pk_i, proof.masterSecret,
+                             credential=presentationToken,
                              attrs=attrs.encoded(),
                              revealedAttrs=revealedAttrs,
                              nonce=nonce1)

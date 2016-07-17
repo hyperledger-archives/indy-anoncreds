@@ -58,10 +58,10 @@ def testNegativePredicateDeltaShouldFail(credDefs, verifierMulti1,
         'age': 30}}  # This will result in a negative value of delta i.e. -5
     with pytest.raises(ValueError):
         prf = proof.preparePredicateProof(credential=presentationToken,
-                                             attrs=attrs.encoded(),
-                                             revealedAttrs=revealedAttrs,
-                                             nonce=nonce,
-                                             predicate=predicate)
+                                          attrs=attrs.encoded(),
+                                          revealedAttrs=revealedAttrs,
+                                          nonce=nonce,
+                                          predicate=predicate)
 
 
 def testQuadEquationLagranges():

@@ -57,8 +57,6 @@ class Verifier:
         R = {}
         for key, val in keys['R'].items():
             R[str(key)] = val
-        # R["0"] is a random number needed corresponding to master secret
-        # R["0"] = keys['master_secret_rand']
         pk_i = IssuerPublicKey(keys['N'], R, keys['S'], keys['Z'])
         return pk_i
 
@@ -112,28 +110,28 @@ class Verifier:
         Tau.extend(get_values_of_dicts(Tvect))
 
         for key, val in predicate.items():
-            N, R, S, Z = pk_i[key]
+            p = pk_i[key]
             Tval = C[key]["Tval"]
 
             # Iterate over the predicates for a given credential(issuer)
             for k, value in val.items():
 
-                Tdeltavect1 = (Tval["delta"] * (Z ** value))
-                Tdeltavect2 = (Z ** mvect[k]) * (S ** rvect["delta"])
-                Tdeltavect = (Tdeltavect1 ** (-1 * c)) * Tdeltavect2 % N
+                Tdeltavect1 = (Tval["delta"] * (p.Z ** value))
+                Tdeltavect2 = (p.Z ** mvect[k]) * (p.S ** rvect["delta"])
+                Tdeltavect = (Tdeltavect1 ** (-1 * c)) * Tdeltavect2 % p.N
 
-                Tuproduct = 1 % N
+                Tuproduct = 1 % p.N
                 for i in range(0, iterations):
                     Tvalvect1 = (Tval[str(i)] ** (-1 * c))
-                    Tvalvect2 = (Z ** uvect[str(i)])
-                    Tvalvect3 = (S ** rvect[str(i)])
-                    Tau.append(Tvalvect1 * Tvalvect2 * Tvalvect3 % N)
+                    Tvalvect2 = (p.Z ** uvect[str(i)])
+                    Tvalvect3 = (p.S ** rvect[str(i)])
+                    Tau.append(Tvalvect1 * Tvalvect2 * Tvalvect3 % p.N)
                     Tuproduct *= Tval[str(i)] ** uvect[str(i)]
 
                 Tau.append(Tdeltavect)
 
                 Qvect1 = (Tval["delta"] ** (-1 * c))
-                Qvect = Qvect1 * Tuproduct * (S ** alphavect) % N
+                Qvect = Qvect1 * Tuproduct * (p.S ** alphavect) % p.N
                 Tau.append(Qvect)
 
         cvect = integer(get_hash(nonce, *reduce(lambda x, y: x+y, [Tau, CList])))
@@ -152,26 +150,25 @@ def getProofParams(proof, pkIssuer: Dict[str, IssuerPublicKey],
     c, evect, mvect, vvect, Aprime = proof
 
     for key, val in pkIssuer.items():
-        N, R, S, Z = pkIssuer[key]
+        p = pkIssuer[key].inFieldN()
         includedAttrs = attrs[key]
 
-        x = 1 % N
-        Rur = x
+        Rur = 1 % p.N
         for k, v in unrevealedAttrs.items():
             if k in includedAttrs:
-                Rur *= R[str(k)] ** mvect[str(k)]
-        Rur *= R["0"] ** mvect["0"]
+                Rur *= p.R[str(k)] ** mvect[str(k)]
+        Rur *= p.R["0"] ** mvect["0"]
 
-        Rr = x
+        Rr = 1 % p.N
         for k, v in Ar.items():
             if k in includedAttrs:
-                Rr *= R[str(k)] ** attrs[key][str(k)]
+                Rr *= p.R[str(k)] ** attrs[key][str(k)]
 
         denom = (Rr * (Aprime[key] ** (2 ** lestart)))
-        Tvect1 = (Z / denom) ** (-1 * c)
+        Tvect1 = (p.Z / denom) ** (-1 * c)
         Tvect2 = (Aprime[key] ** evect[key])
-        Tvect3 = (S ** vvect[key])
-        Tvect[key] = (Tvect1 * Tvect2 * Rur * Tvect3) % N
+        Tvect3 = (p.S ** vvect[key])
+        Tvect[key] = (Tvect1 * Tvect2 * Rur * Tvect3) % p.N
 
     return Aprime, c, Tvect
 

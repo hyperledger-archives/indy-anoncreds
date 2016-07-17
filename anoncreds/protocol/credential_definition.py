@@ -135,18 +135,17 @@ class CredentialDefinition:
 
     @classmethod
     def _sign(cls, pk, attrs, v, u, e, p_prime, q_prime):
-        N, R, S, Z = pk
-        Rx = 1 % N
+        Rx = 1 % pk.N
         # Get the product sequence for the (R[i] and attrs[i]) combination
         for k, val in attrs.items():
-            Rx = Rx * (R[str(k)] ** val)
+            Rx = Rx * (pk.R[str(k)] ** val)
         if u != 0:
-            u = u % N
+            u = u % pk.N
             Rx *= u
         nprime = p_prime * q_prime
         einverse = e % nprime
-        Q = Z / (Rx * (S ** v)) % N
-        A = Q ** (einverse ** -1) % N
+        Q = pk.Z / (Rx * (pk.S ** v)) % pk.N
+        A = Q ** (einverse ** -1) % pk.N
         return A
 
     def get(self, serFmt: SerFmt=SerFmt.charmInteger):

@@ -33,6 +33,9 @@ class Proof:
         # Set the public key of the issuers
         self.pk_i = pk_i
 
+        for key, x in self.pk_i.items():
+            self.pk_i[key] = x.inFieldN()
+
         self._vprime = {}
         for key, val in self.pk_i.items():
             self._vprime[key] = randomBits(lvprime)
@@ -40,7 +43,10 @@ class Proof:
         # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
         self._U = {}
         for key, val in self.pk_i.items():
-            N, R, S, Z = val
+            N = val.N
+            R = val.R
+            S = val.S
+            Z = val.Z
             self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % N
 
     @property
@@ -132,7 +138,7 @@ class Proof:
             updateObject(C, key, "Aprime", Aprime[key])
 
         for key, val in predicate.items():
-            N, R, S, Z = self.pk_i[key]
+            x = self.pk_i[key]
 
             # Iterate over the predicates for a given credential(issuer)
             for k, value in val.items():
@@ -149,25 +155,25 @@ class Proof:
 
                 Tval = {}
                 for i in range(0, iterations):
-                    Tval[str(i)] = (Z ** u[i]) * (S ** r[str(i)]) % N
+                    Tval[str(i)] = (x.Z ** u[i]) * (x.S ** r[str(i)]) % x.N
                     utilde[str(i)] = integer(randomBits(lutilde))
                     rtilde[str(i)] = integer(randomBits(lrtilde))
-                Tval["delta"] = (Z ** delta) * (S ** r["delta"]) % N
+                Tval["delta"] = (x.Z ** delta) * (x.S ** r["delta"]) % x.N
                 rtilde["delta"] = integer(randomBits(lrtilde))
 
                 CList.extend(get_values_of_dicts(Tval))
                 updateObject(C, key, "Tval", Tval)
 
                 for i in range(0, iterations):
-                    TauList.append((Z ** utilde[str(i)]) * (S ** rtilde[str(i)]) % N)
-                TauList.append((Z ** mtilde[k]) * (S ** rtilde["delta"]) % N)
+                    TauList.append((x.Z ** utilde[str(i)]) * (x.S ** rtilde[str(i)]) % x.N)
+                TauList.append((x.Z ** mtilde[k]) * (x.S ** rtilde["delta"]) % x.N)
 
                 alphatilde = integer(randomBits(lalphatilde))
 
-                Q = 1 % N
+                Q = 1 % x.N
                 for i in range(0, iterations):
                     Q *= Tval[str(i)] ** utilde[str(i)]
-                Q *= S ** alphatilde % N
+                Q *= x.S ** alphatilde % x.N
                 TauList.append(Q)
 
         c = integer(get_hash(nonce, *reduce(lambda x, y: x+y, [TauList, CList])))
@@ -227,22 +233,22 @@ def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Dict,
 
         A, e, v = val
         includedAttrs = attrs[key]
-        N, R, S, Z = pk[key]
+        x = pk[key]
 
-        Aprime[key] = A * (S ** Ra) % N
+        Aprime[key] = A * (x.S ** Ra) % x.N
         vprime[key] = (v - e * Ra)
         eprime[key] = e - (2 ** lestart)
 
         etilde[key] = integer(randomBits(letilde))
         vtilde[key] = integer(randomBits(lvtilde))
 
-        Rur = 1 % N
+        Rur = 1 % x.N
         for k, value in unrevealedAttrs.items():
             if k in includedAttrs:
-                Rur = Rur * (R[k] ** mtilde[k])
-        Rur *= R["0"] ** mtilde["0"]
+                Rur = Rur * (x.R[k] ** mtilde[k])
+        Rur *= x.R["0"] ** mtilde["0"]
 
-        T[key] = ((Aprime[key] ** etilde[key]) * Rur * (S ** vtilde[key])) % N
+        T[key] = ((Aprime[key] ** etilde[key]) * Rur * (x.S ** vtilde[key])) % x.N
 
     return (mtilde, etilde, vtilde), (Aprime, vprime, eprime), T
 

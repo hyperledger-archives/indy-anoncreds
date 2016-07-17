@@ -3,6 +3,7 @@ from enum import Enum
 from hashlib import sha256
 from typing import TypeVar
 
+from charm.core.math.integer import integer
 from charm.toolbox.conversion import Conversion
 
 
@@ -100,7 +101,35 @@ T = TypeVar('T')
 
 Credential = namedtuple("Credential", ["A", "e", "v"])
 
-IssuerPublicKey = namedtuple("IssuerPublicKey", ["N", "R", "S", "Z"])
+
+class IssuerPublicKey:
+    def __init__(self, N, R, S, Z):
+        self.N = N
+        self.R = R
+        self.S = S
+        self.Z = Z
+
+    @staticmethod
+    def deser(v, n):
+        if isinstance(v, integer):
+            return v % n
+        elif isinstance(v, int):
+            return integer(v) % n
+        else:
+            raise RuntimeError("unknown type: {}".format(type(v)))
+
+    def inFieldN(self):
+        """
+        Returns new Public Key with same values, in field N
+        :return:
+        """
+        r = {k: self.deser(v, self.N) for k, v in self.R.items()}
+        return IssuerPublicKey(self.N, r,
+                               self.deser(self.S, self.N),
+                               self.deser(self.Z, self.N))
+
+
+# IssuerPublicKey = namedtuple("IssuerPublicKey", ["N", "R", "S", "Z"])
 
 CredDefSecretKey = namedtuple("CredDefSecretKey", ["p", "q"])
 

@@ -13,9 +13,11 @@ class AttribType:
         self.encode = encode
 
 
+# FIXME Why the plural(Attribs) in class name?
 class AttribsDef:
     def __init__(self, name, attr_types):
         if isinstance(name, str):
+            # FIXME CamelCase or snake_case. Stick to one of them.
             self.name_a = [name]
             self.attr_types_a = [attr_types]
         else:
@@ -40,6 +42,7 @@ class AttribsDef:
     def attribs(self, **vals):
         return Attribs(self, **vals)
 
+    # FIXME inconsistent naming. Call it names
     def getNames(self):
         return [at.name
                 for attr_types in self.attr_types_a
@@ -86,6 +89,7 @@ class Attribs:
     # def __len__(self):
     #     return self.vals.__len__()
 
+    # FIXME Cleanup this mess by inheriting dict and using proper dunder methods
     def keys(self):
         return self.vals.keys()
 
@@ -102,6 +106,7 @@ T = TypeVar('T')
 Credential = namedtuple("Credential", ["A", "e", "v"])
 
 
+# FIXME Rename this class. This is the PK of a credential definition, not Issuer
 class IssuerPublicKey:
     def __init__(self, N, R, S, Z):
         self.N = N
@@ -109,6 +114,8 @@ class IssuerPublicKey:
         self.S = S
         self.Z = Z
 
+    # FIXME Write the whole word, we save nothing with a few characters.
+    # Short versions breed inconsistency and cause confusion.
     @staticmethod
     def deser(v, n):
         if isinstance(v, integer):
@@ -119,6 +126,8 @@ class IssuerPublicKey:
             raise RuntimeError("unknown type: {}".format(type(v)))
 
     def inFieldN(self):
+        # FIXME There must be a new line after the description in the docstring.
+        # FIXME Fix it in all other files as well.
         """
         Returns new Public Key with same values, in field N
         :return:
@@ -128,6 +137,7 @@ class IssuerPublicKey:
                                self.deser(self.S, self.N),
                                self.deser(self.Z, self.N))
 
+# FIXME Find all such stray namedtuples and move them to one module.
 
 # IssuerPublicKey = namedtuple("IssuerPublicKey", ["N", "R", "S", "Z"])
 

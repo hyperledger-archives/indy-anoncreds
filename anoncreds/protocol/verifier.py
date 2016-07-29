@@ -19,13 +19,11 @@ def verify_proof(pk_i, proof, nonce, attrs, revealedAttrs):
     :return: A boolean with the verification status for the proof
     """
     Aprime, c, Tvect = getProofParams(proof, pk_i, attrs, revealedAttrs)
-
     # Calculate the `cvect` value based on proof.
     # This value is mathematically proven to be equal to `c`
     # if proof is created correctly from credentials. Refer 2.8 in document
     cvect = integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
                                                   {"nonce": nonce})))
-
     return c == cvect
 
 

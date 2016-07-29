@@ -24,6 +24,7 @@ class Prover:
         # self.credentials[key] = cred
         return cred
 
+    # FIXME CredDef is unnecessary in name as it's evident from only parameter.
     @staticmethod
     def getPkFromCredDef(credDef: CredentialDefinition):
         credDef = credDef.get()
@@ -65,6 +66,7 @@ class Prover:
         proof.prf = prf  # JN - Why is this required?
         return proof
 
+    # FIXME Use abstract base class and get rid of these NotImplementedErrors
     def fetchNonce(self, verifierId):
         raise NotImplementedError
 

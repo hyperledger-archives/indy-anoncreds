@@ -4,14 +4,12 @@ from copy import copy
 
 from charm.core.math.integer import randomPrime, random, integer, randomBits, \
     isPrime
-from charm.toolbox.conversion import Conversion
-
-from functools import singledispatch
 from anoncreds.protocol.globals import lprime, lvprimeprime, lestart, leendrange
 from anoncreds.protocol.types import IssuerPublicKey, CredDefSecretKey, SerFmt
 from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString
 
 
+# FIXME Convert all classmethods in this class to module-level functions.
 class CredentialDefinition:
     def __init__(self,
                  attrNames,
@@ -31,7 +29,8 @@ class CredentialDefinition:
         self.attrNames = attrNames
 
         if not attrNames and isinstance(attrNames, list):
-            raise ValueError("List of attribute names is required to setup credential definition")
+            raise ValueError("List of attribute names is required to "
+                             "setup credential definition")
 
         def genPrime():
             # Generate 2 large primes `p_prime` and `q_prime` and use them

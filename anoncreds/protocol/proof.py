@@ -14,6 +14,7 @@ from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
 from anoncreds.protocol import types
 
 
+# FIXME This class is not a proof in itself. It's a factory for proofs.
 class Proof:
     def __init__(self, pk_i: Dict[str, IssuerPublicKey], masterSecret=None):
         """
@@ -108,6 +109,7 @@ class Proof:
 
         return types.Proof(c, evect, mvect, vvect, Aprime)
 
+    # FIXME This function is 100 lines long. Break it down.
     def preparePredicateProof(self, credential: Dict[str, Credential],
                               attrs: Dict[str, Dict[str, T]],
                               revealedAttrs: Sequence[str],
@@ -216,6 +218,9 @@ class Proof:
 def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Dict,
                      credential: Dict[str, Credential],
                      pk: Dict[str, IssuerPublicKey]):
+
+    # FIXME Write in one line - a, b, c = {}, {}, {}
+    # FIXME Use unicode characters, they'll fit in one line.
     Aprime = {}
     vprime = {}
     eprime = {}
@@ -228,6 +233,7 @@ def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Dict,
         mtilde[key] = integer(randomBits(lmvect))
     mtilde["0"] = integer(randomBits(lmvect))
 
+    # FIXME Breakdown into several functions.
     for key, val in credential.items():
         Ra = integer(randomBits(lvprime))
 
@@ -250,9 +256,11 @@ def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Dict,
 
         T[key] = ((Aprime[key] ** etilde[key]) * Rur * (x.S ** vtilde[key])) % x.N
 
+    # FIXME Returning too many values. Use an object instead.
     return (mtilde, etilde, vtilde), (Aprime, vprime, eprime), T
 
 
+# FIXME inconsistent naming. `find` can be removed from name.
 def findLargestSquareLessThan(x: int):
     sqrtx = int(floor(sqrt(x)))
     return sqrtx
@@ -269,12 +277,11 @@ def fourSquares(delta: int):
         raise Exception("Cannot get the four squares for delta {0}".format(delta))
 
 
+# FIXME Misleading name "object", when it accepts only a dictionary.
 def updateObject(obj: Dict[str, Dict[str, T]], parentKey: str,
                  key: str, val: any):
     parentVal = obj.get(parentKey, {})
     parentVal[key] = val
     obj[parentKey] = parentVal
-
+    # FIXME Unnecessary return statement.
     return obj
-
-

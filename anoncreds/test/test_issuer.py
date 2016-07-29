@@ -15,9 +15,3 @@ def testIssuerShouldBePassedAttributesList():
     with pytest.raises(ValueError):
         credDef = CredentialDefinition(list())
         issuer.addCredDef(credDef)
-
-
-
-
-
-

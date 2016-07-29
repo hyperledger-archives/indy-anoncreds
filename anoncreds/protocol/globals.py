@@ -1,3 +1,7 @@
+# FIXME According to PEP-8, constants should be written in all capital letters
+# and separated by underscores.
+# FIXME Python3 supports unicode characters. We needn't be ASCII-only in naming
+# the variables.
 lprime = 1024
 lvprimeprime = 2724
 le = 717

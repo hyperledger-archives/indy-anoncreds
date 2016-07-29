@@ -14,6 +14,7 @@ def randomQR(n):
 def encodeAttrs(attrs):
     """
     This function will encode all the attributes to 256 bit integers
+
     :param attrs: The attributes to pass in credentials
     :return:
     """
@@ -24,6 +25,7 @@ def encodeAttrs(attrs):
 def get_hash(*args):
     """
     Enumerate over the input tuple and generate a hash using the tuple values
+
     :param args:
     :return:
     """
@@ -67,6 +69,7 @@ def splitRevealedAttributes(attrs, revealedAttrs):
     return Ar, Aur
 
 
+# FIXME This function is copy-pasted from plenum
 def randomString(size: int = 20,
                  chars: str = string.ascii_letters + string.digits) -> str:
     """
@@ -82,6 +85,7 @@ def randomString(size: int = 20,
     return ''.join(sample(chars, size))
 
 
+# FIXME Function has too many unnecessary newlines.
 def getUnrevealedAttrs(attrs, revealedAttrsList):
     flatAttrs = flattenDict(attrs)
 

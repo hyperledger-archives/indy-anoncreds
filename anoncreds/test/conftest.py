@@ -9,8 +9,10 @@ from anoncreds.temp_primes import P_PRIME, Q_PRIME, P_PRIME2, Q_PRIME2
 from anoncreds.test.helper import getProof, GVT, XYZCorp
 
 
+# FIXME All fixtures here deserve better names. I wrote my suggestions inside the methods.
 @pytest.fixture(scope="module")
 def attrRepo1():
+    # FIXME gvtAttrRepo
     attrRepo = InMemoryAttributeRepo()
     attrRepo.addAttributes('prover1', GVT.attribs())
     return attrRepo
@@ -18,11 +20,13 @@ def attrRepo1():
 
 @pytest.fixture(scope="module")
 def issuer1(attrRepo1):
+    # FIXME gvt
     return Issuer(GVT.name, attrRepo1)
 
 
 @pytest.fixture(scope="module")
 def credDefsPk(credDefs):
+    # FIXME 
     pk_i = {}
     for k, v in credDefs.items():
         pk_i[k] = v.PK
@@ -31,11 +35,13 @@ def credDefsPk(credDefs):
 
 @pytest.fixture(scope="module")
 def attrNames1():
+    # FIXME gvtAttrNames
     return GVT.getNames()
 
 
 @pytest.fixture(scope="module")
 def attrNames2():
+    # FIXME xyzAttrNames
     return XYZCorp.getNames()
 
 
@@ -51,6 +57,7 @@ def primes2():
 
 @pytest.fixture(scope="module")
 def attrsList1():
+    # FIXME gvtAttrList or attrListGVT
     return GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
 
 
@@ -83,6 +90,7 @@ def credDefs(credDef1, credDef2):
 @pytest.fixture(scope="module")
 def proverAndAttrs1(credDefPk):
     attribs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
+    # FIXME Replace the following 2 lines by `return getProof(attribs, credDefsPk)`
     proof, attrs = getProof(attribs, credDefPk)
     return proof, attrs
 
@@ -90,6 +98,7 @@ def proverAndAttrs1(credDefPk):
 @pytest.fixture(scope="module")
 def proverAndAttrs2(credDefPk):
     attribs = GVT.attribs(name='Jason Law', age=42, sex='male')
+    # FIXME Replace the following 2 lines by `return getProof(attribs, credDefsPk)`
     proof, attrs = getProof(attribs, credDefPk)
     return proof, attrs
 
@@ -97,6 +106,7 @@ def proverAndAttrs2(credDefPk):
 @pytest.fixture(scope="module")
 def proverAndAttrsForMultiple1(credDefsPk):
     attribs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
+    # FIXME Replace the following 2 lines by `return getProof(attribs, credDefsPk)`
     proof, attrs = getProof(attribs, credDefsPk)
     return proof, attrs
 
@@ -104,6 +114,7 @@ def proverAndAttrsForMultiple1(credDefsPk):
 @pytest.fixture(scope="module")
 def proverAndAttrsForMultiple2(credDefsPk):
     attribs = XYZCorp.attribs(status='ACTIVE')
+    # FIXME Replace the following 2 lines by `return getProof(attribs, credDefsPk)`
     proof, attrs = getProof(attribs, credDefsPk)
     return proof, attrs
 
@@ -111,6 +122,7 @@ def proverAndAttrsForMultiple2(credDefsPk):
 @pytest.fixture(scope="module")
 def proverAndAttrsMapForMultipleIssuers(credDefsPk, attrsList1, attrsList2):
     attributeList = attrsList1 + attrsList2
+    # FIXME Replace the following 2 lines by `return getProof(attributeList, credDefsPk)`
     proof, attrs = getProof(attributeList, credDefsPk)
     return proof, attrs
 

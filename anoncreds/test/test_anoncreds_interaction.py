@@ -15,6 +15,7 @@ class TestIssuer(Issuer):
     pass
 
 
+# FIXME Use Dependency Injection. Get rid of these test classes.
 class TestProver(Prover):
     def __init__(self, id):
         super().__init__(id)
@@ -65,6 +66,7 @@ class TestVerifier(Verifier):
         raise NotImplementedError
 
 
+# FIXME Interatction incomplete. Verifier must verify proof.
 def testInteraction():
     attrRepo = InMemoryAttributeRepo()
     attrs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')

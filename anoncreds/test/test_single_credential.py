@@ -21,6 +21,7 @@ def testSingleProver(credDef1, attrNames1, proverAndAttrs1, credDefPk,
                              revealedAttrs=revealedAttrs,
                              nonce=nonce)
     # Verify the proof
+    # FIXME Unnecessary variable. Assert can be written here right away.
     verify_status = verify_proof(proof=prf,
                                  nonce=nonce,
                                  pk_i=credDefPk,
@@ -29,6 +30,7 @@ def testSingleProver(credDef1, attrNames1, proverAndAttrs1, credDefPk,
     assert verify_status
 
 
+# FIXME Code duplication. testMultipleProvers is essentially two times testSingleProver.
 def testMultipleProvers(credDef1, attrNames1, proverAndAttrs1, proverAndAttrs2,
                         credDefPk, verifier1):
     prover1, attrs1 = proverAndAttrs1
@@ -48,11 +50,13 @@ def testMultipleProvers(credDef1, attrNames1, proverAndAttrs1, proverAndAttrs2,
                                   attrs=attrs1.encoded(),
                                   revealedAttrs=revealedAttrs,
                                   nonce=nonce1)
+    # FIXME Bad indentation.
     proof2 = Proof.prepareProof(prover2.pk_i, prover2.masterSecret,
                                 credential=presentationToken2,
                                   attrs=attrs2.encoded(),
                                   revealedAttrs=revealedAttrs,
                                   nonce=nonce2)
+    # FIXME verify_proof is a static import.
     assert verifier.verify_proof(proof=proof1, nonce=nonce1,
                                  pk_i=credDefPk,
                                  attrs=attrs1.encoded(),
@@ -63,6 +67,7 @@ def testMultipleProvers(credDef1, attrNames1, proverAndAttrs1, proverAndAttrs2,
                                  revealedAttrs=revealedAttrs)
 
 
+# FIXME Code duplication with testSingleProver.
 def testNonceShouldBeSame(credDef1, credDefPk, proverAndAttrs1, verifier1,
                           verifierMulti2):
     proof, attrs = proverAndAttrs1

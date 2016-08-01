@@ -25,6 +25,7 @@ def testMainPredicate(credDef1, proverAndAttrs1, credDefPk,
     assert verify_status
 
 
+# FIXME Code duplication between testPredicateMultipleIssuers and testMainPredicate.
 def testPredicateMultipleIssuers(credDefs, credDefsPk, verifierMulti1,
                                  proverAndAttrsMapForMultipleIssuers):
     proof, attrs = proverAndAttrsMapForMultipleIssuers
@@ -64,6 +65,7 @@ def testNegativePredicateDeltaShouldFail(credDefs, verifierMulti1,
                                           predicate=predicate)
 
 
+# FIXME These two tests don't belong in this file.
 def testQuadEquationLagranges():
     delta = 85
     u1, u2, u3, u4 = tuple(fourSquares(delta))

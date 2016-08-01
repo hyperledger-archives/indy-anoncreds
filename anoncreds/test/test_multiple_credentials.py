@@ -33,6 +33,7 @@ def testMultipleCredentialSingleProof(credDefs,
     assert verify_status
 
 
+# FIXME Code duplication. testMultipleCredentialMultipleVerifier is essentially two times testMultipleCredentialSingleProof.
 def testMultipleCredentialMultipleVerifier(credDefs,
                                            credDefsPk,
                                            proverAndAttrsForMultiple1,
@@ -61,6 +62,7 @@ def testMultipleCredentialMultipleVerifier(credDefs,
                                   attrs=attrs.encoded(),
                                   revealedAttrs=revealedAttrs)
 
+    # FIXME indentation. Fix in all test files.
     proof2 = Proof.prepareProof(prover.pk_i, prover.masterSecret,
                                 credential=presentationToken,
                                  attrs=attrs.encoded(),

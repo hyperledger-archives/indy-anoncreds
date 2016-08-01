@@ -3,6 +3,7 @@ from anoncreds.protocol.prover import Proof
 from anoncreds.protocol.types import Credential, AttribsDef, AttribType
 
 
+# FIXME Document why a dictionary of credentials is known as a presentationToken.
 def getPresentationToken(credDefs, proof, encodedAttrs):
     presentationToken = {}
     for key, val in proof.U.items():
@@ -18,6 +19,7 @@ def getPresentationToken(credDefs, proof, encodedAttrs):
     return presentationToken
 
 
+# FIXME misleading method name. Returns proof and attrs.
 def getProof(attrs, pki):
     proof = Proof(pki)
     proof.setAttrs(attrs)

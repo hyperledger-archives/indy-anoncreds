@@ -1,9 +1,9 @@
 from anoncreds.protocol.attribute_repo import InMemoryAttributeRepo
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
-from anoncreds.temp_primes import P_PRIME, Q_PRIME
+from anoncreds.temp_primes import P_PRIME1, Q_PRIME1
 from anoncreds.protocol.verifier import Verifier
-from anoncreds.test.helper import GVT
+from anoncreds.test.conftest import GVT
 
 interactionId = 100
 issuerId = GVT.name
@@ -43,8 +43,8 @@ class TestProver(Prover):
         return self.issuers[issuerId].getCredDef(attributes=attributes)
 
     def fetchCredential(self, issuerId, credName, credVersion, U):
-        return self.issuers[issuerId].createCredential(self.id, credName,
-                                                       credVersion, U)
+        return self.issuers[issuerId].createCred(self.id, credName,
+                                                 credVersion, U)
 
 
 class TestVerifier(Verifier):
@@ -80,7 +80,7 @@ def testInteraction():
 
     issuer = TestIssuer(issuerId, attrRepo)
     issuer.newCredDef(attrNames, credName, credVersion,
-                      p_prime=P_PRIME, q_prime=Q_PRIME)
+                      p_prime=P_PRIME1, q_prime=Q_PRIME1)
     prover = TestProver(proverId)
     verifier = TestVerifier(verifierId)
 

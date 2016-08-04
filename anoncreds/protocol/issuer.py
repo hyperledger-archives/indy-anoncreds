@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from anoncreds.protocol.attribute_repo import AttributeRepo
-from anoncreds.protocol.credential_definition import CredentialDefinition
+from anoncreds.protocol.credential_definition import CredentialDefinition, generateCredential
 
 
 class Issuer:
@@ -25,13 +25,12 @@ class Issuer:
             self.credDefsForAttribs[key] = []
         self.credDefsForAttribs[key].append(credDef)
 
-    # FIXME inconsistent naming. Rename to createCred.
-    def createCredential(self, proverId, name, version, U):
+    def createCred(self, proverId, name, version, U):
         # This method works for one credDef only.
         credDef = self.getCredDef(name, version)
         attributes = self.attributeRepo.getAttributes(proverId)
         encAttrs = attributes.encoded()
-        return CredentialDefinition.generateCredential(
+        return generateCredential(
             U, next(iter(encAttrs.values())), credDef.PK, credDef.p_prime,
             credDef.q_prime)
 

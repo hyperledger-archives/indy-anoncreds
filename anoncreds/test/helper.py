@@ -1,14 +1,20 @@
-from anoncreds.protocol.credential_definition import CredentialDefinition
-from anoncreds.protocol.prover import Proof
-from anoncreds.protocol.types import Credential, AttribsDef, AttribType
+from anoncreds.protocol.credential_definition import generateCredential
+from anoncreds.protocol.prover import ProofBuilder
+from anoncreds.protocol.types import Credential
 
 
-# FIXME Document why a dictionary of credentials is known as a presentationToken.
+# Why a dictionary of credentials is known as a presentationToken?
+# Source: https://cups.cs.cmu.edu/soups/2013/posters/soups13_posters-final24.pdf
+# In general, Privacy-ABCs (Privacy Attribute-Based Credentials) are issued just like ordinary
+# cryptographic credentials (e.g., X.509 credentials) using a digital (secret) signature key.
+# However, Privacy-ABCs allow their holder to transform them into a new token, called
+# presentation token, in such a way that the privacy of the user is protected
+
 def getPresentationToken(credDefs, proof, encodedAttrs):
     presentationToken = {}
     for key, val in proof.U.items():
         credDef = credDefs[key]
-        A, e, vprimeprime = CredentialDefinition.generateCredential(proof.U[key],
+        A, e, vprimeprime = generateCredential(proof.U[key],
                                                             encodedAttrs[key],
                                                             credDef.PK,
                                                             credDef.p_prime,
@@ -19,17 +25,9 @@ def getPresentationToken(credDefs, proof, encodedAttrs):
     return presentationToken
 
 
-# FIXME misleading method name. Returns proof and attrs.
-def getProof(attrs, pki):
-    proof = Proof(pki)
-    proof.setAttrs(attrs)
-    return proof, attrs
+def getProofBuilder(attrs, pki):
+    proofBuilder = ProofBuilder(pki)
+    proofBuilder.setAttrs(attrs)
+    return proofBuilder, attrs
 
 
-GVT = AttribsDef('gvt',
-                 [AttribType('name', encode=True),
-                  AttribType('age', encode=False),
-                  AttribType('sex', encode=True)])
-XYZCorp = AttribsDef('xyz',
-                     [AttribType('status', encode=True)])
-NASEMP = GVT + XYZCorp

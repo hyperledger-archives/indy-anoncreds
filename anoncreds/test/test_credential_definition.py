@@ -1,12 +1,12 @@
-from anoncreds.protocol.credential_definition import CredentialDefinition
+from anoncreds.protocol.credential_definition import CredentialDefinition, getDeserializedSK, getPPrime, getQPrime
 
 
-def testSerialization(credDef1):
-    sk = credDef1.SK
-    serializedSk = credDef1.serializedSK
-    deserializedSk = CredentialDefinition.getDeserializedSK(serializedSk)
+def testSerialization(gvtCredDef):
+    sk = gvtCredDef.SK
+    serializedSk = gvtCredDef.serializedSK
+    deserializedSk = getDeserializedSK(serializedSk)
     assert sk == deserializedSk
-    p_prime = CredentialDefinition.getPPrime(deserializedSk)
-    q_prime = CredentialDefinition.getQPrime(deserializedSk)
-    assert credDef1.p_prime == p_prime
-    assert credDef1.q_prime == q_prime
+    p_prime = getPPrime(deserializedSk)
+    q_prime = getQPrime(deserializedSk)
+    assert gvtCredDef.p_prime == p_prime
+    assert gvtCredDef.q_prime == q_prime

@@ -1,22 +1,23 @@
 import pytest
-from anoncreds.test.helper import getPresentationToken, GVT
-from anoncreds.protocol.proof import fourSquares
+from anoncreds.test.helper import getPresentationToken
+from anoncreds.test.conftest import GVT
+from anoncreds.protocol.proof_builder import fourSquares
 
 
-def testMainPredicate(credDef1, proverAndAttrs1, credDefPk,
-                     verifier1):
-    proof, attrs = proverAndAttrs1
-    presentationToken = getPresentationToken({GVT.name: credDef1}, proof,
+def testMainPredicate(gvtCredDef, proofBuilderAndAttrs1, credDefPk,
+                      verifier1):
+    proofBuilder, attrs = proofBuilderAndAttrs1
+    presentationToken = getPresentationToken({GVT.name: gvtCredDef}, proofBuilder,
                                              attrs.encoded())
     nonce = verifier1.generateNonce(interactionId=1)
     revealedAttrs = ['name']
     predicate = {GVT.name: {'age': 18}}
-    pproof = proof.preparePredicateProof(credential=presentationToken,
+    proof = proofBuilder.preparePredicateProof(credential=presentationToken,
                                          attrs=attrs.encoded(),
                                          revealedAttrs=revealedAttrs,
                                          nonce=nonce,
                                          predicate=predicate)
-    verify_status = verifier1.verifyPredicateProof(proof=pproof,
+    verify_status = verifier1.verifyPredicateProof(proof=proof,
                                                   pk_i=credDefPk,
                                                   nonce=nonce,
                                                   attrs=attrs.encoded(),
@@ -26,22 +27,22 @@ def testMainPredicate(credDef1, proverAndAttrs1, credDefPk,
 
 
 # FIXME Code duplication between testPredicateMultipleIssuers and testMainPredicate.
-def testPredicateMultipleIssuers(credDefs, credDefsPk, verifierMulti1,
-                                 proverAndAttrsMapForMultipleIssuers):
-    proof, attrs = proverAndAttrsMapForMultipleIssuers
-    presentationToken = getPresentationToken(credDefs, proof,
+def testPredicateMultipleIssuers(credDefs, credDefPks, verifierMulti1,
+                                 proofBuilderAndAttrsMapForMultipleIssuers):
+    proofBuilder, attrs = proofBuilderAndAttrsMapForMultipleIssuers
+    presentationToken = getPresentationToken(credDefs, proofBuilder,
                                              attrs.encoded())
     nonce = verifierMulti1.generateNonce(interactionId=1)
     revealedAttrs = ['name']
     predicate = {GVT.name: {'age': 18}}
-    proof = proof.preparePredicateProof(credential=presentationToken,
+    proof = proofBuilder.preparePredicateProof(credential=presentationToken,
                                          attrs=attrs.encoded(),
                                          revealedAttrs=revealedAttrs,
                                          nonce=nonce,
                                          predicate=predicate)
     verify_status = verifierMulti1.verifyPredicateProof(proof=proof,
                                                         nonce=nonce,
-                                                        pk_i=credDefsPk,
+                                                        pk_i=credDefPks,
                                                         attrs=attrs.encoded(),
                                                         revealedAttrs=revealedAttrs,
                                                         predicate=predicate)
@@ -49,16 +50,16 @@ def testPredicateMultipleIssuers(credDefs, credDefsPk, verifierMulti1,
 
 
 def testNegativePredicateDeltaShouldFail(credDefs, verifierMulti1,
-                                         proverAndAttrsMapForMultipleIssuers):
-    proof, attrs = proverAndAttrsMapForMultipleIssuers
-    presentationToken = getPresentationToken(credDefs, proof,
+                                         proofBuilderAndAttrsMapForMultipleIssuers):
+    proofBuilder, attrs = proofBuilderAndAttrsMapForMultipleIssuers
+    presentationToken = getPresentationToken(credDefs, proofBuilder,
                                              attrs.encoded())
     nonce = verifierMulti1.generateNonce(interactionId=1)
     revealedAttrs = ['name']
     predicate = {GVT.name: {
         'age': 30}}  # This will result in a negative value of delta i.e. -5
     with pytest.raises(ValueError):
-        prf = proof.preparePredicateProof(credential=presentationToken,
+        prf = proofBuilder.preparePredicateProof(credential=presentationToken,
                                           attrs=attrs.encoded(),
                                           revealedAttrs=revealedAttrs,
                                           nonce=nonce,

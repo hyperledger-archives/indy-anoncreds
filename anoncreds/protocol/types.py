@@ -100,14 +100,7 @@ class Attribs:
         return self.vals.items()
 
 
-# Named tuples
-T = TypeVar('T')
-
-Credential = namedtuple("Credential", ["A", "e", "v"])
-
-
-# FIXME Rename this class. This is the PK of a credential definition, not Issuer
-class IssuerPublicKey:
+class CredDefPublicKey:
     def __init__(self, N, R, S, Z):
         self.N = N
         self.R = R
@@ -126,20 +119,34 @@ class IssuerPublicKey:
             raise RuntimeError("unknown type: {}".format(type(v)))
 
     def inFieldN(self):
-        # FIXME There must be a new line after the description in the docstring.
         # FIXME Fix it in all other files as well.
         """
         Returns new Public Key with same values, in field N
         :return:
         """
+
         r = {k: self.deser(v, self.N) for k, v in self.R.items()}
-        return IssuerPublicKey(self.N, r,
-                               self.deser(self.S, self.N),
-                               self.deser(self.Z, self.N))
+        return CredDefPublicKey(self.N, r,
+                                self.deser(self.S, self.N),
+                                self.deser(self.Z, self.N))
+
+class SerFmt(Enum):
+    charmInteger = 1
+    py3Int = 2
+    base58 = 3
 
 # FIXME Find all such stray namedtuples and move them to one module.
 
-# IssuerPublicKey = namedtuple("IssuerPublicKey", ["N", "R", "S", "Z"])
+# Named tuples
+T = TypeVar('T')
+
+Credential = namedtuple("Credential", ["A", "e", "v"])
+
+TildValue = namedtuple("TildValue", ["mtilde", "etilde", "vtilde"])
+
+PrimeValue = namedtuple("PrimeValue", ["Aprime", "vprime", "eprime"])
+
+SecretValue = namedtuple("SecretValue", ["tildValues", "primeValues", "T"])
 
 CredDefSecretKey = namedtuple("CredDefSecretKey", ["p", "q"])
 
@@ -150,9 +157,3 @@ SubProofPredicate = namedtuple('SubProofPredicate', ["alphavect", "rvect",
 
 PredicateProof = namedtuple('PredicateProof', ["subProofC", "subProofPredicate",
                                                "C", "CList"])
-
-
-class SerFmt(Enum):
-    charmInteger = 1
-    py3Int = 2
-    base58 = 3

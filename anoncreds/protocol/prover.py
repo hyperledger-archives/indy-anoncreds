@@ -1,6 +1,6 @@
 from anoncreds.protocol.credential_definition import CredentialDefinition
-from anoncreds.protocol.proof import Proof
-from anoncreds.protocol.types import IssuerPublicKey
+from anoncreds.protocol.proof_builder import ProofBuilder
+from anoncreds.protocol.types import CredDefPublicKey
 
 
 class Prover:
@@ -30,7 +30,7 @@ class Prover:
         credDef = credDef.get()
         R = credDef["keys"]["R"]
         R["0"] = credDef["keys"]["master_secret_rand"]
-        return IssuerPublicKey(
+        return CredDefPublicKey(
             credDef["keys"]["N"],
             R,
             credDef["keys"]["S"],
@@ -41,7 +41,7 @@ class Prover:
         credDef = self.getCredentialDefinition(issuerId, attrNames)
         pk = self.getPkFromCredDef(credDef)
         pk = {issuerId: pk}
-        proof = Proof(pk)
+        proof = ProofBuilder(pk)
         self.proofs[proof.id] = proof
         return proof
 
@@ -59,10 +59,10 @@ class Prover:
         }
         proof.setParams(encodedAttrs, presentationToken,
                         revealedAttrs, nonce)
-        prf = Proof.prepareProof(proof.pk_i, proof.masterSecret,
-                                 credential=presentationToken,
-                                 attrs=encodedAttrs,
-                                 revealedAttrs=revealedAttrs, nonce=nonce)
+        prf = ProofBuilder.prepareProof(proof.credDefPks, proof.masterSecret,
+                                        credential=presentationToken,
+                                        attrs=encodedAttrs,
+                                        revealedAttrs=revealedAttrs, nonce=nonce)
         proof.prf = prf  # JN - Why is this required?
         return proof
 

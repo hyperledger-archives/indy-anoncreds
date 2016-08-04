@@ -5,23 +5,23 @@ from typing import Dict, Sequence
 
 from charm.core.math.integer import randomBits, integer
 
-from anoncreds.protocol.globals import lvprime, lmvect, lestart, letilde, \
-    lvtilde, lms, lutilde, lrtilde, lalphatilde, iterations
-from anoncreds.protocol.types import Credential, IssuerPublicKey,\
-    PredicateProof, SubProofPredicate, T
+from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, LARGE_E_START, LARGE_ETILDE, \
+    LARGE_VTILDE, LARGE_MASTER_SECRET, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS
+from anoncreds.protocol.types import Credential, CredDefPublicKey,\
+    PredicateProof, SubProofPredicate, T, Proof, SecretValue, TildValue, PrimeValue
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     getUnrevealedAttrs
 from anoncreds.protocol import types
 
 
-# FIXME This class is not a proof in itself. It's a factory for proofs.
-class Proof:
-    def __init__(self, pk_i: Dict[str, IssuerPublicKey], masterSecret=None):
+class ProofBuilder:
+    def __init__(self, credDefPks: Dict[str, CredDefPublicKey], masterSecret=None):
         """
         Create a proof instance
 
-        :param pk_i: The public key of the Issuer(s)
+        :param credDefPks: The public key of the Issuer(s)
         """
+
         self.id = str(uuid.uuid4())
         self.credential = None
         self.revealedAttrs = None
@@ -29,21 +29,21 @@ class Proof:
         self.attrs = {}
 
         # Generate the master secret
-        self._ms = masterSecret or integer(randomBits(lms))
+        self._ms = masterSecret or integer(randomBits(LARGE_MASTER_SECRET))
 
         # Set the public key of the issuers
-        self.pk_i = pk_i
+        self.credDefPks = credDefPks
 
-        for key, x in self.pk_i.items():
-            self.pk_i[key] = x.inFieldN()
+        for key, x in self.credDefPks.items():
+            self.credDefPks[key] = x.inFieldN()
 
         self._vprime = {}
-        for key, val in self.pk_i.items():
-            self._vprime[key] = randomBits(lvprime)
+        for key, val in self.credDefPks.items():
+            self._vprime[key] = randomBits(LARGE_VPRIME)
 
         # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
         self._U = {}
-        for key, val in self.pk_i.items():
+        for key, val in self.credDefPks.items():
             N = val.N
             R = val.R
             S = val.S
@@ -107,7 +107,7 @@ class Proof:
             mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
         mvect["0"] = mtilde["0"] + (c * masterSecret)
 
-        return types.Proof(c, evect, mvect, vvect, Aprime)
+        return Proof(c, evect, mvect, vvect, Aprime)
 
     # FIXME This function is 100 lines long. Break it down.
     def preparePredicateProof(self, credential: Dict[str, Credential],
@@ -115,32 +115,22 @@ class Proof:
                               revealedAttrs: Sequence[str],
                               nonce, predicate: Dict[str, Dict]) -> PredicateProof:
 
-        TauList = []
-        CList = []
-        C = {}
-        evect = {}
-        vvect = {}
-        u = {}
-        utilde = {}
-        uvect = {}
-        r = {}
-        rvect = {}
-        rtilde = {}
-        alphatilde = 0
-        alphavect = 0
+        TauList, CList, C, u, r = [], [], {}, {}, {}
+        evect, vvect, uvect, rvect, alphavect = {}, {}, {}, {}, {}
+        utilde, rtilde, alphatilde = {}, {}, 0
 
         flatAttrs, unrevealedAttrs = getUnrevealedAttrs(attrs, revealedAttrs)
-        tildeValues, primeValues, T = findSecretValues(attrs, unrevealedAttrs, credential, self.pk_i)
+        tildeValues, primeValues, T = findSecretValues(attrs, unrevealedAttrs, credential, self.credDefPks)
         mtilde, etilde, vtilde = tildeValues
         Aprime, vprime, eprime = primeValues
 
         for key, val in credential.items():
             TauList.append(T[key])
             CList.append(Aprime[key])
-            updateObject(C, key, "Aprime", Aprime[key])
+            updateDict(C, key, "Aprime", Aprime[key])
 
         for key, val in predicate.items():
-            x = self.pk_i[key]
+            x = self.credDefPks[key]
 
             # Iterate over the predicates for a given credential(issuer)
             for k, value in val.items():
@@ -151,29 +141,29 @@ class Proof:
 
                 u = fourSquares(delta)
 
-                for i in range(0, iterations):
-                    r[str(i)] = integer(randomBits(lvprime))
-                r["delta"] = integer(randomBits(lvprime))
+                for i in range(0, ITERATIONS):
+                    r[str(i)] = integer(randomBits(LARGE_VPRIME))
+                r["delta"] = integer(randomBits(LARGE_VPRIME))
 
                 Tval = {}
-                for i in range(0, iterations):
+                for i in range(0, ITERATIONS):
                     Tval[str(i)] = (x.Z ** u[i]) * (x.S ** r[str(i)]) % x.N
-                    utilde[str(i)] = integer(randomBits(lutilde))
-                    rtilde[str(i)] = integer(randomBits(lrtilde))
+                    utilde[str(i)] = integer(randomBits(LARGE_UTILDE))
+                    rtilde[str(i)] = integer(randomBits(LARGE_RTILDE))
                 Tval["delta"] = (x.Z ** delta) * (x.S ** r["delta"]) % x.N
-                rtilde["delta"] = integer(randomBits(lrtilde))
+                rtilde["delta"] = integer(randomBits(LARGE_RTILDE))
 
                 CList.extend(get_values_of_dicts(Tval))
-                updateObject(C, key, "Tval", Tval)
+                updateDict(C, key, "Tval", Tval)
 
-                for i in range(0, iterations):
+                for i in range(0, ITERATIONS):
                     TauList.append((x.Z ** utilde[str(i)]) * (x.S ** rtilde[str(i)]) % x.N)
                 TauList.append((x.Z ** mtilde[k]) * (x.S ** rtilde["delta"]) % x.N)
 
-                alphatilde = integer(randomBits(lalphatilde))
+                alphatilde = integer(randomBits(LARGE_ALPHATILDE))
 
                 Q = 1 % x.N
-                for i in range(0, iterations):
+                for i in range(0, ITERATIONS):
                     Q *= Tval[str(i)] ** utilde[str(i)]
                 Q *= x.S ** alphatilde % x.N
                 TauList.append(Q)
@@ -194,7 +184,7 @@ class Proof:
         for key, val in predicate.items():
             for a, p in val.items():
                 urproduct = 0
-                for i in range(0, iterations):
+                for i in range(0, ITERATIONS):
                     uvect[str(i)] = utilde[str(i)] + c * u[i]
                     rvect[str(i)] = rtilde[str(i)] + c * r[str(i)]
                     urproduct += u[i] * r[str(i)]
@@ -216,72 +206,68 @@ class Proof:
 
 
 def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Dict,
-                     credential: Dict[str, Credential],
-                     pk: Dict[str, IssuerPublicKey]):
+                     credentials: Dict[str, Credential],
+                     credDefPks: Dict[str, CredDefPublicKey]):
 
-    # FIXME Write in one line - a, b, c = {}, {}, {}
+    def getMTilde():
+        mtilde = {}
+        for key, value in unrevealedAttrs.items():
+            mtilde[key] = integer(randomBits(LARGE_MVECT))
+        mtilde["0"] = integer(randomBits(LARGE_MVECT))
+        return mtilde
+
     # FIXME Use unicode characters, they'll fit in one line.
-    Aprime = {}
-    vprime = {}
-    eprime = {}
-    etilde = {}
-    vtilde = {}
-    T = {}
-
-    mtilde = {}
-    for key, value in unrevealedAttrs.items():
-        mtilde[key] = integer(randomBits(lmvect))
-    mtilde["0"] = integer(randomBits(lmvect))
+    Aprime, vprime, eprime, etilde, vtilde, T = {}, {}, {}, {}, {}, {}
+    mtilde = getMTilde()
 
     # FIXME Breakdown into several functions.
-    for key, val in credential.items():
-        Ra = integer(randomBits(lvprime))
+    for issuer, credential in credentials.items():
+        Ra = integer(randomBits(LARGE_VPRIME))
 
-        A, e, v = val
-        includedAttrs = attrs[key]
-        x = pk[key]
+        credDefPk = credDefPks[issuer]
+        A, e, v = credential
+        includedAttrs = attrs[issuer]
 
-        Aprime[key] = A * (x.S ** Ra) % x.N
-        vprime[key] = (v - e * Ra)
-        eprime[key] = e - (2 ** lestart)
+        Aprime[issuer] = A * (credDefPk.S ** Ra) % credDefPk.N
+        vprime[issuer] = (v - e * Ra)
+        eprime[issuer] = e - (2 ** LARGE_E_START)
 
-        etilde[key] = integer(randomBits(letilde))
-        vtilde[key] = integer(randomBits(lvtilde))
+        etilde[issuer] = integer(randomBits(LARGE_ETILDE))
+        vtilde[issuer] = integer(randomBits(LARGE_VTILDE))
 
-        Rur = 1 % x.N
+        Rur = 1 % credDefPk.N
         for k, value in unrevealedAttrs.items():
             if k in includedAttrs:
-                Rur = Rur * (x.R[k] ** mtilde[k])
-        Rur *= x.R["0"] ** mtilde["0"]
+                Rur = Rur * (credDefPk.R[k] ** mtilde[k])
+        Rur *= credDefPk.R["0"] ** mtilde["0"]
 
-        T[key] = ((Aprime[key] ** etilde[key]) * Rur * (x.S ** vtilde[key])) % x.N
+        T[issuer] = ((Aprime[issuer] ** etilde[issuer]) * Rur * (credDefPk.S ** vtilde[issuer])) % credDefPk.N
 
-    # FIXME Returning too many values. Use an object instead.
-    return (mtilde, etilde, vtilde), (Aprime, vprime, eprime), T
+    tildValue = TildValue(mtilde, etilde, vtilde)
+    primeValue = PrimeValue(Aprime, vprime, eprime)
+
+    return SecretValue(tildValue, primeValue, T)
 
 
-# FIXME inconsistent naming. `find` can be removed from name.
-def findLargestSquareLessThan(x: int):
+def largestSquareLessThan(x: int):
     sqrtx = int(floor(sqrt(x)))
     return sqrtx
 
 
 def fourSquares(delta: int):
-    u1 = findLargestSquareLessThan(delta)
-    u2 = findLargestSquareLessThan(delta - (u1 ** 2))
-    u3 = findLargestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2))
-    u4 = findLargestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2) - (u3 ** 2))
+    u1 = largestSquareLessThan(delta)
+    u2 = largestSquareLessThan(delta - (u1 ** 2))
+    u3 = largestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2))
+    u4 = largestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2) - (u3 ** 2))
     if (u1 ** 2) + (u2 ** 2) + (u3 ** 2) + (u4 ** 2) == delta:
         return list((u1, u2, u3, u4))
     else:
         raise Exception("Cannot get the four squares for delta {0}".format(delta))
 
 
-# FIXME Misleading name "object", when it accepts only a dictionary.
-def updateObject(obj: Dict[str, Dict[str, T]], parentKey: str,
-                 key: str, val: any):
+def updateDict(obj: Dict[str, Dict[str, T]], parentKey: str,
+               key: str, val: any):
     parentVal = obj.get(parentKey, {})
     parentVal[key] = val
     obj[parentKey] = parentVal
-    # FIXME Unnecessary return statement.
-    return obj
+

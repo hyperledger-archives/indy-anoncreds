@@ -3,8 +3,8 @@ from typing import Dict, Sequence
 
 from charm.core.math.integer import integer, randomBits
 
-from anoncreds.protocol.globals import lestart, lnonce, iterations
-from anoncreds.protocol.types import IssuerPublicKey
+from anoncreds.protocol.globals import LARGE_E_START, LARGE_NONCE, ITERATIONS
+from anoncreds.protocol.types import CredDefPublicKey
 from anoncreds.protocol.types import PredicateProof, T
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     splitRevealedAttributes
@@ -34,7 +34,7 @@ class Verifier:
         self.credDefs = {}           # Dict[(issuer id, credential name, credential version), Credential Definition]
 
     def generateNonce(self, interactionId):
-        nv = integer(randomBits(lnonce))
+        nv = integer(randomBits(LARGE_NONCE))
         self.interactionDetail[str(nv)] = interactionId
         return nv
 
@@ -50,12 +50,12 @@ class Verifier:
     #     self.credDefs[(issuerId, credName, credVersion)] = pk
     #     return pkI
 
-    def _getIssuerPkByCredDef(self, credDef) -> IssuerPublicKey:
+    def _getIssuerPkByCredDef(self, credDef) -> CredDefPublicKey:
         keys = credDef.get()['keys']
         R = {}
         for key, val in keys['R'].items():
             R[str(key)] = val
-        pk_i = IssuerPublicKey(keys['N'], R, keys['S'], keys['Z'])
+        pk_i = CredDefPublicKey(keys['N'], R, keys['S'], keys['Z'])
         return pk_i
 
     # def _getIssuerPk(self, proof):
@@ -119,7 +119,7 @@ class Verifier:
                 Tdeltavect = (Tdeltavect1 ** (-1 * c)) * Tdeltavect2 % p.N
 
                 Tuproduct = 1 % p.N
-                for i in range(0, iterations):
+                for i in range(0, ITERATIONS):
                     Tvalvect1 = (Tval[str(i)] ** (-1 * c))
                     Tvalvect2 = (p.Z ** uvect[str(i)])
                     Tvalvect3 = (p.S ** rvect[str(i)])
@@ -137,7 +137,7 @@ class Verifier:
         return c == cvect
 
 
-def getProofParams(proof, pkIssuer: Dict[str, IssuerPublicKey],
+def getProofParams(proof, pkIssuer: Dict[str, CredDefPublicKey],
                    attrs, revealedAttrs):
     flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
 
@@ -162,7 +162,7 @@ def getProofParams(proof, pkIssuer: Dict[str, IssuerPublicKey],
             if k in includedAttrs:
                 Rr *= p.R[str(k)] ** attrs[key][str(k)]
 
-        denom = (Rr * (Aprime[key] ** (2 ** lestart)))
+        denom = (Rr * (Aprime[key] ** (2 ** LARGE_E_START)))
         Tvect1 = (p.Z / denom) ** (-1 * c)
         Tvect2 = (Aprime[key] ** evect[key])
         Tvect3 = (p.S ** vvect[key])

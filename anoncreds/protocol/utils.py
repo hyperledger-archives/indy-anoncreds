@@ -85,12 +85,9 @@ def randomString(size: int = 20,
     return ''.join(sample(chars, size))
 
 
-# FIXME Function has too many unnecessary newlines.
 def getUnrevealedAttrs(attrs, revealedAttrsList):
     flatAttrs = flattenDict(attrs)
-
     revealedAttrs, unrevealedAttrs = splitRevealedAttributes(flatAttrs, revealedAttrsList)
-
     return flatAttrs, unrevealedAttrs
 
 

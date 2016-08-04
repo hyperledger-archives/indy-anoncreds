@@ -7,10 +7,9 @@ class Prover:
     def __init__(self, id):
         self.id = id
         self.credDefs = {}      # Dict[(issuer, id, attribute names), credentialDefinition]
-        # self.credentials = {}   # Dict[(issuer id, name, version), List[credential]]
         self.proofs = {}        # Dict[proof id, Proof]
 
-    def getCredentialDefinition(self, issuerId, attrNames):
+    def _getCredDef(self, issuerId, attrNames):
         key = (issuerId, tuple(sorted(attrNames)))
         credDef = self.credDefs.get(key)
         if not credDef:
@@ -18,15 +17,12 @@ class Prover:
             self.credDefs[key] = credDef
         return credDef
 
-    def getCredential(self, issuerId, credName, credVersion, U):
+    def _getCred(self, issuerId, credName, credVersion, U):
         key = issuerId, credName, credVersion, U
-        cred = self.fetchCredential(*key)
-        # self.credentials[key] = cred
-        return cred
+        return self.fetchCredential(*key)
 
-    # FIXME CredDef is unnecessary in name as it's evident from only parameter.
     @staticmethod
-    def getPkFromCredDef(credDef: CredentialDefinition):
+    def getPk(credDef: CredentialDefinition):
         credDef = credDef.get()
         R = credDef["keys"]["R"]
         R["0"] = credDef["keys"]["master_secret_rand"]
@@ -37,9 +33,9 @@ class Prover:
             credDef["keys"]["Z"],
         )
 
-    def initProof(self, issuerId, attrNames):
-        credDef = self.getCredentialDefinition(issuerId, attrNames)
-        pk = self.getPkFromCredDef(credDef)
+    def _initProof(self, issuerId, attrNames):
+        credDef = self._getCredDef(issuerId, attrNames)
+        pk = self.getPk(credDef)
         pk = {issuerId: pk}
         proof = ProofBuilder(pk)
         self.proofs[proof.id] = proof
@@ -47,11 +43,11 @@ class Prover:
 
     def createProof(self, issuerId, attrNames, verifierId,
                     encodedAttrs, revealedAttrs):
-        credDef = self.getCredentialDefinition(issuerId, attrNames)
-        proof = self.initProof(issuerId, attrNames)
+        credDef = self._getCredDef(issuerId, attrNames)
+        proof = self._initProof(issuerId, attrNames)
         nonce = self.fetchNonce(verifierId)
-        credential = self.getCredential(issuerId, credDef.name,
-                                        credDef.version, proof.U[issuerId])
+        credential = self._getCred(issuerId, credDef.name,
+                                  credDef.version, proof.U[issuerId])
         presentationToken = {
             issuerId: (
             credential[0], credential[1],

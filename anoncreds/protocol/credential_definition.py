@@ -4,7 +4,8 @@ from copy import copy
 
 from charm.core.math.integer import randomPrime, random, integer, randomBits, \
     isPrime
-from anoncreds.protocol.globals import LARGE_PRIME, LARGE_VPRIME_PRIME, LARGE_E_START, LARGE_E_END_RANGE
+from anoncreds.protocol.globals import LARGE_PRIME, LARGE_VPRIME_PRIME, LARGE_E_START, LARGE_E_END_RANGE, KEYS, \
+    MASTER_SEC_RAND, PK_N, PK_S, PK_Z, PK_R, NAME, VERSION, TYPE, IP, PORT, TYPE_CL
 from anoncreds.protocol.types import CredDefPublicKey, CredDefSecretKey, SerFmt
 from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString
 
@@ -70,6 +71,7 @@ class CredentialDefinition:
 
         :return: Public key for the credential definition
         """
+
         return self._pk
 
     @property
@@ -79,6 +81,7 @@ class CredentialDefinition:
 
         :return: Secret key for the credential definition
         """
+
         return CredDefSecretKey(**self.sk)
 
     @property
@@ -89,17 +92,17 @@ class CredentialDefinition:
         pk = copy(self.PK)
         R = copy(pk.R)
         data = {
-            "name": self.name,
-            "version": self.version,
-            "type": "CL",
-            "ip": self.ip,
-            "port": self.port,
-            "keys": {
-                "master_secret_rand": R["0"],
-                "N": pk.N,
-                "S": pk.S,
-                "Z": pk.Z,
-                "R": R  # TODO Master secret rand number, R[0] is still passed,
+            NAME: self.name,
+            VERSION: self.version,
+            TYPE: TYPE_CL,
+            IP: self.ip,
+            PORT: self.port,
+            KEYS: {
+                MASTER_SEC_RAND: R["0"],
+                PK_N: pk.N,
+                PK_S: pk.S,
+                PK_Z: pk.Z,
+                PK_R: R  # TODO Master secret rand number, R[0] is still passed,
                 #  remove that
             }
         }
@@ -144,6 +147,7 @@ def generateCredential(u, attrs, pk, p_prime, q_prime):
     :param attrs: The attributes for which the credential needs to be generated
     :return: The presentation token as a combination of (A, e, vprimeprime)
     """
+
     if not u:
         raise ValueError("u must be provided to issue a credential")
     # Generate a random prime and
@@ -173,13 +177,13 @@ def _sign(pk, attrs, v, u, e, p_prime, q_prime):
     return A
 
 def serialize(data, serfunc):
-    for k, v in data['keys'].items():
+    for k, v in data[KEYS].items():
         if isinstance(v, integer):
             # int casting works with Python 3 only.
             # for Python 2, charm's serialization api must be used.
-            data['keys'][k] = serfunc(v)
-        if k == 'R':
-            data['keys'][k] = {key: serfunc(val) for key, val in v.items()}
+            data[KEYS][k] = serfunc(v)
+        if k == PK_R :
+            data[KEYS][k] = {key: serfunc(val) for key, val in v.items()}
     return data
 
 

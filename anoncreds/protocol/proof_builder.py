@@ -6,7 +6,8 @@ from typing import Dict, Sequence
 from charm.core.math.integer import randomBits, integer
 
 from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, LARGE_E_START, LARGE_ETILDE, \
-    LARGE_VTILDE, LARGE_MASTER_SECRET, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS
+    LARGE_VTILDE, LARGE_MASTER_SECRET, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, APRIME, DELTA, TVAL, \
+    NONCE, ZERO_INDEX
 from anoncreds.protocol.types import Credential, CredDefPublicKey,\
     PredicateProof, SubProofPredicate, T, Proof, SecretValue, TildValue, PrimeValue
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
@@ -48,7 +49,7 @@ class ProofBuilder:
             R = val.R
             S = val.S
             Z = val.Z
-            self._U[key] = (S ** self._vprime[key]) * (R["0"] ** self._ms) % N
+            self._U[key] = (S ** self._vprime[key]) * (R[ZERO_INDEX] ** self._ms) % N
 
     @property
     def masterSecret(self):
@@ -73,7 +74,7 @@ class ProofBuilder:
         self.setNonce(nonce)
 
     @staticmethod
-    def prepareProof(pk_i, masterSecret, credential: Dict[str, Credential],
+    def prepareProof(credDefPks, masterSecret, credential: Dict[str, Credential],
                      attrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
                      nonce) -> types.Proof:
         """
@@ -86,17 +87,18 @@ class ProofBuilder:
         :param nonce: The nonce used to have a commit
         :return: The proof
         """
+
         evect = {}
         vvect = {}
 
         flatAttrs, unrevealedAttrs = getUnrevealedAttrs(attrs, revealedAttrs)
-        tildeValues, primeValues, T = findSecretValues(attrs, unrevealedAttrs, credential, pk_i)
+        tildeValues, primeValues, T = findSecretValues(attrs, unrevealedAttrs, credential, credDefPks)
         mtilde, etilde, vtilde = tildeValues
         Aprime, vprime, eprime = primeValues
 
         # Calculate the `c` value as the hash result of Aprime, T and nonce.
         # This value will be used to verify the proof against the credential
-        c = integer(get_hash(*get_values_of_dicts(Aprime, T, {"nonce": nonce})))
+        c = integer(get_hash(*get_values_of_dicts(Aprime, T, {NONCE: nonce})))
 
         for key, val in credential.items():
             evect[key] = etilde[key] + (c * eprime[key])
@@ -105,7 +107,7 @@ class ProofBuilder:
         mvect = {}
         for k, value in unrevealedAttrs.items():
             mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
-        mvect["0"] = mtilde["0"] + (c * masterSecret)
+        mvect[ZERO_INDEX] = mtilde[ZERO_INDEX] + (c * masterSecret)
 
         return Proof(c, evect, mvect, vvect, Aprime)
 
@@ -127,7 +129,7 @@ class ProofBuilder:
         for key, val in credential.items():
             TauList.append(T[key])
             CList.append(Aprime[key])
-            updateDict(C, key, "Aprime", Aprime[key])
+            updateDict(C, key, APRIME, Aprime[key])
 
         for key, val in predicate.items():
             x = self.credDefPks[key]
@@ -143,22 +145,22 @@ class ProofBuilder:
 
                 for i in range(0, ITERATIONS):
                     r[str(i)] = integer(randomBits(LARGE_VPRIME))
-                r["delta"] = integer(randomBits(LARGE_VPRIME))
+                r[DELTA] = integer(randomBits(LARGE_VPRIME))
 
                 Tval = {}
                 for i in range(0, ITERATIONS):
                     Tval[str(i)] = (x.Z ** u[i]) * (x.S ** r[str(i)]) % x.N
                     utilde[str(i)] = integer(randomBits(LARGE_UTILDE))
                     rtilde[str(i)] = integer(randomBits(LARGE_RTILDE))
-                Tval["delta"] = (x.Z ** delta) * (x.S ** r["delta"]) % x.N
-                rtilde["delta"] = integer(randomBits(LARGE_RTILDE))
+                Tval[DELTA] = (x.Z ** delta) * (x.S ** r[DELTA]) % x.N
+                rtilde[DELTA] = integer(randomBits(LARGE_RTILDE))
 
                 CList.extend(get_values_of_dicts(Tval))
-                updateDict(C, key, "Tval", Tval)
+                updateDict(C, key, TVAL, Tval)
 
                 for i in range(0, ITERATIONS):
                     TauList.append((x.Z ** utilde[str(i)]) * (x.S ** rtilde[str(i)]) % x.N)
-                TauList.append((x.Z ** mtilde[k]) * (x.S ** rtilde["delta"]) % x.N)
+                TauList.append((x.Z ** mtilde[k]) * (x.S ** rtilde[DELTA]) % x.N)
 
                 alphatilde = integer(randomBits(LARGE_ALPHATILDE))
 
@@ -177,7 +179,7 @@ class ProofBuilder:
         mvect = {}
         for k, value in unrevealedAttrs.items():
             mvect[str(k)] = mtilde[str(k)] + (c * flatAttrs[str(k)])
-        mvect["0"] = mtilde["0"] + (c * self._ms)
+        mvect[ZERO_INDEX] = mtilde[ZERO_INDEX] + (c * self._ms)
 
         subProofC = types.Proof(c, evect, mvect, vvect, Aprime)
 
@@ -188,9 +190,9 @@ class ProofBuilder:
                     uvect[str(i)] = utilde[str(i)] + c * u[i]
                     rvect[str(i)] = rtilde[str(i)] + c * r[str(i)]
                     urproduct += u[i] * r[str(i)]
-                rvect["delta"] = rtilde["delta"] + c * r["delta"]
+                rvect[DELTA] = rtilde[DELTA] + c * r[DELTA]
 
-                alphavect = alphatilde + c * (r["delta"] - urproduct)
+                alphavect = alphatilde + c * (r[DELTA] - urproduct)
 
         subProofPredicate = SubProofPredicate(alphavect, rvect, uvect)
 
@@ -213,7 +215,7 @@ def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Dict,
         mtilde = {}
         for key, value in unrevealedAttrs.items():
             mtilde[key] = integer(randomBits(LARGE_MVECT))
-        mtilde["0"] = integer(randomBits(LARGE_MVECT))
+        mtilde[ZERO_INDEX] = integer(randomBits(LARGE_MVECT))
         return mtilde
 
     # FIXME Use unicode characters, they'll fit in one line.
@@ -239,7 +241,7 @@ def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Dict,
         for k, value in unrevealedAttrs.items():
             if k in includedAttrs:
                 Rur = Rur * (credDefPk.R[k] ** mtilde[k])
-        Rur *= credDefPk.R["0"] ** mtilde["0"]
+        Rur *= credDefPk.R[ZERO_INDEX] ** mtilde[ZERO_INDEX]
 
         T[issuer] = ((Aprime[issuer] ** etilde[issuer]) * Rur * (credDefPk.S ** vtilde[issuer])) % credDefPk.N
 

@@ -1,10 +1,13 @@
 from collections import namedtuple
 from enum import Enum
 from hashlib import sha256
-from typing import TypeVar
+from typing import TypeVar, Dict
 
 from charm.core.math.integer import integer
 from charm.toolbox.conversion import Conversion
+
+from anoncreds.protocol.globals import APRIME, EVECT, MVECT, VVECT, CRED_C, ETILDE, MTILDE, VTILDE, EPRIME, VPRIME, \
+    CRED_A, CRED_E, CRED_V
 
 
 class AttribType:
@@ -13,46 +16,43 @@ class AttribType:
         self.encode = encode
 
 
-# FIXME Why the plural(Attribs) in class name?
-class AttribsDef:
-    def __init__(self, name, attr_types):
+class AttribDef:
+    def __init__(self, name, attrTypes):
         if isinstance(name, str):
-            # FIXME CamelCase or snake_case. Stick to one of them.
-            self.name_a = [name]
-            self.attr_types_a = [attr_types]
+            self.names = [name]
+            self.attrTypes = [attrTypes]
         else:
-            self.name_a = name
-            self.attr_types_a = attr_types
+            self.names = name
+            self.attrTypes = attrTypes
 
     @property
     def name(self):
-        return ', '.join(self.name_a)
+        return ', '.join(self.names)
 
     def __getattr__(self, item):
-        for attr_types in self.attr_types_a:
+        for attr_types in self.attrTypes:
             for at in attr_types:
                 if item == at.name:
                     return at
             raise AttributeError
 
     def __add__(self, other):
-        return AttribsDef(self.name_a + other.name_a,
-                          self.attr_types_a + other.attr_types_a)
+        return AttribDef(self.names + other.names,
+                         self.attrTypes + other.attrTypes)
 
     def attribs(self, **vals):
         return Attribs(self, **vals)
 
-    # FIXME inconsistent naming. Call it names
-    def getNames(self):
+    def attribNames(self):
         return [at.name
-                for attr_types in self.attr_types_a
+                for attr_types in self.attrTypes
                 for at in attr_types]
 
 
 class Attribs:
-    def __init__(self, credType: AttribsDef, **vals):
+    def __init__(self, credType: AttribDef, **vals):
         self.credType = credType
-        self.vals = vals
+        self._vals = vals
 
     def encoded(self):
         """
@@ -61,43 +61,39 @@ class Attribs:
         :param attrs: The attributes to pass in credentials
         :return:
         """
+
         named = {}
-        for i in range(len(self.credType.name_a)):
-            name = self.credType.name_a[i]
-            attr_types = self.credType.attr_types_a[i]
+        for i in range(len(self.credType.names)):
+            name = self.credType.names[i]
+            attr_types = self.credType.attrTypes[i]
             encoded = {}
             for at in attr_types:
                 if at.encode:
                     encoded[at.name] = Conversion.bytes2integer(
-                        sha256(str(self.vals[at.name]).encode()).digest())
+                        sha256(str(self._vals[at.name]).encode()).digest())
                 else:
-                    encoded[at.name] = self.vals[at.name]
+                    encoded[at.name] = self._vals[at.name]
             named[name] = encoded
         return named
 
     def __add__(self, other):
-        vals = self.vals.copy()
-        vals.update(other.vals)
+        vals = self._vals.copy()
+        vals.update(other._vals)
         return Attribs(self.credType + other.credType, **vals)
 
     def __iter__(self):
-        return self.vals.__iter__()
+        return self._vals.__iter__()
 
-    # def __getitem__(self, item):
-    #     return self.vals.get(item)
-    #
-    # def __len__(self):
-    #     return self.vals.__len__()
 
     # FIXME Cleanup this mess by inheriting dict and using proper dunder methods
     def keys(self):
-        return self.vals.keys()
+        return self._vals.keys()
 
     def values(self):
-        return self.vals.values()
+        return self._vals.values()
 
     def items(self):
-        return self.vals.items()
+        return self._vals.items()
 
 
 class CredDefPublicKey:
@@ -119,7 +115,6 @@ class CredDefPublicKey:
             raise RuntimeError("unknown type: {}".format(type(v)))
 
     def inFieldN(self):
-        # FIXME Fix it in all other files as well.
         """
         Returns new Public Key with same values, in field N
         :return:
@@ -135,22 +130,21 @@ class SerFmt(Enum):
     py3Int = 2
     base58 = 3
 
-# FIXME Find all such stray namedtuples and move them to one module.
 
 # Named tuples
 T = TypeVar('T')
 
-Credential = namedtuple("Credential", ["A", "e", "v"])
+Credential = namedtuple("Credential", [CRED_A, CRED_E, CRED_V])
 
-TildValue = namedtuple("TildValue", ["mtilde", "etilde", "vtilde"])
+TildValue = namedtuple("TildValue", [MTILDE, ETILDE, VTILDE])
 
-PrimeValue = namedtuple("PrimeValue", ["Aprime", "vprime", "eprime"])
+PrimeValue = namedtuple("PrimeValue", [APRIME, VPRIME, EPRIME])
 
 SecretValue = namedtuple("SecretValue", ["tildValues", "primeValues", "T"])
 
 CredDefSecretKey = namedtuple("CredDefSecretKey", ["p", "q"])
 
-Proof = namedtuple('Proof', ["c", "evect", "mvect", "vvect", "Aprime"])
+Proof = namedtuple('Proof', [CRED_C, EVECT, MVECT, VVECT, APRIME])
 
 SubProofPredicate = namedtuple('SubProofPredicate', ["alphavect", "rvect",
                                                      "uvect"])

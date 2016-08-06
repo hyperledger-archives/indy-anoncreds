@@ -4,8 +4,7 @@ from typing import Dict
 from anoncreds.protocol.types import Attribs
 
 
-# FIXME inconsistent naming. Rename to AttrRepo or AttributeRepository
-class AttributeRepo:
+class AttrRepo:
     @abstractmethod
     def getAttributes(self, proverId):
         raise NotImplementedError
@@ -15,7 +14,7 @@ class AttributeRepo:
         raise NotImplementedError
 
 
-class InMemoryAttributeRepo(AttributeRepo):
+class InMemoryAttrRepo(AttrRepo):
     def __init__(self):
         self.attributes = {}    # type: Dict
 

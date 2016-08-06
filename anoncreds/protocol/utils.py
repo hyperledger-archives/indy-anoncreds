@@ -18,6 +18,7 @@ def encodeAttrs(attrs):
     :param attrs: The attributes to pass in credentials
     :return:
     """
+
     return {key: Conversion.bytes2integer(sha256(value.encode()).digest())
             for key, value in attrs.items()}
 
@@ -29,6 +30,7 @@ def get_hash(*args):
     :param args:
     :return:
     """
+
     h_challenge = sha256()
     for arg in args:
         h_challenge.update(Conversion.IP2OS(arg))
@@ -82,6 +84,7 @@ def randomString(size: int = 20,
     :param chars: the set of characters to use to generate the random string. Uses alphanumerics by default.
     :return: the random string generated
     """
+
     return ''.join(sample(chars, size))
 
 

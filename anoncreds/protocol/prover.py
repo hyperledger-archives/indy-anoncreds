@@ -1,24 +1,25 @@
 from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.proof_builder import ProofBuilder
 from anoncreds.protocol.types import CredDefPublicKey
+from anoncreds.protocol.verifier import Verifier
 
 
 class Prover:
     def __init__(self, id):
         self.id = id
-        self.credDefs = {}      # Dict[(issuer, id, attribute names), credentialDefinition]
-        self.proofs = {}        # Dict[proof id, Proof]
+        self.credDefs = {}          # Dict[(issuer, id, attribute names), credentialDefinition]
+        self.proofBuilders = {}     # Dict[proof id, Proof]
 
-    def _getCredDef(self, issuerId, attrNames):
-        key = (issuerId, tuple(sorted(attrNames)))
+    def _getCredDef(self, issuer, attrNames):
+        key = (issuer, tuple(sorted(attrNames)))
         credDef = self.credDefs.get(key)
         if not credDef:
             credDef = self.fetchCredentialDefinition(*key)
             self.credDefs[key] = credDef
         return credDef
 
-    def _getCred(self, issuerId, credName, credVersion, U):
-        key = issuerId, credName, credVersion, U
+    def _getCred(self, issuer, credName, credVersion, U):
+        key = issuer, credName, credVersion, U
         return self.fetchCredential(*key)
 
     @staticmethod
@@ -33,44 +34,35 @@ class Prover:
             credDef["keys"]["Z"],
         )
 
-    def _initProof(self, issuerId, attrNames):
-        credDef = self._getCredDef(issuerId, attrNames)
+    def _initProofBuilder(self, issuer, attrNames):
+        credDef = self._getCredDef(issuer, attrNames)
         pk = self.getPk(credDef)
-        pk = {issuerId: pk}
-        proof = ProofBuilder(pk)
-        self.proofs[proof.id] = proof
-        return proof
+        pk = {issuer.id: pk}
+        proofBuilder = ProofBuilder(pk)
+        self.proofBuilders[proofBuilder.id] = proofBuilder
+        return proofBuilder
 
-    def createProof(self, issuerId, attrNames, verifierId,
-                    encodedAttrs, revealedAttrs):
-        credDef = self._getCredDef(issuerId, attrNames)
-        proof = self._initProof(issuerId, attrNames)
-        nonce = self.fetchNonce(verifierId)
-        credential = self._getCred(issuerId, credDef.name,
-                                  credDef.version, proof.U[issuerId])
+    def createProofBuilder(self, issuer, attrNames, interactionId, verifier,
+                           encodedAttrs, revealedAttrs):
+        credDef = self._getCredDef(issuer, attrNames)
+        proofBuilder = self._initProofBuilder(issuer, attrNames)
+        nonce = self.fetchNonce(interactionId, verifier)
+        credential = self._getCred(issuer, credDef.name,
+                                  credDef.version, proofBuilder.U[issuer.id])
         presentationToken = {
-            issuerId: (
+            issuer.id: (
             credential[0], credential[1],
-            proof.vprime[issuerId] + credential[2])
+            proofBuilder.vprime[issuer.id] + credential[2])
         }
-        proof.setParams(encodedAttrs, presentationToken,
+        proofBuilder.setParams(encodedAttrs, presentationToken,
                         revealedAttrs, nonce)
-        prf = ProofBuilder.prepareProof(proof.credDefPks, proof.masterSecret,
-                                        credential=presentationToken,
-                                        attrs=encodedAttrs,
-                                        revealedAttrs=revealedAttrs, nonce=nonce)
-        proof.prf = prf  # JN - Why is this required?
-        return proof
+        return proofBuilder
 
-    # FIXME Use abstract base class and get rid of these NotImplementedErrors
-    def fetchNonce(self, verifierId):
-        raise NotImplementedError
+    def fetchNonce(self, interactionId, verifier: Verifier):
+        return verifier.generateNonce(interactionId)
 
-    def sendProof(self, issuerId, name, version, proof, verifierId):
-        raise NotImplementedError
+    def fetchCredentialDefinition(self, issuer, attributes):
+        return issuer.getCredDef(attributes=attributes)
 
-    def fetchCredentialDefinition(self, issuerId, attributes):
-        raise NotImplementedError
-
-    def fetchCredential(self, issuerId, credName, credVersion, U):
-        raise NotImplementedError
+    def fetchCredential(self, issuer, credName, credVersion, U):
+        return issuer.createCred(self.id, credName, credVersion, U)

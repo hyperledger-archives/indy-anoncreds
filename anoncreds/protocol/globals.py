@@ -14,3 +14,47 @@ LARGE_VTILDE = 3060
 LARGE_MASTER_SECRET = 256
 LARGE_ALPHATILDE = 2787
 ITERATIONS = 4
+
+ZERO_INDEX = "0"
+
+ATTRS = "attrs"
+REVEALED_ATTRS = "revealedAttrs"
+DELTA = "delta"
+TVAL = "Tval"
+KEYS = "keys"
+NONCE = "nonce"
+
+APRIME = "Aprime"
+EPRIME = "eprime"
+VPRIME = "vprime"
+
+EVECT = "evect"
+MVECT = "mvect"
+VVECT = "vvect"
+
+ETILDE = "etilde"
+MTILDE = "mtilde"
+VTILDE = "vtilde"
+
+MASTER_SEC_RAND = "master_secret_rand"
+
+CRED_A = "A"
+CRED_E = "e"
+CRED_V = "v"
+CRED_C = "c"
+
+PK_R = "R"
+PK_N = "N"
+PK_S = "S"
+PK_Z = "Z"
+
+ISSUER = "issuer"
+PROOF = "proof"
+
+NAME = "name"
+VERSION = "version"
+TYPE = "type"
+IP = "ip"
+PORT = "port"
+
+TYPE_CL = "CL"

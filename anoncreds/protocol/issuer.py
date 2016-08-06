@@ -1,13 +1,13 @@
 from typing import Sequence
 
-from anoncreds.protocol.attribute_repo import AttributeRepo
+from anoncreds.protocol.attribute_repo import AttrRepo
 from anoncreds.protocol.credential_definition import CredentialDefinition, generateCredential
 
 
 class Issuer:
-    def __init__(self, id, attributeRepo: AttributeRepo=None):
+    def __init__(self, id, attributeRepo: AttrRepo=None):
         self.id = id
-        self.credDefs = {}     # Dict[Tuple, CredentialDefinition]
+        self.credDefs = {}              # Dict[Tuple, CredentialDefinition]
         self.credDefsForAttribs = {}    # Dict[Tuple, List]
         self.attributeRepo = attributeRepo
 

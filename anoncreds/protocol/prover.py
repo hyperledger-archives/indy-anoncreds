@@ -1,4 +1,5 @@
 from anoncreds.protocol.credential_definition import CredentialDefinition
+from anoncreds.protocol.globals import KEYS, PK_R, MASTER_SEC_RAND, PK_N, PK_S, PK_Z
 from anoncreds.protocol.proof_builder import ProofBuilder
 from anoncreds.protocol.types import CredDefPublicKey
 from anoncreds.protocol.verifier import Verifier
@@ -25,13 +26,13 @@ class Prover:
     @staticmethod
     def getPk(credDef: CredentialDefinition):
         credDef = credDef.get()
-        R = credDef["keys"]["R"]
-        R["0"] = credDef["keys"]["master_secret_rand"]
+        R = credDef[KEYS][PK_R]
+        R["0"] = credDef[KEYS][MASTER_SEC_RAND]
         return CredDefPublicKey(
-            credDef["keys"]["N"],
+            credDef[KEYS][PK_N],
             R,
-            credDef["keys"]["S"],
-            credDef["keys"]["Z"],
+            credDef[KEYS][PK_S],
+            credDef[KEYS][PK_Z],
         )
 
     def _initProofBuilder(self, issuer, attrNames):
@@ -54,7 +55,7 @@ class Prover:
             credential[0], credential[1],
             proofBuilder.vprime[issuer.id] + credential[2])
         }
-        proofBuilder.setParams(encodedAttrs, presentationToken,
+        proofBuilder.setParams(presentationToken,
                         revealedAttrs, nonce)
         return proofBuilder
 

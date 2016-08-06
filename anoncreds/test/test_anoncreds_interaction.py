@@ -31,11 +31,11 @@ def testInteraction():
     proofBuilder = prover.createProofBuilder(issuer, attrNames, interactionId, verifier,
                                              encodedAttrs, revealedAttrs)
 
+
     proof = proofBuilder.prepareProof(proofBuilder.credDefPks, proofBuilder.masterSecret,
                                       proofBuilder.credential,
-                                      proofBuilder.attrs,
+                                      encodedAttrs,
                                       proofBuilder.revealedAttrs, proofBuilder.nonce)
-
     assert verifier.verify(issuer, credName, credVersion, proof,
-                           proofBuilder.nonce, proofBuilder.attrs,
+                           proofBuilder.nonce, encodedAttrs,
                            proofBuilder.revealedAttrs)

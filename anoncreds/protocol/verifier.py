@@ -8,14 +8,14 @@ from anoncreds.protocol.globals import LARGE_E_START, LARGE_NONCE, ITERATIONS, D
 from anoncreds.protocol.types import CredDefPublicKey
 from anoncreds.protocol.types import PredicateProof, T
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
-    splitRevealedAttributes
+    splitRevealedAttrs
 
 
 def getProofParams(proof, pkIssuer: Dict[str, CredDefPublicKey],
                    attrs, revealedAttrs):
 
     flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
-    Ar, unrevealedAttrs = splitRevealedAttributes(flatAttrs, revealedAttrs)
+    Ar, unrevealedAttrs = splitRevealedAttrs(flatAttrs, revealedAttrs)
     Tvect = {}
     # Extract the values from the proof
     c, evect, mvect, vvect, Aprime = proof

@@ -57,7 +57,7 @@ def get_prime_in_range(start, end):
     raise Exception("Cannot find prime in {} iterations".format(maxIter))
 
 
-def splitRevealedAttributes(attrs, revealedAttrs):
+def splitRevealedAttrs(attrs, revealedAttrs):
     # Revealed attributes
     Ar = {}
     # Unrevealed attributes
@@ -88,9 +88,9 @@ def randomString(size: int = 20,
     return ''.join(sample(chars, size))
 
 
-def getUnrevealedAttrs(attrs, revealedAttrsList):
-    flatAttrs = flattenDict(attrs)
-    revealedAttrs, unrevealedAttrs = splitRevealedAttributes(flatAttrs, revealedAttrsList)
+def getUnrevealedAttrs(encodedAttrs, revealedAttrsList):
+    flatAttrs = flattenDict(encodedAttrs)
+    revealedAttrs, unrevealedAttrs = splitRevealedAttrs(flatAttrs, revealedAttrsList)
     return flatAttrs, unrevealedAttrs
 
 

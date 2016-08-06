@@ -27,10 +27,9 @@ def getPresentationToken(credDefs, proofBuilder, encodedAttrs):
     return presentationToken
 
 
-def getProofBuilder(attrs, credDefPks):
+def getProofBuilderAndAttribs(attribs, credDefPks):
     proofBuilder = ProofBuilder(credDefPks)
-    proofBuilder.setAttrs(attrs)
-    return proofBuilder, attrs
+    return proofBuilder, attribs
 
 
 def verifyPredicateProof(credDefs, credDefPks, proofBuilderWithAttribs,
@@ -63,7 +62,7 @@ def prepareProofAndVerify(credDefs, credDefPks, proofBuilder,
     proof = ProofBuilder.prepareProof(credDefPks=proofBuilder.credDefPks,
                                       masterSecret=proofBuilder.masterSecret,
                                       credential=presentationToken,
-                                      attrs=attrs.encoded(),
+                                      encodedAttrs=attrs.encoded(),
                                       revealedAttrs=revealedAttrs,
                                       nonce=proofNonce)
 

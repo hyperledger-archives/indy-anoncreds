@@ -6,7 +6,7 @@ from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.types import AttribDef, AttribType
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.temp_primes import P_PRIME1, Q_PRIME1, P_PRIME2, Q_PRIME2
-from anoncreds.test.helper import getProofBuilder
+from anoncreds.test.helper import getProofBuilderAndAttribs
 
 GVT = AttribDef('gvt',
                 [AttribType('name', encode=True),
@@ -102,31 +102,31 @@ def credDefPk(gvtCredDef):
 @pytest.fixture(scope="module")
 def gvtProofBuilderWithProver1(credDefPk):
     attribs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
-    return getProofBuilder(attribs, credDefPk)
+    return getProofBuilderAndAttribs(attribs, credDefPk)
 
 
 @pytest.fixture(scope="module")
 def gvtProofBuilderWithProver2(credDefPk):
     attribs = GVT.attribs(name='Jason Law', age=42, sex='male')
-    return getProofBuilder(attribs, credDefPk)
+    return getProofBuilderAndAttribs(attribs, credDefPk)
 
 
 @pytest.fixture(scope="module")
 def proofBuilderWithGvtAttribs(gvtCredDefPks):
     attribs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
-    return getProofBuilder(attribs, gvtCredDefPks)
+    return getProofBuilderAndAttribs(attribs, gvtCredDefPks)
 
 
 @pytest.fixture(scope="module")
 def proofBuilderWithXyzAttribs(xyzCredDefPks):
     attribs = XYZCorp.attribs(status='ACTIVE')
-    return getProofBuilder(attribs, xyzCredDefPks)
+    return getProofBuilderAndAttribs(attribs, xyzCredDefPks)
 
 
 @pytest.fixture(scope="module")
 def proofBuilderWithGvtAndXyzAttribs(gvtAndXyzCredDefPks, gvtAttrList, xyzAttrList):
     attributeList = gvtAttrList + xyzAttrList
-    return getProofBuilder(attributeList, gvtAndXyzCredDefPks)
+    return getProofBuilderAndAttribs(attributeList, gvtAndXyzCredDefPks)
 
 
 @pytest.fixture(scope="module")

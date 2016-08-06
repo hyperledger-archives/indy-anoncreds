@@ -24,10 +24,10 @@ class ProofBuilder:
         """
 
         self.id = str(uuid.uuid4())
-        self.credential = None
-        self.revealedAttrs = None
         self.nonce = None
-        self.attrs = {}
+        self.credential = None
+        self.encodedAttrs = None
+        self.revealedAttrs = None
 
         # Generate the master secret
         self._ms = masterSecret or integer(randomBits(LARGE_MASTER_SECRET))
@@ -55,9 +55,6 @@ class ProofBuilder:
     def masterSecret(self):
         return self._ms
 
-    def setAttrs(self, attrs):
-        self.attrs = attrs
-
     def setCredential(self, credential):
         self.credential = credential
 
@@ -67,22 +64,24 @@ class ProofBuilder:
     def setNonce(self, nonce):
         self.nonce = nonce
 
-    def setParams(self, attrs, credential, revealedAttrs, nonce):
-        self.setAttrs(attrs)
+    def setEncodedAttrs(self, encodedAttrs):
+        self.encodedAttrs = encodedAttrs
+
+    def setParams(self, credential, revealedAttrs, nonce):
         self.setCredential(credential)
         self.setRevealedAttrs(revealedAttrs)
         self.setNonce(nonce)
 
     @staticmethod
     def prepareProof(credDefPks, masterSecret, credential: Dict[str, Credential],
-                     attrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
+                     encodedAttrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
                      nonce) -> types.Proof:
         """
         Prepare the proof from credentials
 
         :param credential: The credential to be used for the proof preparation.
         This is a dictionary with key as issuer name and value as the credential
-        :param attrs: The encoded attributes dictionary
+        :param encodedAttrs: The encoded attributes dictionary
         :param revealedAttrs: The revealed attributes list
         :param nonce: The nonce used to have a commit
         :return: The proof
@@ -91,8 +90,8 @@ class ProofBuilder:
         evect = {}
         vvect = {}
 
-        flatAttrs, unrevealedAttrs = getUnrevealedAttrs(attrs, revealedAttrs)
-        tildeValues, primeValues, T = findSecretValues(attrs, unrevealedAttrs, credential, credDefPks)
+        flatAttrs, unrevealedAttrs = getUnrevealedAttrs(encodedAttrs, revealedAttrs)
+        tildeValues, primeValues, T = findSecretValues(encodedAttrs, unrevealedAttrs, credential, credDefPks)
         mtilde, etilde, vtilde = tildeValues
         Aprime, vprime, eprime = primeValues
 
@@ -110,6 +109,7 @@ class ProofBuilder:
         mvect[ZERO_INDEX] = mtilde[ZERO_INDEX] + (c * masterSecret)
 
         return Proof(c, evect, mvect, vvect, Aprime)
+
 
     # FIXME This function is 100 lines long. Break it down.
     def preparePredicateProof(self, credential: Dict[str, Credential],
@@ -207,7 +207,7 @@ class ProofBuilder:
         return self._vprime
 
 
-def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Dict,
+def findSecretValues(encodedAttrs: Dict[str, T], unrevealedAttrs: Dict,
                      credentials: Dict[str, Credential],
                      credDefPks: Dict[str, CredDefPublicKey]):
 
@@ -228,7 +228,7 @@ def findSecretValues(attrs: Dict[str, T], unrevealedAttrs: Dict,
 
         credDefPk = credDefPks[issuer]
         A, e, v = credential
-        includedAttrs = attrs[issuer]
+        includedAttrs = encodedAttrs[issuer]
 
         Aprime[issuer] = A * (credDefPk.S ** Ra) % credDefPk.N
         vprime[issuer] = (v - e * Ra)

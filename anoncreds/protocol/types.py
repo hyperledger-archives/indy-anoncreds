@@ -6,7 +6,7 @@ from typing import TypeVar, Dict
 from charm.core.math.integer import integer
 from charm.toolbox.conversion import Conversion
 
-from anoncreds.protocol.globals import APRIME, EVECT, MVECT, VVECT, CRED_C, ETILDE, MTILDE, VTILDE, EPRIME, VPRIME, \
+from anoncreds.protocol.globals import APRIME, EVECT, MVECT, VVECT, C_VALUE, ETILDE, MTILDE, VTILDE, EPRIME, VPRIME, \
     CRED_A, CRED_E, CRED_V
 
 
@@ -131,6 +131,35 @@ class SerFmt(Enum):
     base58 = 3
 
 
+class ProofComponent:
+    def __init__(self):
+        self.evect = {}
+        self.mvect = {}
+        self.vvect = {}
+        self.flatAttrs = None
+        self.unrevealedAttrs = None
+        self.tildeValues = None
+        self.primeValues = None
+        self.T = None
+        self.c = None
+
+class PredicateProofComponent(ProofComponent):
+    def __init__(self):
+        super().__init__()
+        self.TauList = []
+        self.CList = []
+        self.C = {}
+        self.u = {}
+        self.r = {}
+
+        self.alphavect = {}
+        self.rvect = {}
+        self.uvect = {}
+
+        self.rtilde = {}
+        self.utilde = {}
+        self.alphatilde = 0
+
 # Named tuples
 T = TypeVar('T')
 
@@ -144,7 +173,7 @@ SecretValue = namedtuple("SecretValue", ["tildValues", "primeValues", "T"])
 
 CredDefSecretKey = namedtuple("CredDefSecretKey", ["p", "q"])
 
-Proof = namedtuple('Proof', [CRED_C, EVECT, MVECT, VVECT, APRIME])
+Proof = namedtuple('Proof', [C_VALUE, EVECT, MVECT, VVECT, APRIME])
 
 SubProofPredicate = namedtuple('SubProofPredicate', ["alphavect", "rvect",
                                                      "uvect"])

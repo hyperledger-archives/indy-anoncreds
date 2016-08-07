@@ -26,7 +26,7 @@ def testNegativePredicateDeltaShouldFail(gvtAndXyzCredDefs, verifierMulti1,
     predicate = {GVT.name: {
         'age': 30}}  # This will result in a negative value of delta i.e. -5
     with pytest.raises(ValueError):
-        prf = proofBuilder.preparePredicateProof(credential=presentationToken,
+        prf = proofBuilder.preparePredicateProof(creds=presentationToken,
                                           attrs=attrs.encoded(),
                                           revealedAttrs=revealedAttrs,
                                           nonce=nonce,

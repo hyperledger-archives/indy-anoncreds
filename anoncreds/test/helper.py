@@ -38,7 +38,7 @@ def verifyPredicateProof(credDefs, credDefPks, proofBuilderWithAttribs,
     proofBuilder, attrs = proofBuilderWithAttribs
     presentationToken = getPresentationToken(credDefs, proofBuilder, attrs.encoded())
     nonce = verifier.generateNonce(interactionId=1)
-    proof = proofBuilder.preparePredicateProof(credential=presentationToken,
+    proof = proofBuilder.preparePredicateProof(creds=presentationToken,
                                                attrs=attrs.encoded(),
                                                revealedAttrs=revealedAttrs,
                                                nonce=nonce,
@@ -61,7 +61,7 @@ def prepareProofAndVerify(credDefs, credDefPks, proofBuilder,
 
     proof = ProofBuilder.prepareProof(credDefPks=proofBuilder.credDefPks,
                                       masterSecret=proofBuilder.masterSecret,
-                                      credential=presentationToken,
+                                      creds=presentationToken,
                                       encodedAttrs=attrs.encoded(),
                                       revealedAttrs=revealedAttrs,
                                       nonce=proofNonce)

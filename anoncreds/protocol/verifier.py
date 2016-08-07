@@ -78,8 +78,7 @@ class Verifier:
         R = {}
         for key, val in keys[PK_R].items():
             R[str(key)] = val
-        pk_i = CredDefPublicKey(keys[PK_N], R, keys[PK_S], keys[PK_Z])
-        return pk_i
+        return CredDefPublicKey(keys[PK_N], R, keys[PK_S], keys[PK_Z])
 
     def getCredDef(self, issuerId, name, version):
         key = (issuerId, name, version)

@@ -8,8 +8,8 @@ from anoncreds.protocol.verifier import Verifier
 class Prover:
     def __init__(self, id):
         self.id = id
-        self.credDefs = {}          # Dict[(issuer, id, attribute names), credentialDefinition]
-        self.proofBuilders = {}     # Dict[proof id, Proof]
+        self.credDefs = {}          # Dict[(issuer, attribute names), credentialDefinition]
+        self.proofBuilders = {}     # Dict[ProofBuilder, ProofBuilder]
 
     def _getCredDef(self, issuer, attrNames):
         key = (issuer, tuple(sorted(attrNames)))

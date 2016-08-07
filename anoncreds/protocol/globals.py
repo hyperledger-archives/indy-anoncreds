@@ -15,10 +15,12 @@ LARGE_MASTER_SECRET = 256
 LARGE_ALPHATILDE = 2787
 ITERATIONS = 4
 
+
+MASTER_SEC_RAND = "master_secret_rand"
+REVEALED_ATTRS = "revealedAttrs"
 ZERO_INDEX = "0"
 
 ATTRS = "attrs"
-REVEALED_ATTRS = "revealedAttrs"
 DELTA = "delta"
 TVAL = "Tval"
 KEYS = "keys"
@@ -36,12 +38,11 @@ ETILDE = "etilde"
 MTILDE = "mtilde"
 VTILDE = "vtilde"
 
-MASTER_SEC_RAND = "master_secret_rand"
-
 CRED_A = "A"
 CRED_E = "e"
 CRED_V = "v"
-CRED_C = "c"
+
+C_VALUE = "c"
 
 PK_R = "R"
 PK_N = "N"

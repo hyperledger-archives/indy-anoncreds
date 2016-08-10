@@ -1,5 +1,3 @@
-# FIXME Python3 supports unicode characters. We needn't be ASCII-only in naming
-# the variables.
 LARGE_PRIME = 1024
 LARGE_VPRIME_PRIME = 2724
 LARGE_VPRIME = 2128

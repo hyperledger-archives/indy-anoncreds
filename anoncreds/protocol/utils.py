@@ -71,7 +71,6 @@ def splitRevealedAttrs(attrs, revealedAttrs):
     return Ar, Aur
 
 
-# FIXME This function is copy-pasted from plenum
 def randomString(size: int = 20,
                  chars: str = string.ascii_letters + string.digits) -> str:
     """

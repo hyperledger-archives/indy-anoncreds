@@ -263,7 +263,6 @@ def findSecretValues(encodedAttrs: Dict[str, T], unrevealedAttrs: Dict,
         Rur *= credDefPk.R[ZERO_INDEX] ** mtilde[ZERO_INDEX]
         return Rur
 
-    # FIXME Use unicode characters, they'll fit in one line.
     Aprime, vprime, eprime, etilde, vtilde, T = {}, {}, {}, {}, {}, {}
     mtilde = getMTilde(unrevealedAttrs)
 

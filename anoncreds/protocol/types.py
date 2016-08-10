@@ -84,8 +84,6 @@ class Attribs:
     def __iter__(self):
         return self._vals.__iter__()
 
-
-    # FIXME Cleanup this mess by inheriting dict and using proper dunder methods
     def keys(self):
         return self._vals.keys()
 
@@ -103,8 +101,6 @@ class CredDefPublicKey:
         self.S = S
         self.Z = Z
 
-    # FIXME Write the whole word, we save nothing with a few characters.
-    # Short versions breed inconsistency and cause confusion.
     @staticmethod
     def deser(v, n):
         if isinstance(v, integer):

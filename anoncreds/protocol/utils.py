@@ -3,7 +3,7 @@ import string
 from hashlib import sha256
 from random import randint, sample
 
-from charm.core.math.integer import random, isPrime
+from charm.core.math.integer import random, isPrime, integer
 from charm.toolbox.conversion import Conversion
 
 
@@ -96,3 +96,11 @@ def getUnrevealedAttrs(encodedAttrs, revealedAttrsList):
 def flattenDict(attrs):
     return {x: y for z in attrs.values()
             for x, y in z.items()}
+
+
+def strToCharmInteger(n):
+    if "mod" in n:
+        a, b = n.split("mod")
+        return integer(int(a.strip())) % integer(int(b.strip()))
+    else:
+        return integer(int(n))

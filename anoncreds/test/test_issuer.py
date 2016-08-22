@@ -10,8 +10,7 @@ def testIssuerShouldBePassedAttributesList():
     attrRepo.addAttributes('prover1', GVT.attribs())
 
     issuer = Issuer(GVT.name, attrRepo)
-    # This test should fail to add credential definition as Credential
-    # definition requires attributes name list
+    # This test should fail to add credential definition as
+    # Credential definition requires attributes name list
     with pytest.raises(ValueError):
-        credDef = CredentialDefinition(list())
-        issuer.addCredDef(credDef)
+        CredentialDefinition(list())

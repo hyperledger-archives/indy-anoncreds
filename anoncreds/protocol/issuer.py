@@ -11,19 +11,29 @@ class Issuer:
         self.credDefsForAttribs = {}    # Dict[Tuple, List]
         self.attributeRepo = attributeRepo
 
+    def getId(self):
+        return self.id
+
+    def _addCredDef(self, credDef: CredentialDefinition):
+        self.credDefs[(credDef.name, credDef.version)] = credDef
+        key = tuple(sorted(credDef.attrNames))
+        if key not in self.credDefsForAttribs:
+            self.credDefsForAttribs[key] = []
+        self.credDefsForAttribs[key].append(credDef)
+
+    def newCredDef(self, attrNames, name, version,
+                   p_prime=None, q_prime=None, ip=None, port=None):
+        credDef = CredentialDefinition(attrNames, name, version,
+                                       p_prime, q_prime, ip, port)
+        self._addCredDef(credDef)
+        return credDef
+
     def getCredDef(self, name=None, version=None, attributes: Sequence[str]=None):
         if name and version:
             return self.credDefs[(name, version)]
         else:
             defs = self.credDefsForAttribs.get(tuple(sorted(attributes)))
             return defs[-1] if defs else None
-
-    def addCredDef(self, credDef: CredentialDefinition):
-        self.credDefs[(credDef.name, credDef.version)] = credDef
-        key = tuple(sorted(credDef.attrNames))
-        if key not in self.credDefsForAttribs:
-            self.credDefsForAttribs[key] = []
-        self.credDefsForAttribs[key].append(credDef)
 
     def createCred(self, proverId, name, version, U):
         # This method works for one credDef only.
@@ -34,11 +44,5 @@ class Issuer:
             U, next(iter(encAttrs.values())), credDef.PK, credDef.p_prime,
             credDef.q_prime)
 
-    def newCredDef(self, attrNames, name, version,
-                   p_prime=None, q_prime=None, ip=None, port=None):
-        credDef = CredentialDefinition(attrNames, name, version,
-                                       p_prime, q_prime, ip, port)
-        self.addCredDef(credDef)
-        return credDef
 
 

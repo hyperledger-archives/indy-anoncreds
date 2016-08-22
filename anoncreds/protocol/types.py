@@ -121,6 +121,7 @@ class CredDefPublicKey:
                                 self.deser(self.S, self.N),
                                 self.deser(self.Z, self.N))
 
+
 class SerFmt(Enum):
     charmInteger = 1
     py3Int = 2

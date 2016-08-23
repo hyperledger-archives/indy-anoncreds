@@ -23,7 +23,7 @@ def testInteraction():
     attrRepo.addAttributes(proverId, attrs)
 
     issuer = Issuer(issuerId, attrRepo)
-    issuer.newCredDef(attrNames, credName, credVersion,
+    issuer.addNewCredDef(attrNames, credName, credVersion,
                       p_prime=P_PRIME1, q_prime=Q_PRIME1)
     prover = Prover(proverId)
     verifier = Verifier(verifierId)

@@ -22,8 +22,8 @@ class CredentialDefinition:
         :param attrNames: List of all attribute names
         """
 
-        self.name = name or randomString(6)
-        self.version = version or "1.0"
+        self._name = name or randomString(6)
+        self._version = version or "1.0"
         self.ip = ip
         self.port = port
         self.attrNames = attrNames
@@ -63,6 +63,22 @@ class CredentialDefinition:
 
         self._pk = CredDefPublicKey(n, R, S, Z)
         self.sk = {'p': self.p, 'q': self.q}
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        self._name = name
+
+    @property
+    def version(self) -> str:
+        return self._version
+
+    @version.setter
+    def version(self, version):
+        self._version = version
 
     @property
     def PK(self) -> CredDefPublicKey:

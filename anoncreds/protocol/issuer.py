@@ -4,7 +4,7 @@ from anoncreds.protocol.attribute_repo import AttrRepo
 from anoncreds.protocol.credential_definition import CredentialDefinition, generateCredential
 
 
-class Issuer(object):
+class Issuer:
     def __init__(self, id, attributeRepo: AttrRepo=None):
         self.id = id
         self.credDefs = {}              # Dict[Tuple, CredentialDefinition]
@@ -18,7 +18,7 @@ class Issuer(object):
             self.credDefsForAttribs[key] = []
         self.credDefsForAttribs[key].append(credDef)
 
-    def newCredDef(self, attrNames, name, version,
+    def addNewCredDef(self, attrNames, name, version,
                    p_prime=None, q_prime=None, ip=None, port=None):
         credDef = CredentialDefinition(attrNames, name, version,
                                        p_prime, q_prime, ip, port)

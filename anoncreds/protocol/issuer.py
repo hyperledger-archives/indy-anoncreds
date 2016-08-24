@@ -11,6 +11,9 @@ class Issuer:
         self.credDefsForAttribs = {}    # Dict[Tuple, List]
         self.attributeRepo = attributeRepo
 
+    def initAttrRepo(self, attributeRepo: AttrRepo):
+        self.attributeRepo = attributeRepo
+
     def _addCredDef(self, credDef: CredentialDefinition):
         self.credDefs[(credDef.name, credDef.version)] = credDef
         key = tuple(sorted(credDef.attrNames))

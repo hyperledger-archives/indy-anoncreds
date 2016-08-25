@@ -7,7 +7,7 @@ from charm.core.math.integer import randomPrime, random, integer, randomBits, \
 from anoncreds.protocol.globals import LARGE_PRIME, LARGE_VPRIME_PRIME, LARGE_E_START, LARGE_E_END_RANGE, KEYS, \
     MASTER_SEC_RAND, PK_N, PK_S, PK_Z, PK_R, NAME, VERSION, TYPE, IP, PORT, TYPE_CL
 from anoncreds.protocol.types import CredDefPublicKey, CredDefSecretKey, SerFmt
-from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString
+from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString, strToCharmInteger
 
 static_p_prime=integer(157329491389375793912190594961134932804032426403110797476730107804356484516061051345332763141806005838436304922612495876180233509449197495032194146432047460167589034147716097417880503952139805241591622353828629383332869425029086898452227895418829799945650973848983901459733426212735979668835984691928193677469)
 static_q_prime=integer(151323892648373196579515752826519683836764873607632072057591837216698622729557534035138587276594156320800768525825023728398410073692081011811496168877166664537052088207068061172594879398773872352920912390983199416927388688319207946493810449203702100559271439586753256728900713990097168484829574000438573295723)
@@ -83,6 +83,16 @@ class CredentialDefinition:
     def version(self, version):
         self._version = version
 
+    @staticmethod
+    def getPk(keys):
+        N = strToCharmInteger(base58decode(keys["N"]))
+        S = strToCharmInteger(base58decode(keys["S"]))
+        Z = strToCharmInteger(base58decode(keys["Z"]))
+        R = {}
+        for k, v in keys["R"].items():
+            R[k] = strToCharmInteger(base58decode(v))
+        return CredDefPublicKey(N, R, S, Z)
+
     @property
     def PK(self) -> CredDefPublicKey:
         """
@@ -106,6 +116,10 @@ class CredentialDefinition:
     @property
     def serializedSK(self) -> str:
         return "{},{}".format(int(self.p), int(self.q))
+
+    @classmethod
+    def getCryptoInteger(cls, val):
+        return strToCharmInteger(val)
 
     def get(self, serFmt: SerFmt=SerFmt.charmInteger):
         pk = copy(self.PK)
@@ -156,44 +170,6 @@ def getPPrime(sk: CredDefSecretKey):
 
 def getQPrime(sk: CredDefSecretKey):
     return (sk.q - 1) / 2
-
-
-def generateCredential(u, attrs, pk, p_prime, q_prime):
-    """
-    Issue the credential for the defined attributes
-
-    :param u: The `u` value provided by the prover
-    :param attrs: The attributes for which the credential needs to be generated
-    :return: The presentation token as a combination of (A, e, vprimeprime)
-    """
-
-    if not u:
-        raise ValueError("u must be provided to issue a credential")
-    # Generate a random prime and
-    # Set the Most-significant-bit to 1
-    vprimeprime = integer(randomBits(LARGE_VPRIME_PRIME) |
-                          (2 ** (LARGE_VPRIME_PRIME - 1)))
-    # Generate prime number in the range (2^596, 2^596 + 2^119)
-    estart = 2 ** LARGE_E_START
-    eend = (estart + 2 ** LARGE_E_END_RANGE)
-    e = get_prime_in_range(estart, eend)
-    A = _sign(pk, attrs, vprimeprime, u, e, p_prime, q_prime)
-    return A, e, vprimeprime
-
-
-def _sign(pk, attrs, v, u, e, p_prime, q_prime):
-    Rx = 1 % pk.N
-    # Get the product sequence for the (R[i] and attrs[i]) combination
-    for k, val in attrs.items():
-        Rx = Rx * (pk.R[str(k)] ** val)
-    if u != 0:
-        u = u % pk.N
-        Rx *= u
-    nprime = p_prime * q_prime
-    einverse = e % nprime
-    Q = pk.Z / (Rx * (pk.S ** v)) % pk.N
-    A = Q ** (einverse ** -1) % pk.N
-    return A
 
 def serialize(data, serfunc):
     for k, v in data[KEYS].items():

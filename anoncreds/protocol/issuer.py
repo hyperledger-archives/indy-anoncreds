@@ -1,7 +1,11 @@
 from typing import Sequence
 
 from anoncreds.protocol.attribute_repo import AttrRepo
-from anoncreds.protocol.credential_definition import CredentialDefinition, generateCredential
+from anoncreds.protocol.credential_definition import CredentialDefinition, getDeserializedSK, getPPrime, getQPrime
+from anoncreds.protocol.globals import LARGE_VPRIME_PRIME, LARGE_E_START, LARGE_E_END_RANGE
+from anoncreds.protocol.types import CredDefPublicKey
+from anoncreds.protocol.utils import get_prime_in_range, strToCharmInteger
+from charm.core.math.integer import integer, randomBits
 
 
 class Issuer:
@@ -9,9 +13,6 @@ class Issuer:
         self.id = id
         self.credDefs = {}              # Dict[Tuple, CredentialDefinition]
         self.credDefsForAttribs = {}    # Dict[Tuple, List]
-        self.attributeRepo = attributeRepo
-
-    def initAttrRepo(self, attributeRepo: AttrRepo):
         self.attributeRepo = attributeRepo
 
     def _addCredDef(self, credDef: CredentialDefinition):
@@ -40,9 +41,47 @@ class Issuer:
         credDef = self.getCredDef(name, version)
         attributes = self.attributeRepo.getAttributes(proverId)
         encAttrs = attributes.encoded()
-        return generateCredential(
+        return Issuer.generateCredential(
             U, next(iter(encAttrs.values())), credDef.PK, credDef.p_prime,
             credDef.q_prime)
 
+    @classmethod
+    def generateCredential(cls, uValue, attributes, pk, sk):
+        """
+        Issue the credential for the defined attributes
 
+        :param u: The `u` value provided by the prover
+        :param attrs: The attributes for which the credential needs to be generated
+        :return: The presentation token as a combination of (A, e, vprimeprime)
+        """
+        u = strToCharmInteger(uValue)
+        sk = getDeserializedSK(sk)
+        p_prime, q_prime = getPPrime(sk), getQPrime(sk)
+
+        if not u:
+            raise ValueError("u must be provided to issue a credential")
+        # Generate a random prime and
+        # Set the Most-significant-bit to 1
+        vprimeprime = integer(randomBits(LARGE_VPRIME_PRIME) |
+                              (2 ** (LARGE_VPRIME_PRIME - 1)))
+        # Generate prime number in the range (2^596, 2^596 + 2^119)
+        estart = 2 ** LARGE_E_START
+        eend = (estart + 2 ** LARGE_E_END_RANGE)
+        e = get_prime_in_range(estart, eend)
+        A = Issuer._sign(pk, attributes, vprimeprime, u, e, p_prime, q_prime)
+        return A, e, vprimeprime
+
+    def _sign(pk: CredDefPublicKey, attrs, v, u, e, p_prime, q_prime):
+        Rx = 1 % pk.N
+        # Get the product sequence for the (R[i] and attrs[i]) combination
+        for k, val in attrs.items():
+            Rx = Rx * (pk.R[str(k)] ** val)
+        if u != 0:
+            u = u % pk.N
+            Rx *= u
+        nprime = p_prime * q_prime
+        einverse = e % nprime
+        Q = pk.Z / (Rx * (pk.S ** v)) % pk.N
+        A = Q ** (einverse ** -1) % pk.N
+        return A
 

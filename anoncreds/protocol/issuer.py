@@ -42,11 +42,11 @@ class Issuer:
         attributes = self.attributeRepo.getAttributes(proverId)
         encAttrs = attributes.encoded()
         return Issuer.generateCredential(
-            U, next(iter(encAttrs.values())), credDef.PK, credDef.p_prime,
+            U, next(iter(encAttrs.values())), credDef.PK, None, credDef.p_prime,
             credDef.q_prime)
 
     @classmethod
-    def generateCredential(cls, uValue, attributes, pk, sk):
+    def generateCredential(cls, uValue, attributes, pk, sk, p_prime, q_prime):
         """
         Issue the credential for the defined attributes
 
@@ -55,8 +55,9 @@ class Issuer:
         :return: The presentation token as a combination of (A, e, vprimeprime)
         """
         u = strToCharmInteger(uValue)
-        sk = getDeserializedSK(sk)
-        p_prime, q_prime = getPPrime(sk), getQPrime(sk)
+
+        if sk:
+            p_prime, q_prime = getPPrime(sk), getQPrime(sk)
 
         if not u:
             raise ValueError("u must be provided to issue a credential")
@@ -70,6 +71,14 @@ class Issuer:
         e = get_prime_in_range(estart, eend)
         A = Issuer._sign(pk, attributes, vprimeprime, u, e, p_prime, q_prime)
         return A, e, vprimeprime
+
+    # @classmethod
+    # def generateCredential(cls, uValue, attributes, pk, sk):
+    #     sk = getDeserializedSK(sk)
+    #     p_prime, q_prime = getPPrime(sk), getQPrime(sk)
+    #     return Issuer.generateCredential(uValue, attributes, pk, p_prime, q_prime)
+
+
 
     def _sign(pk: CredDefPublicKey, attrs, v, u, e, p_prime, q_prime):
         Rx = 1 % pk.N

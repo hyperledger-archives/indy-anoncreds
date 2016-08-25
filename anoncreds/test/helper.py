@@ -1,4 +1,4 @@
-from anoncreds.protocol.credential_definition import generateCredential
+from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import ProofBuilder
 from anoncreds.protocol.types import Credential
 
@@ -9,16 +9,17 @@ from anoncreds.protocol.types import Credential
 # cryptographic credentials (e.g., X.509 credentials) using a digital (secret) signature key.
 # However, Privacy-ABCs allow their holder to transform them into a new token, called
 # presentation token, in such a way that the privacy of the user is protected
-from anoncreds.protocol.verifier import verify_proof
+from anoncreds.protocol.verifier import Verifier
 
 
 def getPresentationToken(credDefs, proofBuilder, encodedAttrs):
     presentationToken = {}
     for key, val in proofBuilder.U.items():
         credDef = credDefs[key]
-        A, e, vprimeprime = generateCredential(proofBuilder.U[key],
+        A, e, vprimeprime = Issuer.generateCredential(proofBuilder.U[key],
                                                encodedAttrs[key],
                                                credDef.PK,
+                                               None,
                                                credDef.p_prime,
                                                credDef.q_prime
                                                )
@@ -67,7 +68,7 @@ def prepareProofAndVerify(credDefs, credDefPks, proofBuilder,
                                       nonce=proofNonce)
 
     vNonce = proofNonce if not verifyNonce else verifyNonce
-    return verify_proof(proof=proof,
+    return Verifier.verifyProof(proof=proof,
                                nonce=vNonce,
                                credDefPks=credDefPks,
                                attrs=attrs.encoded(),

@@ -127,7 +127,7 @@ class CredentialDefinition:
     def getCryptoInteger(cls, val):
         return strToCharmInteger(val)
 
-    def get(self, serFmt: SerFmt=SerFmt.charmInteger):
+    def get(self, serFmt: SerFmt=SerFmt.default):
         pk = copy(self.PK)
         R = copy(pk.R)
         data = {

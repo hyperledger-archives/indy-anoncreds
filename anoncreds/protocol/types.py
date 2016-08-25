@@ -123,7 +123,7 @@ class CredDefPublicKey:
 
 
 class SerFmt(Enum):
-    charmInteger = 1
+    default = 1
     py3Int = 2
     base58 = 3
 

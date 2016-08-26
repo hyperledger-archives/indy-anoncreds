@@ -46,7 +46,7 @@ class Issuer:
             credDef.q_prime)
 
     @classmethod
-    def generateCredential(cls, uValue, attributes, pk, sk, p_prime, q_prime):
+    def generateCredential(cls, uValue, attributes, pk, sk=None, p_prime=None, q_prime=None):
         """
         Issue the credential for the defined attributes
 
@@ -54,9 +54,10 @@ class Issuer:
         :param attrs: The attributes for which the credential needs to be generated
         :return: The presentation token as a combination of (A, e, vprimeprime)
         """
-        u = strToCharmInteger(uValue)
+        u = strToCharmInteger(uValue) if isinstance(uValue, str) else uValue
 
         if sk:
+            sk = getDeserializedSK(sk)
             p_prime, q_prime = getPPrime(sk), getQPrime(sk)
 
         if not u:

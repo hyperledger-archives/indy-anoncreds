@@ -41,10 +41,10 @@ class CredentialDefinition:
             raise ValueError("List of attribute names is required to "
                              "setup credential definition")
 
-        self.p_prime = primes.get("prime1")[0] if str(p_prime) == "static" else genPrime()
+        self.p_prime = genPrime() if p_prime is None else primes.get(p_prime)[0] if isinstance(p_prime, str) else p_prime
         self.p = 2 * self.p_prime + 1
 
-        self.q_prime = primes.get("prime1")[1] if str(q_prime) == "static" else genPrime()
+        self.q_prime = genPrime() if q_prime is None else primes.get(q_prime)[1] if isinstance(q_prime, str) else q_prime
         self.q = 2 * self.q_prime + 1
 
         n = self.p * self.q

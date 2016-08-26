@@ -67,10 +67,11 @@ class ProofBuilder:
     def setEncodedAttrs(self, encodedAttrs):
         self.encodedAttrs = encodedAttrs
 
-    def setParams(self, credential, revealedAttrs, nonce):
-        self.setCredential(credential)
-        self.setRevealedAttrs(revealedAttrs)
+    def setParams(self, credential=None, revealedAttrs=None, nonce=None, encodedAttrs=None):
         self.setNonce(nonce)
+        self.setCredential(credential)
+        self.setEncodedAttrs(encodedAttrs)
+        self.setRevealedAttrs(revealedAttrs)
 
     @staticmethod
     def prepareProof(credDefPks, masterSecret, creds: Dict[str, Credential],

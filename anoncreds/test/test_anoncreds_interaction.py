@@ -28,8 +28,8 @@ def testInteraction():
     prover = Prover(proverId)
     verifier = Verifier(verifierId)
 
-    proofBuilder = prover.createProofBuilder(issuer, attrNames, interactionId, verifier,
-                                             encodedAttrs, revealedAttrs)
+    proofBuilder = prover.createProofBuilder(issuer, attrNames, interactionId,
+                                             verifier, revealedAttrs)
 
 
     proof = proofBuilder.prepareProof(proofBuilder.credDefPks, proofBuilder.masterSecret,

@@ -34,7 +34,7 @@ def getProofBuilderAndAttribs(attribs, credDefPks):
 
 
 def verifyPredicateProof(credDefs, credDefPks, proofBuilderWithAttribs,
-                             revealedAttrs, predicate, verifier):
+                             revealedAttrs, predicate, verifier: Verifier):
 
     proofBuilder, attrs = proofBuilderWithAttribs
     presentationToken = getPresentationToken(credDefs, proofBuilder, attrs.encoded())

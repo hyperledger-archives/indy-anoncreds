@@ -1,4 +1,7 @@
+from _sha256 import sha256
+
 import base58
+from charm.toolbox.conversion import Conversion
 
 from copy import copy
 
@@ -159,6 +162,18 @@ class CredentialDefinition:
     @classmethod
     def getStaticQPrime(cls, key):
         return primes.get(key)[1]
+
+    @classmethod
+    def getEncodedAttrs(cls, attrs):
+        """
+        This function will encode all the attributes to 256 bit integers
+
+        :param attrs: The attributes to pass in credentials
+        :return:
+        """
+
+        return {key: Conversion.bytes2integer(sha256(value.encode()).digest())
+                for key, value in attrs.items()}
 
 
 def genPrime():

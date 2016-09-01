@@ -44,22 +44,7 @@ def getProofParams(proof, pkIssuer: Dict[str, CredDefPublicKey],
     return Aprime, c, Tvect
 
 
-def verify_proof(credDefPks, proof, nonce, attrs, revealedAttrs):
-    """
-    Verify the proof
-    :param attrs: The encoded attributes dictionary
-    :param revealedAttrs: The revealed attributes list
-    :param nonce: The nonce used to have a commit
-    :return: A boolean with the verification status for the proof
-    """
 
-    Aprime, c, Tvect = getProofParams(proof, credDefPks, attrs, revealedAttrs)
-    # Calculate the `cvect` value based on proof.
-    # This value is mathematically proven to be equal to `c`
-    # if proof is created correctly from credentials. Refer 2.8 in document
-    cvect = integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
-                                                  {NONCE: nonce})))
-    return c == cvect
 
 
 class Verifier:
@@ -90,7 +75,7 @@ class Verifier:
     def verify(self, issuer, name, version, proof, nonce, attrs, revealedAttrs):
         credDef = self.fetchCredDef(issuer, name, version)
         pk = self._getIssuerPkByCredDef(credDef)
-        result = verify_proof({issuer.id: pk}, proof, nonce, attrs, revealedAttrs)
+        result = Verifier.verifyProof({issuer.id: pk}, proof, nonce, attrs, revealedAttrs)
         return result
 
     def fetchCredDef(self, issuer, name, version):
@@ -150,5 +135,20 @@ class Verifier:
 
         return c == cvect
 
+    @classmethod
+    def verifyProof(cls, credDefPks, proof, nonce, attrs, revealedAttrs):
+        """
+        Verify the proof
+        :param attrs: The encoded attributes dictionary
+        :param revealedAttrs: The revealed attributes list
+        :param nonce: The nonce used to have a commit
+        :return: A boolean with the verification status for the proof
+        """
 
-
+        Aprime, c, Tvect = getProofParams(proof, credDefPks, attrs, revealedAttrs)
+        # Calculate the `cvect` value based on proof.
+        # This value is mathematically proven to be equal to `c`
+        # if proof is created correctly from credentials. Refer 2.8 in document
+        cvect = integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
+                                                      {NONCE: nonce})))
+        return c == cvect

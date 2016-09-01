@@ -1,4 +1,4 @@
-from anoncreds.protocol.credential_definition import CredentialDefinition, getDeserializedSK, getPPrime, getQPrime
+from anoncreds.protocol.credential_definition import getDeserializedSK, getPPrime, getQPrime
 
 
 def testSerialization(gvtCredDef):

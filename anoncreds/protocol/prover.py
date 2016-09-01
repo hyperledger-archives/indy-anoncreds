@@ -44,7 +44,7 @@ class Prover:
         return proofBuilder
 
     def createProofBuilder(self, issuer, attrNames, interactionId, verifier,
-                           encodedAttrs, revealedAttrs):
+                           revealedAttrs):
         credDef = self._getCredDef(issuer, attrNames)
         proofBuilder = self._initProofBuilder(issuer, attrNames)
         nonce = self.fetchNonce(interactionId, verifier)

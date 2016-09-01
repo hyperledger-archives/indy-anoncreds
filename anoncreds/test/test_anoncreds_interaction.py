@@ -1,7 +1,7 @@
 from anoncreds.protocol.attribute_repo import InMemoryAttrRepo
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
-from anoncreds.temp_primes import P_PRIME1, Q_PRIME1
+from anoncreds.temp_primes import P_PRIME, Q_PRIME
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.test.conftest import GVT
 
@@ -23,13 +23,13 @@ def testInteraction():
     attrRepo.addAttributes(proverId, attrs)
 
     issuer = Issuer(issuerId, attrRepo)
-    issuer.newCredDef(attrNames, credName, credVersion,
-                      p_prime=P_PRIME1, q_prime=Q_PRIME1)
+    issuer.addNewCredDef(attrNames, credName, credVersion,
+                      p_prime=P_PRIME, q_prime=Q_PRIME)
     prover = Prover(proverId)
     verifier = Verifier(verifierId)
 
-    proofBuilder = prover.createProofBuilder(issuer, attrNames, interactionId, verifier,
-                                             encodedAttrs, revealedAttrs)
+    proofBuilder = prover.createProofBuilder(issuer, attrNames, interactionId,
+                                             verifier, revealedAttrs)
 
 
     proof = proofBuilder.prepareProof(proofBuilder.credDefPks, proofBuilder.masterSecret,

@@ -2,10 +2,9 @@ import pytest
 
 from anoncreds.protocol.attribute_repo import InMemoryAttrRepo
 from anoncreds.protocol.issuer import Issuer
-from anoncreds.protocol.credential_definition import CredentialDefinition
+from anoncreds.protocol.credential_definition import CredentialDefinition, primes
 from anoncreds.protocol.types import AttribDef, AttribType
 from anoncreds.protocol.verifier import Verifier
-from anoncreds.temp_primes import P_PRIME1, Q_PRIME1, P_PRIME2, Q_PRIME2
 from anoncreds.test.helper import getProofBuilderAndAttribs
 
 GVT = AttribDef('gvt',
@@ -74,11 +73,13 @@ def gvtAndXyzCredDefPks(gvtAndXyzCredDefs):
 
 @pytest.fixture(scope="module")
 def primes1():
+    P_PRIME1, Q_PRIME1 = primes.get("prime1")
     return dict(p_prime=P_PRIME1, q_prime=Q_PRIME1)
 
 
 @pytest.fixture(scope="module")
 def primes2():
+    P_PRIME2, Q_PRIME2 = primes.get("prime2")
     return dict(p_prime=P_PRIME2, q_prime=Q_PRIME2)
 
 

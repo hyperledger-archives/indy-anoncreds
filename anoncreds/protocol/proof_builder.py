@@ -7,12 +7,12 @@ from charm.core.math.integer import randomBits, integer
 
 from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, LARGE_E_START, LARGE_ETILDE, \
     LARGE_VTILDE, LARGE_MASTER_SECRET, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, APRIME, DELTA, TVAL, \
-    NONCE, ZERO_INDEX
+    NONCE, ZERO_INDEX, C_VALUE, EVECT, MVECT, VVECT, ISSUER, PROOF
 from anoncreds.protocol.types import Credential, CredDefPublicKey,\
     PredicateProof, SubProofPredicate, T, Proof, SecretValue, TildValue, PrimeValue, ProofComponent, \
     PredicateProofComponent
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
-    getUnrevealedAttrs
+    getUnrevealedAttrs, strToCharmInteger
 from anoncreds.protocol import types
 
 
@@ -67,10 +67,11 @@ class ProofBuilder:
     def setEncodedAttrs(self, encodedAttrs):
         self.encodedAttrs = encodedAttrs
 
-    def setParams(self, credential, revealedAttrs, nonce):
-        self.setCredential(credential)
-        self.setRevealedAttrs(revealedAttrs)
+    def setParams(self, credential=None, revealedAttrs=None, nonce=None, encodedAttrs=None):
         self.setNonce(nonce)
+        self.setCredential(credential)
+        self.setEncodedAttrs(encodedAttrs)
+        self.setRevealedAttrs(revealedAttrs)
 
     @staticmethod
     def prepareProof(credDefPks, masterSecret, creds: Dict[str, Credential],
@@ -111,6 +112,30 @@ class ProofBuilder:
 
         return Proof(proofComponent.c, proofComponent.evect, proofComponent.mvect, proofComponent.vvect, proofComponent.primeValues.Aprime)
 
+    @staticmethod
+    def prepareProofFromDict(proofElements) -> Proof:
+        issuer = proofElements[ISSUER]
+        prf = proofElements[PROOF]
+        prfArgs = {}
+        prfArgs[APRIME] = {issuer: strToCharmInteger(prf[APRIME][issuer])}
+        prfArgs[C_VALUE] = strToCharmInteger(prf[C_VALUE])
+        prfArgs[EVECT] = {issuer: strToCharmInteger(prf[EVECT][issuer])}
+        prfArgs[MVECT] = {k: strToCharmInteger(v) for k, v in prf[MVECT].items()}
+        prfArgs[VVECT] = {issuer: strToCharmInteger(prf[VVECT][issuer])}
+        return Proof(**prfArgs)
+
+    @staticmethod
+    def prepareProofAsDict(issuer, credDefPks, masterSecret, creds: Dict[str, Credential],
+                     encodedAttrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
+                     nonce) -> dict:
+        prf = ProofBuilder.prepareProof(credDefPks, masterSecret, creds, encodedAttrs, revealedAttrs, nonce)
+        proof = {}
+        proof[APRIME] = {issuer: str(prf.Aprime[issuer])}
+        proof[C_VALUE] = str(prf.c)
+        proof[EVECT] = {issuer: str(prf.evect[issuer])}
+        proof[MVECT] = {k: str(v) for k, v in prf.mvect.items()}
+        proof[VVECT] = {issuer: str(prf.vvect[issuer])}
+        return proof
 
     def preparePredicateProof(self, creds: Dict[str, Credential],
                               attrs: Dict[str, Dict[str, T]],

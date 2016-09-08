@@ -1,7 +1,6 @@
 from anoncreds.protocol.attribute_repo import InMemoryAttrRepo
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
-from anoncreds.temp_primes import P_PRIME, Q_PRIME
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.test.conftest import GVT
 
@@ -24,7 +23,7 @@ def testInteraction():
 
     issuer = Issuer(issuerId, attrRepo)
     issuer.addNewCredDef(attrNames, credName, credVersion,
-                      p_prime=P_PRIME, q_prime=Q_PRIME)
+                      p_prime="prime1", q_prime="prime1")
     prover = Prover(proverId)
     verifier = Verifier(verifierId)
 

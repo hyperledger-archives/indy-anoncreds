@@ -10,7 +10,7 @@ proverId = '12'
 verifierId = '13'
 
 
-def testInteraction():
+def testInteraction(primes1):
     attrRepo = InMemoryAttrRepo()
     attrs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
     attrNames = tuple(attrs.keys())
@@ -22,8 +22,7 @@ def testInteraction():
     attrRepo.addAttributes(proverId, attrs)
 
     issuer = Issuer(issuerId, attrRepo)
-    issuer.addNewCredDef(attrNames, credName, credVersion,
-                      p_prime="prime1", q_prime="prime1")
+    issuer.addNewCredDef(attrNames, credName, credVersion, **primes1)
     prover = Prover(proverId)
     verifier = Verifier(verifierId)
 

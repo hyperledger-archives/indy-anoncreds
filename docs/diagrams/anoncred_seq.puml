@@ -1,0 +1,83 @@
+@startuml
+participant "Issuer" as I
+actor Prover as P
+participant "Verifier" as V
+
+== Common Parameters ==
+
+note over I, V
+    Generate Common parameters:
+    **(Gamma, rho, g, h)**
+    random or calculated from random
+end note
+
+note over I, V
+end note
+
+== Private values ==
+
+note over I
+    **m_i, i=2..l** - attribute values
+    known to issuer
+end note
+
+note over P
+    **m1** - master secret
+    known to the the user only
+end note
+
+note over P,V
+    **A_r** - attributes revealed to Verifier
+    **A_nr** - attributes hidden from Verifier
+end note
+
+note over P,V
+    **m_i (i from A_r)**
+    value of attributes revealed to Verifier
+end note
+
+note over P,V
+    **p** - predicates: m_j >= z_j
+end note
+
+
+== Issuer setup ==
+
+I -> I: Private Key **SK_I=(p, q)**\nbased on random
+
+I -> I: Public Key **PK_I=(n,S,Z,R_i,P), i=1..l**\nbased on SK_I and random
+
+I -> P: PK_I
+
+I -> V: PK_I
+
+== Pseudonym registration ==
+
+P -> I: **Nym**\n- based on master secret m1\n- m_1 is not revealed
+
+== Issuance ==
+
+P -> I: **U**\nbased on random and PK_I
+
+I -> P: **(A, e, v'')**\nbased on U, PK_I and random
+
+P -> P: **Cr=({m_i}, A, e, v)** - credential\n- based on values from issuer\n- not known to Verifier!
+
+== Proof Preparation ==
+
+V -> P: **n_1** - nonce
+
+P -> P: **PrC** - sub-proof for each credential Cr\nbased on Cr, PK_I, n_1 and random
+
+P -> P: **PrP** - sub-proof for each predicate p\nbased on p, Cr, PK_I, n_1 and random
+
+P -> V: **Pr=(c, {PrC}, {Prp}, //C//)** - full proof\n- based on p, Cr, PK_I, n_1 and random\n- doesn't reveal neither credentials\n nor attribute values hidden from Verifier
+
+== Verification ==
+
+V -> V: **c'** - based on Pr, PK_I, m_i (i from A_r).
+
+V -> V: if **c=c'** - OK!
+
+
+@enduml

@@ -77,11 +77,9 @@ class CredentialDefinition:
         self.sk = {'p': self.p, 'q': self.q}
 
     def _genX(self):
-        X = 0
-        upperValue = self.p_prime * self.q_prime - 1
-        while X < 2:
-            X = integer(random(upperValue))
-        return X
+        maxValue = self.p_prime * self.q_prime - 1
+        minValue = 2
+        return integer(random(maxValue - minValue)) + minValue
 
     @property
     def name(self) -> str:

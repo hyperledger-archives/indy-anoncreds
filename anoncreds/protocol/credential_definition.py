@@ -56,11 +56,11 @@ class CredentialDefinition:
         S = randomQR(n)
 
         # Generate random numbers corresponding to every attributes
-        Xz = integer(random(n))
+        Xz = self._genX()
         Xr = {}
 
         for name in attrNames:
-            Xr[str(name)] = integer(random(n))
+            Xr[str(name)] = self._genX()
 
         # Generate `Z` as the exponentiation of the quadratic random 'S' .
         # over the random `Xz` in the group defined by modulus `n`
@@ -69,12 +69,19 @@ class CredentialDefinition:
         # Generate random numbers corresponding to every attributes
         R = {}
         for name in attrNames:
-            R[str(name)] = S ** Xr[str(name)]
+            R[str(name)] = (S ** Xr[str(name)]) % n
         # R["0"] is a random number needed corresponding to master secret
-        R["0"] = S ** integer(random(n))
+        R["0"] = (S ** self._genX()) % n
 
         self._pk = CredDefPublicKey(n, R, S, Z)
         self.sk = {'p': self.p, 'q': self.q}
+
+    def _genX(self):
+        X = 0
+        upperValue = self.p_prime * self.q_prime - 1
+        while X < 2:
+            X = integer(random(upperValue))
+        return X
 
     @property
     def name(self) -> str:

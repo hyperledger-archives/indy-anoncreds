@@ -1,10 +1,10 @@
 import uuid
 from functools import reduce
-from math import sqrt, floor
 from typing import Dict, Sequence
 
 from charm.core.math.integer import randomBits, integer
 
+from anoncreds.protocol import types
 from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, LARGE_E_START, LARGE_ETILDE, \
     LARGE_VTILDE, LARGE_MASTER_SECRET, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, APRIME, DELTA, TVAL, \
     NONCE, ZERO_INDEX, C_VALUE, EVECT, MVECT, VVECT, ISSUER, PROOF
@@ -12,8 +12,7 @@ from anoncreds.protocol.types import Credential, CredDefPublicKey,\
     PredicateProof, SubProofPredicate, T, Proof, SecretValue, TildValue, PrimeValue, ProofComponent, \
     PredicateProofComponent
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
-    getUnrevealedAttrs, strToCharmInteger
-from anoncreds.protocol import types
+    getUnrevealedAttrs, strToCharmInteger, updateDict, fourSquares
 
 
 class ProofBuilder:
@@ -25,10 +24,7 @@ class ProofBuilder:
         """
 
         self.id = str(uuid.uuid4())
-        self.nonce = None
         self.credential = None
-        self.encodedAttrs = None
-        self.revealedAttrs = None
 
         # Generate the master secret
         self._ms = masterSecret or integer(randomBits(LARGE_MASTER_SECRET))
@@ -47,35 +43,51 @@ class ProofBuilder:
         self._U = {}
         for key, val in self.credDefPks.items():
             N = val.N
-            R = val.R
+            R0 = val.R0
             S = val.S
-            self._U[key] = (S ** self._vprime[key]) * (R[ZERO_INDEX] ** self._ms) % N
+            self._U[key] = (S ** self._vprime[key]) * (R0 ** self._ms) % N
+
 
     @property
-    def masterSecret(self):
-        return self._ms
+    def U(self):
+        return self._U
 
-    def setCredential(self, credential):
-        self.credential = credential
+    @property
+    def vprime(self):
+        return self._vprime
 
-    def setRevealedAttrs(self, revealedAttrs):
-        self.revealedAttrs = revealedAttrs
 
-    def setNonce(self, nonce):
-        self.nonce = nonce
 
-    def setEncodedAttrs(self, encodedAttrs):
-        self.encodedAttrs = encodedAttrs
+    def prepareProofFromDict(self, proofElements) -> Proof:
+        issuer = proofElements[ISSUER]
+        prf = proofElements[PROOF]
+        prfArgs = {}
+        prfArgs[APRIME] = {issuer: strToCharmInteger(prf[APRIME][issuer])}
+        prfArgs[C_VALUE] = strToCharmInteger(prf[C_VALUE])
+        prfArgs[EVECT] = {issuer: strToCharmInteger(prf[EVECT][issuer])}
+        prfArgs[MVECT] = {k: strToCharmInteger(v) for k, v in prf[MVECT].items()}
+        prfArgs[VVECT] = {issuer: strToCharmInteger(prf[VVECT][issuer])}
+        return Proof(**prfArgs)
 
-    def setParams(self, credential=None, revealedAttrs=None, nonce=None, encodedAttrs=None):
-        self.setNonce(nonce)
-        self.setCredential(credential)
-        self.setEncodedAttrs(encodedAttrs)
-        self.setRevealedAttrs(revealedAttrs)
 
-    @staticmethod
-    def prepareProof(credDefPks, masterSecret, creds: Dict[str, Credential],
-                     encodedAttrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
+    def prepareProofAsDict(issuer,
+                           creds: Dict[str, Credential],
+                           encodedAttrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
+                           nonce) -> dict:
+        prf = ProofBuilder.prepareProofEquality(creds, encodedAttrs, revealedAttrs, nonce)
+        proof = {}
+        proof[APRIME] = {issuer: str(prf.Aprime[issuer])}
+        proof[C_VALUE] = str(prf.c)
+        proof[EVECT] = {issuer: str(prf.evect[issuer])}
+        proof[MVECT] = {k: str(v) for k, v in prf.mvect.items()}
+        proof[VVECT] = {issuer: str(prf.vvect[issuer])}
+        return proof
+
+
+    def prepareProofEquality(self,
+                     creds: Dict[str, Credential],
+                     encodedAttrs: Dict[str, Dict[str, T]],
+                     revealedAttrs: Sequence[str],
                      nonce) -> types.Proof:
         """
         Prepare the proof from credentials
@@ -90,16 +102,18 @@ class ProofBuilder:
         def initProofComponent(credDefPks, creds, encodedAttrs, revealedAttrs, nonce):
             proofComponent = ProofComponent()
             proofComponent.flatAttrs, proofComponent.unrevealedAttrs = getUnrevealedAttrs(encodedAttrs, revealedAttrs)
-            proofComponent.tildeValues, proofComponent.primeValues, proofComponent.T = findSecretValues(encodedAttrs,
-                                                                                   proofComponent.unrevealedAttrs, creds,
-                                                                                   credDefPks)
+            proofComponent.tildeValues, proofComponent.primeValues, proofComponent.T = self._findSecretValues(encodedAttrs,
+                                                                                   proofComponent.unrevealedAttrs, creds)
 
             # Calculate the `c` value as the hash result of Aprime, T and nonce.
             # This value will be used to verify the proof against the credential
             proofComponent.c = integer(get_hash(*get_values_of_dicts(proofComponent.primeValues.Aprime, proofComponent.T, {NONCE: nonce})))
             return proofComponent
 
-        proofComponent = initProofComponent(credDefPks, creds, encodedAttrs, revealedAttrs, nonce)
+        # Add VPrime to V
+        creds = self._getPresentationToken(creds)
+
+        proofComponent = initProofComponent(self.credDefPks, creds, encodedAttrs, revealedAttrs, nonce)
 
 
         for credIssuer, _ in creds.items():
@@ -108,48 +122,25 @@ class ProofBuilder:
 
         for k, _ in proofComponent.unrevealedAttrs.items():
             proofComponent.mvect[str(k)] = proofComponent.tildeValues.mtilde[str(k)] + (proofComponent.c * proofComponent.flatAttrs[str(k)])
-        proofComponent.mvect[ZERO_INDEX] = proofComponent.tildeValues.mtilde[ZERO_INDEX] + (proofComponent.c * masterSecret)
+        proofComponent.mvect[ZERO_INDEX] = proofComponent.tildeValues.mtilde[ZERO_INDEX] + (proofComponent.c * self._ms)
 
         return Proof(proofComponent.c, proofComponent.evect, proofComponent.mvect, proofComponent.vvect, proofComponent.primeValues.Aprime)
 
-    @staticmethod
-    def prepareProofFromDict(proofElements) -> Proof:
-        issuer = proofElements[ISSUER]
-        prf = proofElements[PROOF]
-        prfArgs = {}
-        prfArgs[APRIME] = {issuer: strToCharmInteger(prf[APRIME][issuer])}
-        prfArgs[C_VALUE] = strToCharmInteger(prf[C_VALUE])
-        prfArgs[EVECT] = {issuer: strToCharmInteger(prf[EVECT][issuer])}
-        prfArgs[MVECT] = {k: strToCharmInteger(v) for k, v in prf[MVECT].items()}
-        prfArgs[VVECT] = {issuer: strToCharmInteger(prf[VVECT][issuer])}
-        return Proof(**prfArgs)
 
-    @staticmethod
-    def prepareProofAsDict(issuer, credDefPks, masterSecret, creds: Dict[str, Credential],
-                     encodedAttrs: Dict[str, Dict[str, T]], revealedAttrs: Sequence[str],
-                     nonce) -> dict:
-        prf = ProofBuilder.prepareProof(credDefPks, masterSecret, creds, encodedAttrs, revealedAttrs, nonce)
-        proof = {}
-        proof[APRIME] = {issuer: str(prf.Aprime[issuer])}
-        proof[C_VALUE] = str(prf.c)
-        proof[EVECT] = {issuer: str(prf.evect[issuer])}
-        proof[MVECT] = {k: str(v) for k, v in prf.mvect.items()}
-        proof[VVECT] = {issuer: str(prf.vvect[issuer])}
-        return proof
-
-    def preparePredicateProof(self, creds: Dict[str, Credential],
+    def prepareProofPredicateGreaterEq(self,
+                              creds: Dict[str, Credential],
                               attrs: Dict[str, Dict[str, T]],
                               revealedAttrs: Sequence[str],
-                              nonce, predicate: Dict[str, Dict]) -> PredicateProof:
+                              nonce,
+                              predicate: Dict[str, Dict]) -> PredicateProof:
 
         def initProofComponent(attrs, creds, revealedAttrs):
             proofComponent = PredicateProofComponent()
             proofComponent.flatAttrs, proofComponent.unrevealedAttrs = getUnrevealedAttrs(attrs, revealedAttrs)
-            proofComponent.tildeValues, proofComponent.primeValues, proofComponent.T = findSecretValues(
+            proofComponent.tildeValues, proofComponent.primeValues, proofComponent.T = self._findSecretValues(
                 attrs,
                 proofComponent.unrevealedAttrs,
-                creds,
-                self.credDefPks)
+                creds)
             return proofComponent
 
         def appendToProofCompWithCredData(proofComponent, creds):
@@ -242,6 +233,9 @@ class ProofBuilder:
             return SubProofPredicate(predProofComponent.alphavect, predProofComponent.rvect,
                                                   predProofComponent.uvect)
 
+        # Add VPrime to V
+        creds = self._getPresentationToken(creds)
+
         # Initialize predicate proof components
         proofComponent = initProofComponent(attrs, creds, revealedAttrs)
 
@@ -260,78 +254,64 @@ class ProofBuilder:
         return PredicateProof(subProofC, subProofPredicate, proofComponent.C, proofComponent.CList)
 
 
-    @property
-    def U(self):
-        return self._U
 
-    @property
-    def vprime(self):
-        return self._vprime
+    def _findSecretValues(self,
+                         encodedAttrs: Dict[str, T],
+                         unrevealedAttrs: Dict,
+                         creds: Dict[str, Credential]):
 
+        def getMTilde(unrevealedAttrs):
+            mtilde = {}
+            for key, value in unrevealedAttrs.items():
+                mtilde[key] = integer(randomBits(LARGE_MVECT))
+            mtilde[ZERO_INDEX] = integer(randomBits(LARGE_MVECT))
+            return mtilde
 
-def findSecretValues(encodedAttrs: Dict[str, T], unrevealedAttrs: Dict,
-                     creds: Dict[str, Credential],
-                     credDefPks: Dict[str, CredDefPublicKey]):
+        def getRur(credDefPk, includedAttrs, mtilde, unrevealedAttrs):
+            Rur = 1 % credDefPk.N
+            for k, value in unrevealedAttrs.items():
+                if k in includedAttrs:
+                    Rur = Rur * (credDefPk.R[k] ** mtilde[k])
+            Rur *= credDefPk.R0 ** mtilde[ZERO_INDEX]
+            return Rur
 
-    def getMTilde(unrevealedAttrs):
-        mtilde = {}
-        for key, value in unrevealedAttrs.items():
-            mtilde[key] = integer(randomBits(LARGE_MVECT))
-        mtilde[ZERO_INDEX] = integer(randomBits(LARGE_MVECT))
-        return mtilde
+        Aprime, vprime, eprime, etilde, vtilde, T = {}, {}, {}, {}, {}, {}
+        mtilde = getMTilde(unrevealedAttrs)
 
-    def getRur(credDefPk, includedAttrs, mtilde, unrevealedAttrs):
-        Rur = 1 % credDefPk.N
-        for k, value in unrevealedAttrs.items():
-            if k in includedAttrs:
-                Rur = Rur * (credDefPk.R[k] ** mtilde[k])
-        Rur *= credDefPk.R[ZERO_INDEX] ** mtilde[ZERO_INDEX]
-        return Rur
+        for issuer, credential in creds.items():
+            Ra = integer(randomBits(LARGE_VPRIME))
+            credDefPk = self.credDefPks[issuer]
+            A, e, v = credential
 
-    Aprime, vprime, eprime, etilde, vtilde, T = {}, {}, {}, {}, {}, {}
-    mtilde = getMTilde(unrevealedAttrs)
+            Aprime[issuer] = A * (credDefPk.S ** Ra) % credDefPk.N
+            vprime[issuer] = (v - e * Ra)
+            eprime[issuer] = e - (2 ** LARGE_E_START)
 
-    for issuer, credential in creds.items():
-        Ra = integer(randomBits(LARGE_VPRIME))
-        credDefPk = credDefPks[issuer]
-        A, e, v = credential
+            etilde[issuer] = integer(randomBits(LARGE_ETILDE))
+            vtilde[issuer] = integer(randomBits(LARGE_VTILDE))
 
-        Aprime[issuer] = A * (credDefPk.S ** Ra) % credDefPk.N
-        vprime[issuer] = (v - e * Ra)
-        eprime[issuer] = e - (2 ** LARGE_E_START)
+            Rur = getRur(credDefPk, encodedAttrs[issuer], mtilde, unrevealedAttrs)
 
-        etilde[issuer] = integer(randomBits(LARGE_ETILDE))
-        vtilde[issuer] = integer(randomBits(LARGE_VTILDE))
+            T[issuer] = ((Aprime[issuer] ** etilde[issuer]) * Rur * (credDefPk.S ** vtilde[issuer])) % credDefPk.N
 
-        Rur = getRur(credDefPk, encodedAttrs[issuer], mtilde, unrevealedAttrs)
+        tildValue = TildValue(mtilde, etilde, vtilde)
+        primeValue = PrimeValue(Aprime, vprime, eprime)
 
-        T[issuer] = ((Aprime[issuer] ** etilde[issuer]) * Rur * (credDefPk.S ** vtilde[issuer])) % credDefPk.N
+        return SecretValue(tildValue, primeValue, T)
 
-    tildValue = TildValue(mtilde, etilde, vtilde)
-    primeValue = PrimeValue(Aprime, vprime, eprime)
+    # Why a dictionary of credentials is known as a presentationToken?
+    # Source: https://cups.cs.cmu.edu/soups/2013/posters/soups13_posters-final24.pdf
+    # In general, Privacy-ABCs (Privacy Attribute-Based Credentials) are issued just like ordinary
+    # cryptographic credentials (e.g., X.509 credentials) using a digital (secret) signature key.
+    # However, Privacy-ABCs allow their holder to transform them into a new token, called
+    # presentation token, in such a way that the privacy of the user is protected
 
-    return SecretValue(tildValue, primeValue, T)
+    def _getPresentationToken(self, creds: Dict[str, Credential]):
+        credWithVPrime = {}
+        for key, val in creds.items():
+            A, e, vprimeprime = val
+            v = vprimeprime + self._vprime[key]
+            credWithVPrime[key] = Credential(A, e, v)
+        return credWithVPrime
 
-
-def largestSquareLessThan(x: int):
-    sqrtx = int(floor(sqrt(x)))
-    return sqrtx
-
-
-def fourSquares(delta: int):
-    u1 = largestSquareLessThan(delta)
-    u2 = largestSquareLessThan(delta - (u1 ** 2))
-    u3 = largestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2))
-    u4 = largestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2) - (u3 ** 2))
-    if (u1 ** 2) + (u2 ** 2) + (u3 ** 2) + (u4 ** 2) == delta:
-        return list((u1, u2, u3, u4))
-    else:
-        raise Exception("Cannot get the four squares for delta {0}".format(delta))
-
-
-def updateDict(obj: Dict[str, Dict[str, T]], parentKey: str,
-               key: str, val: any):
-    parentVal = obj.get(parentKey, {})
-    parentVal[key] = val
-    obj[parentKey] = parentVal
 

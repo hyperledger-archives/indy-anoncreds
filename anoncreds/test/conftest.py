@@ -1,31 +1,22 @@
 import pytest
 
 from anoncreds.protocol.attribute_repo import InMemoryAttrRepo
+from anoncreds.protocol.credential_definition import CredentialDefinitionInternal, primes
+from anoncreds.protocol.credential_defs_repo import InMemoryCredentialDefsRepo
+from anoncreds.protocol.credential_defs_secret_repo import InMemoryCredentialDefsSecretRepo
 from anoncreds.protocol.issuer import Issuer
-from anoncreds.protocol.credential_definition import CredentialDefinition, primes
+from anoncreds.protocol.proof_verifier import ProofVerifier
+from anoncreds.protocol.prover import Prover
 from anoncreds.protocol.types import AttribDef, AttribType
 from anoncreds.protocol.verifier import Verifier
-from anoncreds.test.helper import getProofBuilderAndAttribs
 
 GVT = AttribDef('gvt',
                 [AttribType('name', encode=True),
-                  AttribType('age', encode=False),
-                  AttribType('sex', encode=True)])
+                 AttribType('age', encode=False),
+                 AttribType('sex', encode=True)])
 XYZCorp = AttribDef('xyz',
                     [AttribType('status', encode=True)])
 NASEMP = GVT + XYZCorp
-
-@pytest.fixture(scope="module")
-def gvtAttrRepo():
-    attrRepo = InMemoryAttrRepo()
-    attrRepo.addAttributes('prover1', GVT.attribs())
-    return attrRepo
-
-
-@pytest.fixture(scope="module")
-def gvt(gvtAttrRepo):
-    return Issuer(GVT.name, gvtAttrRepo)
-
 
 @pytest.fixture(scope="module")
 def gvtAttrNames():
@@ -33,42 +24,79 @@ def gvtAttrNames():
 
 
 @pytest.fixture(scope="module")
-def xyzAttrNames():
-    return XYZCorp.attribNames()
-
-
-@pytest.fixture(scope="module")
 def gvtCredDef(gvtAttrNames, primes1):
-    return CredentialDefinition(gvtAttrNames, **primes1)
+    return CredentialDefinitionInternal(gvtAttrNames, **primes1)
 
 
-@pytest.fixture(scope="module")
-def xyzCredDef(xyzAttrNames, primes2):
-    return CredentialDefinition(xyzAttrNames, **primes2)
+@pytest.fixture(scope="function")
+def attrRepo():
+    return InMemoryAttrRepo()
 
 
-@pytest.fixture(scope="module")
-def gvtCredDefPks(gvtCredDef):
-    credDefPks = {}
-    credDefPks[GVT.name] = gvtCredDef.PK
-    return credDefPks
+@pytest.fixture(scope="function")
+def gvtAttrRepo(attrRepo, gvtIssuer, prover):
+    attrRepo.addAttributes(prover.id, gvtIssuer.id,
+                           GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male'))
+    return attrRepo
 
-@pytest.fixture(scope="module")
-def xyzCredDefPks(xyzCredDef):
-    credDefPks = {}
-    credDefPks[XYZCorp.name] = xyzCredDef.PK
-    return credDefPks
 
-@pytest.fixture(scope="module")
-def gvtAndXyzCredDefs(gvtCredDef, xyzCredDef):
-    return {GVT.name: gvtCredDef, XYZCorp.name: xyzCredDef}
+@pytest.fixture(scope="function")
+def gvtXyzAttrRepo(attrRepo, gvtIssuer, xyzIssuer, prover):
+    attrRepo.addAttributes(prover.id, gvtIssuer.id,
+                          GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male'))
+    attrRepo.addAttributes(prover.id, xyzIssuer.id,
+                           XYZCorp.attribs(status='ACTIVE'))
+    return attrRepo
 
-@pytest.fixture(scope="module")
-def gvtAndXyzCredDefPks(gvtAndXyzCredDefs):
-    credDefPks = {}
-    for k, v in gvtAndXyzCredDefs.items():
-        credDefPks[k] = v.PK
-    return credDefPks
+
+@pytest.fixture(scope="function")
+def credDefRepo():
+    return InMemoryCredentialDefsRepo()
+
+
+@pytest.fixture(scope="function")
+def credDefSecretRepo(credDefRepo):
+    return InMemoryCredentialDefsSecretRepo(credDefRepo)
+
+
+@pytest.fixture(scope="function")
+def genNonce():
+    return ProofVerifier({}).nonce
+
+
+@pytest.fixture(scope="function")
+def gvtIssuer(credDefSecretRepo, attrRepo):
+    return Issuer(GVT.name, credDefSecretRepo, attrRepo)
+
+
+@pytest.fixture(scope="function")
+def xyzIssuer(credDefSecretRepo, attrRepo):
+    return Issuer(XYZCorp.name, credDefSecretRepo, attrRepo)
+
+
+@pytest.fixture(scope="function")
+def xyzIssuer(credDefSecretRepo, attrRepo):
+    return Issuer(XYZCorp.name, credDefSecretRepo, attrRepo)
+
+
+@pytest.fixture(scope="function")
+def prover(credDefRepo):
+    return Prover("prover1", credDefRepo)
+
+
+@pytest.fixture(scope="function")
+def prover2(credDefRepo):
+    return Prover("prover2", credDefRepo)
+
+
+@pytest.fixture(scope="function")
+def verifier(credDefRepo):
+    return Verifier("verifier1", credDefRepo)
+
+
+@pytest.fixture(scope="function")
+def verifier2(credDefRepo):
+    return Verifier("verifier2", credDefRepo)
 
 
 @pytest.fixture(scope="module")
@@ -82,65 +110,4 @@ def primes2():
     P_PRIME2, Q_PRIME2 = primes.get("prime2")
     return dict(p_prime=P_PRIME2, q_prime=Q_PRIME2)
 
-
-@pytest.fixture(scope="module")
-def gvtAttrList():
-    return GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
-
-
-@pytest.fixture(scope="module")
-def xyzAttrList():
-    return XYZCorp.attribs(status='ACTIVE')
-
-
-@pytest.fixture(scope="module")
-def credDefPk(gvtCredDef):
-    """Return gvtCredDef's public key"""
-
-    return {GVT.name: gvtCredDef.PK}
-
-
-@pytest.fixture(scope="module")
-def gvtProofBuilderWithProver1(credDefPk):
-    attribs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
-    return getProofBuilderAndAttribs(attribs, credDefPk)
-
-
-@pytest.fixture(scope="module")
-def gvtProofBuilderWithProver2(credDefPk):
-    attribs = GVT.attribs(name='Jason Law', age=42, sex='male')
-    return getProofBuilderAndAttribs(attribs, credDefPk)
-
-
-@pytest.fixture(scope="module")
-def proofBuilderWithGvtAttribs(gvtCredDefPks):
-    attribs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
-    return getProofBuilderAndAttribs(attribs, gvtCredDefPks)
-
-
-@pytest.fixture(scope="module")
-def proofBuilderWithXyzAttribs(xyzCredDefPks):
-    attribs = XYZCorp.attribs(status='ACTIVE')
-    return getProofBuilderAndAttribs(attribs, xyzCredDefPks)
-
-
-@pytest.fixture(scope="module")
-def proofBuilderWithGvtAndXyzAttribs(gvtAndXyzCredDefPks, gvtAttrList, xyzAttrList):
-    attributeList = gvtAttrList + xyzAttrList
-    return getProofBuilderAndAttribs(attributeList, gvtAndXyzCredDefPks)
-
-
-@pytest.fixture(scope="module")
-def verifier1():
-    return Verifier('verifier1')
-
-
-@pytest.fixture(scope="module")
-def verifierMulti1():
-    return Verifier('verifierMulti1')
-
-
-@pytest.fixture(scope="module")
-def verifierMulti2():
-    return Verifier('verifierMulti2')
 

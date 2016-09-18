@@ -1,20 +1,10 @@
-from anoncreds.test.helper import verifyProof
+from anoncreds.test.helper import verifyEquality
 
 
-def testMultiCredSingleProof(gvtAndXyzCredDefs,
-                             gvtAndXyzCredDefPks,
-                             proofBuilderWithGvtAndXyzAttribs,
-                             verifierMulti1):
-    assert verifyProof(gvtAndXyzCredDefs, gvtAndXyzCredDefPks, None,
-                 proofBuilderWithGvtAndXyzAttribs, ['name'],
-                verifierMulti1)
+def testMultipleIssuers(gvtXyzAttrRepo, gvtIssuer, xyzIssuer, prover, verifier, primes1):
+    assert verifyEquality(gvtXyzAttrRepo,  ['name'], [gvtIssuer, xyzIssuer], prover, [verifier], primes1)
 
 
-def testMultiCredMultiVerifier(gvtAndXyzCredDefs,
-                              gvtAndXyzCredDefPks,
-                              proofBuilderWithGvtAndXyzAttribs,
-                              verifierMulti1, verifierMulti2):
-    assert verifyProof(gvtAndXyzCredDefs, gvtAndXyzCredDefPks, None,
-                proofBuilderWithGvtAndXyzAttribs, ['name'],
-                verifierMulti1, verifierMulti2)
+def testMultiIssuersMultiVerifiers(gvtXyzAttrRepo, gvtIssuer, xyzIssuer, prover, verifier, verifier2, primes1):
+    assert verifyEquality(gvtXyzAttrRepo,  ['name'], [gvtIssuer, xyzIssuer], prover, [verifier, verifier2], primes1)
 

@@ -1,41 +1,26 @@
-import pytest
-
-from anoncreds.test.helper import getPresentationToken, verifyProof, prepareProofAndVerify
 from anoncreds.test.conftest import GVT
+from anoncreds.test.helper import verifyEquality
 
 
-def testSingleProver(gvtCredDef, gvtAttrNames, proofBuilderWithGvtAttribs, gvtCredDefPks,
-                     verifier1):
-    assert verifyProof({GVT.name: gvtCredDef}, gvtCredDefPks, gvtAttrNames, proofBuilderWithGvtAttribs,
-                ['name'], verifier1)
+def testSingleProver(gvtIssuer, prover, verifier, gvtAttrRepo, primes1):
+    assert verifyEquality(gvtAttrRepo,  ['name'], [gvtIssuer], prover, [verifier], primes1)
 
 
-def testMultipleProvers(gvtCredDef, gvtAttrNames, gvtCredDefPks,
-                        gvtProofBuilderWithProver1, gvtProofBuilderWithProver2,
-                        verifier1):
-    assert verifyProof({GVT.name: gvtCredDef}, gvtCredDefPks, gvtAttrNames, gvtProofBuilderWithProver1,
-                ['name'], verifier1)
+def testMultipleProvers(gvtIssuer, prover, prover2, verifier, attrRepo, primes1):
+    attrRepo.addAttributes(prover.id, gvtIssuer.id,
+                           GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male'))
+    attrRepo.addAttributes(prover2.id, gvtIssuer.id,
+                           GVT.attribs(name='Jason Law', age=42, sex='male'))
 
-    assert verifyProof({GVT.name: gvtCredDef}, gvtCredDefPks, gvtAttrNames, gvtProofBuilderWithProver2,
-                ['name'], verifier1)
+    assert verifyEquality(attrRepo,  ['name'], [gvtIssuer], prover, [verifier], primes1)
 
-
-def testNonceShouldBeSame(gvtCredDef, gvtCredDefPks,
-                          gvtProofBuilderWithProver1, verifier1,
-                          verifierMulti2):
-    proofBuilder, attrs = gvtProofBuilderWithProver1
-    nonce1 = verifier1.generateNonce(interactionId=4)
-    nonce2 = verifierMulti2.generateNonce(interactionId=5)
-
-    assert not prepareProofAndVerify({GVT.name: gvtCredDef}, gvtCredDefPks, proofBuilder,
-                          attrs, ['name'], nonce1, nonce2)
+    assert verifyEquality(attrRepo,  ['name'], [gvtIssuer], prover2, [verifier], primes1)
 
 
-def testGenerateCredentialMustBePassedParameters(proofBuilderWithGvtAttribs, gvtCredDef):
-    gvtProofBuilder, attrs = proofBuilderWithGvtAttribs
-    # Manually override prover.U
-    gvtProofBuilder._U = {GVT.name: ''}
-    # This should fail as we are not passing prover.U
-    with pytest.raises(ValueError):
-        getPresentationToken({GVT.name: gvtCredDef}, gvtProofBuilder,
-                                                 attrs.encoded())
+def testNonceShouldBeSame(gvtIssuer, prover, verifier, gvtAttrRepo, primes1, genNonce):
+    assert not verifyEquality(gvtAttrRepo,  ['name'], [gvtIssuer], prover, [verifier], primes1, defaultNonce=genNonce)
+
+
+def testUParamShouldBeCorrect(gvtIssuer, prover, verifier, gvtAttrRepo, primes1):
+    assert not verifyEquality(gvtAttrRepo,  ['name'], [gvtIssuer], prover, [verifier], primes1, defaultU=1)
+

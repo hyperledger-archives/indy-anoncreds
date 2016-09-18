@@ -1,7 +1,7 @@
 from collections import namedtuple
 from enum import Enum
 from hashlib import sha256
-from typing import TypeVar, Dict
+from typing import TypeVar, Sequence
 
 from charm.core.math.integer import integer
 from charm.toolbox.conversion import Conversion
@@ -93,10 +93,24 @@ class Attribs:
     def items(self):
         return self._vals.items()
 
+class PublicParams:
+    def __init__(self, Gamma, rho, g, h):
+        self.Gamma = Gamma
+        self.rho = rho
+        self.g = g
+        self.h = h
+
+class CredDefId:
+    def __init__(self, name=None, version=None, attrNames: Sequence[str]=None):
+        self.name = name
+        self.version = version
+        self.attrNames = attrNames
+
 
 class CredDefPublicKey:
-    def __init__(self, N, R, S, Z):
+    def __init__(self, N, R0, R, S, Z):
         self.N = N
+        self.R0 = R0
         self.R = R
         self.S = S
         self.Z = Z
@@ -117,7 +131,9 @@ class CredDefPublicKey:
         """
 
         r = {k: self.deser(v, self.N) for k, v in self.R.items()}
-        return CredDefPublicKey(self.N, r,
+        return CredDefPublicKey(self.N,
+                                self.deser(self.R0, self.N),
+                                r,
                                 self.deser(self.S, self.N),
                                 self.deser(self.Z, self.N))
 

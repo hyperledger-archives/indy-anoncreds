@@ -1,16 +1,13 @@
 from _sha256 import sha256
 
 import base58
+from charm.core.math.integer import randomPrime, random, integer, isPrime
 from charm.toolbox.conversion import Conversion
 
-from copy import copy
-
-from charm.core.math.integer import randomPrime, random, integer, randomBits, \
-    isPrime
-from anoncreds.protocol.globals import LARGE_PRIME, LARGE_VPRIME_PRIME, LARGE_E_START, LARGE_E_END_RANGE, KEYS, \
+from anoncreds.protocol.globals import LARGE_PRIME, KEYS, \
     MASTER_SEC_RAND, PK_N, PK_S, PK_Z, PK_R, NAME, VERSION, TYPE, IP, PORT, TYPE_CL
 from anoncreds.protocol.types import CredDefPublicKey, CredDefSecretKey, SerFmt
-from anoncreds.protocol.utils import randomQR, get_prime_in_range, randomString, strToCharmInteger
+from anoncreds.protocol.utils import randomQR, randomString, strToCharmInteger
 
 primes = {
     "prime1":
@@ -21,8 +18,42 @@ primes = {
         integer(171590857568436644992359347719703764048501078398666061921719064395827496970696879481740311141148273607392657321103691543916274965279072000206208571551864201305434022165176563363954921183576230072812635744629337290242954699427160362586102068962285076213200828451838142959637006048439307273563604553818326766703))
     }
 
-
 class CredentialDefinition:
+    def __init__(self, PK: CredDefPublicKey, attrNames, name, version, ip, port):
+        self.pk = PK
+        self.name = name
+        self.version = version
+        self.ip = ip
+        self.port = port
+        self.attrNames = attrNames
+
+        self.data = {
+            NAME: name,
+            VERSION: version,
+            TYPE: TYPE_CL,
+            IP: ip,
+            PORT: port,
+            KEYS: {
+                MASTER_SEC_RAND: self.pk.R0,
+                PK_N: self.pk.N,
+                PK_S: self.pk.S,
+                PK_Z: self.pk.Z,
+                PK_R: self.pk.R
+            }
+        }
+
+    def getAsPy3Int(self):
+        serialize(self.data, int)
+
+    def getAsInteger(self):
+        serialize(self.data, integer)
+
+    def getAsBase58(self):
+        serialize(self.data, base58encode)
+
+
+
+class CredentialDefinitionInternal:
     def __init__(self,
                  attrNames,
                  name=None, version=None,
@@ -56,11 +87,11 @@ class CredentialDefinition:
         S = randomQR(n)
 
         # Generate random numbers corresponding to every attributes
-        Xz = integer(random(n))
+        Xz = self._genX()
         Xr = {}
 
         for name in attrNames:
-            Xr[str(name)] = integer(random(n))
+            Xr[str(name)] = self._genX()
 
         # Generate `Z` as the exponentiation of the quadratic random 'S' .
         # over the random `Xz` in the group defined by modulus `n`
@@ -69,12 +100,24 @@ class CredentialDefinition:
         # Generate random numbers corresponding to every attributes
         R = {}
         for name in attrNames:
-            R[str(name)] = S ** Xr[str(name)]
-        # R["0"] is a random number needed corresponding to master secret
-        R["0"] = S ** integer(random(n))
+            R[str(name)] = (S ** Xr[str(name)]) % n
+        # R0 is a random number needed corresponding to master secret
+        R0 = (S ** self._genX()) % n
 
-        self._pk = CredDefPublicKey(n, R, S, Z)
-        self.sk = {'p': self.p, 'q': self.q}
+        self._pk = CredDefPublicKey(n, R0, R, S, Z)
+        self._sk = {'p': self.p, 'q': self.q}
+        self._credentialDefinition = CredentialDefinition(self._pk, self.attrNames,
+                                                          self._name, self._version,
+                                                          self.ip, self.port)
+
+    def _genX(self):
+        maxValue = self.p_prime * self.q_prime - 1
+        minValue = 2
+        return integer(random(maxValue - minValue)) + minValue
+
+    @property
+    def credentialDefinition(self) -> CredentialDefinition:
+        return self._credentialDefinition
 
     @property
     def name(self) -> str:
@@ -120,7 +163,7 @@ class CredentialDefinition:
         :return: Secret key for the credential definition
         """
 
-        return CredDefSecretKey(**self.sk)
+        return CredDefSecretKey(**self._sk)
 
     @property
     def serializedSK(self) -> str:

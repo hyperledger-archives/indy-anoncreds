@@ -1,49 +1,37 @@
-from typing import Sequence
+from charm.core.math.integer import integer, randomBits
 
 from anoncreds.protocol.attribute_repo import AttrRepo
-from anoncreds.protocol.credential_definition import CredentialDefinition, getDeserializedSK, getPPrime, getQPrime
+from anoncreds.protocol.credential_definition import CredentialDefinitionInternal, getDeserializedSK, getPPrime, getQPrime
+from anoncreds.protocol.credential_defs_secret_repo import CredentialDefsSecretRepo
 from anoncreds.protocol.globals import LARGE_VPRIME_PRIME, LARGE_E_START, LARGE_E_END_RANGE
-from anoncreds.protocol.types import CredDefPublicKey
+from anoncreds.protocol.types import CredDefPublicKey, CredDefId
 from anoncreds.protocol.utils import get_prime_in_range, strToCharmInteger
-from charm.core.math.integer import integer, randomBits
 
 
 class Issuer:
-    def __init__(self, id, attributeRepo: AttrRepo=None):
+    def __init__(self, id, credDefsRepo: CredentialDefsSecretRepo, attributeRepo: AttrRepo):
         self.id = id
-        self.credDefs = {}              # Dict[Tuple, CredentialDefinition]
-        self.credDefsForAttribs = {}    # Dict[Tuple, List]
         self.attributeRepo = attributeRepo
+        self.credDefsRepo = credDefsRepo
 
-    def _addCredDef(self, credDef: CredentialDefinition):
-        self.credDefs[(credDef.name, credDef.version)] = credDef
-        key = tuple(sorted(credDef.attrNames))
-        if key not in self.credDefsForAttribs:
-            self.credDefsForAttribs[key] = []
-        self.credDefsForAttribs[key].append(credDef)
 
     def addNewCredDef(self, attrNames, name, version,
                    p_prime=None, q_prime=None, ip=None, port=None):
-        credDef = CredentialDefinition(attrNames, name, version,
+        credDef = CredentialDefinitionInternal(attrNames, name, version,
                                        p_prime, q_prime, ip, port)
-        self._addCredDef(credDef)
+        self.credDefsRepo.addCredentialDef(self.id, credDef)
         return credDef
 
-    def getCredDef(self, name=None, version=None, attributes: Sequence[str]=None):
-        if name and version:
-            return self.credDefs[(name, version)]
-        else:
-            defs = self.credDefsForAttribs.get(tuple(sorted(attributes)))
-            return defs[-1] if defs else None
 
-    def createCred(self, proverId, name, version, U):
+    def createCred(self, proverId, credDefId: CredDefId, U):
         # This method works for one credDef only.
-        credDef = self.getCredDef(name, version)
-        attributes = self.attributeRepo.getAttributes(proverId)
+        credDef = self.credDefsRepo.getCredentialDef(self.id, credDefId)
+        attributes = self.attributeRepo.getAttributes(proverId, self.id)
         encAttrs = attributes.encoded()
         return Issuer.generateCredential(
             U, next(iter(encAttrs.values())), credDef.PK, None, credDef.p_prime,
             credDef.q_prime)
+
 
     @classmethod
     def generateCredential(cls, uValue, attributes, pk, sk=None, p_prime=None, q_prime=None):

@@ -119,6 +119,11 @@ class CredentialDefinitionInternal:
     def credentialDefinition(self) -> CredentialDefinition:
         return self._credentialDefinition
 
+    def _genX(self):
+        maxValue = self.p_prime * self.q_prime - 1
+        minValue = 2
+        return integer(random(maxValue - minValue)) + minValue
+
     @property
     def name(self) -> str:
         return self._name

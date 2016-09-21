@@ -13,9 +13,9 @@ class PublicParamsRepo:
 
 class InMemoryPublicParamsRepo(PublicParamsRepo):
     def __init__(self):
-        self.rho, self.b, self.Gamma = self._genRhoBGamma()
-        self.g = self._genG()
-        self.h = self._genH()
+        self._rho, self._b, self._Gamma = self._genRhoBGamma()
+        self._g = self._genG()
+        self._h = self._genH()
 
 
     def _genRhoBGamma(self):
@@ -28,15 +28,15 @@ class InMemoryPublicParamsRepo(PublicParamsRepo):
 
     def _genG(self):
         while True:
-            gprime = random(self.Gamma)
-            g = (gprime ** self.b) % self.Gamma
+            gprime = random(self._Gamma)
+            g = (gprime ** self._b) % self._Gamma
             if (g != 1):
                 return g
 
     def _genH(self):
-        r = random(self.rho)
-        return self.g ** self.r
+        r = random(self._rho)
+        return self._g ** self._r
 
 
     def getParams(self) -> PublicParams:
-        return PublicParams(self.Gamma, self.rho, self.g, self.h)
+        return PublicParams(self._Gamma, self._rho, self._g, self._h)

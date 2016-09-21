@@ -16,7 +16,7 @@ from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
 
 
 class ProofBuilder:
-    def __init__(self, credDefPks: Dict[str, CredDefPublicKey], masterSecret=None):
+    def __init__(self, credDefPks: Dict[str, CredDefPublicKey], masterSecret):
         """
         Create a proof instance
 
@@ -27,7 +27,7 @@ class ProofBuilder:
         self.credential = None
 
         # Generate the master secret
-        self._ms = masterSecret or integer(randomBits(LARGE_MASTER_SECRET))
+        self._ms = masterSecret
 
         # Set the credential definition pub keys
         self.credDefPks = credDefPks

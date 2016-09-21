@@ -119,11 +119,6 @@ class CredentialDefinitionInternal:
     def credentialDefinition(self) -> CredentialDefinition:
         return self._credentialDefinition
 
-    def _genX(self):
-        maxValue = self.p_prime * self.q_prime - 1
-        minValue = 2
-        return integer(random(maxValue - minValue)) + minValue
-
     @property
     def name(self) -> str:
         return self._name
@@ -177,31 +172,6 @@ class CredentialDefinitionInternal:
     @classmethod
     def getCryptoInteger(cls, val):
         return strToCharmInteger(val)
-
-    def get(self, serFmt: SerFmt=SerFmt.default):
-        pk = copy(self.PK)
-        R = copy(pk.R)
-        data = {
-            NAME: self.name,
-            VERSION: self.version,
-            TYPE: TYPE_CL,
-            IP: self.ip,
-            PORT: self.port,
-            KEYS: {
-                MASTER_SEC_RAND: R["0"],
-                PK_N: pk.N,
-                PK_S: pk.S,
-                PK_Z: pk.Z,
-                PK_R: R  # TODO Master secret rand number, R[0] is still passed,
-                #  remove that
-            }
-        }
-        serFuncs = {
-            serFmt.py3Int: int,
-            serFmt.default: integer,
-            serFmt.base58: base58encode,
-        }
-        return serialize(data, serFuncs[serFmt])
 
     @classmethod
     def getStaticPPrime(cls, key):

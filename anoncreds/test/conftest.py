@@ -5,7 +5,6 @@ from anoncreds.protocol.credential_definition import CredentialDefinitionInterna
 from anoncreds.protocol.credential_defs_repo import InMemoryCredentialDefsRepo
 from anoncreds.protocol.credential_defs_secret_repo import InMemoryCredentialDefsSecretRepo
 from anoncreds.protocol.issuer import Issuer
-from anoncreds.protocol.proof_verifier import ProofVerifier
 from anoncreds.protocol.prover import Prover
 from anoncreds.protocol.types import AttribDef, AttribType
 from anoncreds.protocol.verifier import Verifier

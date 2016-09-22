@@ -8,7 +8,7 @@ GType = Dict[int, integer]
 
 
 class RevocationPublicKey:
-    def __init__(self, qr, g, h, h0, h1, h2, htilde, u, pk, y, L, x):
+    def __init__(self, qr, g, h, h0, h1, h2, htilde, u, pk, y, x):
         self.qr = qr
         self.g = g
         self.h = h
@@ -18,7 +18,6 @@ class RevocationPublicKey:
         self.htilde = htilde
         self.u = u
         self.pk = pk
-        self.L = L
         self.y = y
         self.x = x
 
@@ -50,10 +49,16 @@ class RevocationCredential:
 
 
 class Accumulator:
-    def __init__(self, acc, V: VType, pk: AccumulatorPublicKey):
+    def __init__(self, iA, acc, V: VType, pk: AccumulatorPublicKey, L):
+        self.iA= iA
         self.acc = acc
         self.V = V
         self.pk = pk
+        self.L = L
+        self.currentI = 1
+
+    def isFull(self):
+        return self.currentI > self.L
 
 
 class Witness:

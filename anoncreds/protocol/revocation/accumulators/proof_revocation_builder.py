@@ -1,5 +1,4 @@
 from functools import reduce
-from typing import Dict
 
 from charm.toolbox.pairinggroup import PairingGroup, ZR, pair
 
@@ -8,103 +7,99 @@ from anoncreds.protocol.revocation.accumulators.types import RevocationPublicKey
 from anoncreds.protocol.utils import get_hash_hex, hex_hash_to_ZR
 
 
+# TODO: it works for one issuer only now
 class ProofRevocationBuilder:
-    def __init__(self, groups: Dict[str, PairingGroup], revocationPks: Dict[str, RevocationPublicKey], ms):
-        self._groups = groups
-        self._revocationPks = revocationPks
+    def __init__(self, issuerId, group: PairingGroup, pk: RevocationPublicKey, ms):
+        self._issuerId = issuerId
+        self._group = group
+        self._pk = pk
         self._ms = int(ms)
 
-        self._vrPrime = {}
-        for key, val in revocationPks.items():
-            self._vrPrime[key] = self._groups[key].random(ZR)
-
-        self._Ur = {}
-        for key, val in revocationPks.items():
-            self._Ur[key] = (val.h1 ** self._ms) * (val.h2 ** self._vrPrime[key])
+        self._vrPrime = self._group.random(ZR)
+        self._vrPrime = self._group.random(ZR)
+        self._Ur = (self._pk.h1 ** self._ms) * (self._pk.h2 ** self._vrPrime)
 
     @property
     def Ur(self):
         return self._Ur
 
-    def testWitnessCredentials(self, Ws: Dict[str, WitnessCredential], accs: Dict[str, Accumulator]):
-        result = True
-        for key, val in Ws.items():
-            result &= self.testWitnessCredential(key, val, accs[key])
-        return result
+    def prepareProofNonVerification(self, witnessCred: WitnessCredential,
+                                    accum: Accumulator, g: GType, nonce) -> RevocationProof:
+        # update vPrime parameter for Witness
+        witnessCred = self._getPresentationWitnessCredential(witnessCred)
 
-    def testWitnessCredential(self, issuerId, W: WitnessCredential, acc: Accumulator):
-        W = self.getPresentationWitnessCredential(issuerId, W)
+        # update V and omega in witness to correspond to the new accumulator
+        witnessCred = self._updateWitness(witnessCred, accum, g)
 
-        pk = self._revocationPks[issuerId]
-        zCalc = pair(W.gi, acc.acc) / pair(pk.g, W.witi.omega)
+        # check whether issued witness is correct
+        self._testWitnessCredential(witnessCred, accum)
+
+        # prepare non-revocation proof
+        return self._prepareProof(witnessCred, accum, nonce)
+
+    def _getPresentationWitnessCredential(self, W: WitnessCredential):
+        W.v += self._vrPrime
+        return W
+
+    def _updateWitness(self, witnessCred: WitnessCredential, newAccum: Accumulator, g: GType):
+        oldV = witnessCred.witi.V
+        newV = newAccum.V
+
+        if witnessCred.i not in newV:
+            raise ValueError("Can not update Witness. I'm revoced.")
+
+        if oldV != newV:
+            witnessCred.witi.V = newV
+
+            vOldMinusNew = oldV - newV
+            vNewMinusOld = newV - oldV
+            omegaDenom = 1
+            for j in vOldMinusNew:
+                omegaDenom *= g[newAccum.L + 1 - j + witnessCred.i]
+            omegaNum = 1
+            for j in vNewMinusOld:
+                omegaNum *= g[newAccum.L + 1 - j + witnessCred.i]
+
+                witnessCred.witi.omega = witnessCred.witi.omega * omegaNum / omegaDenom
+
+        return witnessCred
+
+    def _testWitnessCredential(self, W: WitnessCredential, acc: Accumulator):
+        zCalc = pair(W.gi, acc.acc) / pair(self._pk.g, W.witi.omega)
         if zCalc != acc.pk.z:
             raise ValueError("issuer is sending incorrect data")
 
-        pairGGCalc = pair(pk.pk * W.gi, W.witi.sigmai)
-        pairGG = pair(pk.g, pk.g)
+        pairGGCalc = pair(self._pk.pk * W.gi, W.witi.sigmai)
+        pairGG = pair(self._pk.g, self._pk.g)
         if pairGGCalc != pairGG:
             raise ValueError("issuer is sending incorrect data")
 
-        pairH1 = pair(W.sigma, pk.y * (pk.h ** W.c))
-        pairH2 = pair(pk.h0 * (pk.h1 ** self._ms) * (pk.h2 ** W.v) * W.gi, pk.h)
+        pairH1 = pair(W.sigma, self._pk.y * (self._pk.h ** W.c))
+        pairH2 = pair(self._pk.h0 * (self._pk.h1 ** self._ms) * (self._pk.h2 ** W.v) * W.gi, self._pk.h)
         if pairH1 != pairH2:
             raise ValueError("issuer is sending incorrect data")
 
         return True
 
-    def getPresentationWitnessCredential(self, issuerId, W: WitnessCredential):
-        W.v += self._vrPrime[issuerId]
-        return W
 
-    def updateWitness(self, witnessCreds: Dict[str, WitnessCredential], newAccums: Dict[str, Accumulator],
-                      gAll: Dict[str, GType]):
-        for key, val in witnessCreds.items():
-            accum = newAccums[key]
-            g = gAll[key]
-            pk = self._revocationPks[key]
-
-            oldV = val.witi.V
-            newV = accum.V
-
-            if oldV != newV:
-                val.witi.V = newV
-
-                vOldMinusNew = oldV - newV
-                vNewMinusOld = newV - oldV
-                omegaDenom = 1
-                for j in vOldMinusNew:
-                    omegaDenom *= g[pk.L + 1 - j + val.i]
-                omegaNum = 1
-                for j in vNewMinusOld:
-                    omegaNum *= g[pk.L + 1 - j + val.i]
-
-                val.witi.omega = val.witi.omega * omegaNum / omegaDenom
-
-    def prepareProofNonVerification(self, witnessCreds: Dict[str, WitnessCredential],
-                                    accums: Dict[str, Accumulator], nonce) -> RevocationProof:
+    def _prepareProof(self, witnessCred: WitnessCredential,
+                                    accum: Accumulator, nonce) -> RevocationProof:
         CList = []
         TauList = []
         XList = ProofParams()
-        cH = None
 
-        # TODO: it works for one issuer only now
-        for key, val in witnessCreds.items():
-            pk = self._revocationPks[key]
-            group = self._groups[key]
-            accum = accums[key]
+        cListParams = self._genCListParams(self._group, witnessCred)
+        proofCList = self._createCListValues(self._pk, witnessCred, cListParams)
+        CList.extend(proofCList.asList())
 
-            cListParams = self._genCListParams(group, val)
-            proofCList = self._createCListValues(pk, val, cListParams)
-            CList.extend(proofCList.asList())
+        tauListParams = self._genTauListParams(self._group)
+        proofTauList = self.createTauListValues(self._pk, accum, tauListParams, proofCList)
+        TauList.extend(proofTauList.asList())
 
-            tauListParams = self._genTauListParams(group)
-            proofTauList = self.createTauListValues(pk, accum, tauListParams, proofCList)
-            TauList.extend(proofTauList.asList())
+        cH = get_hash_hex(nonce, *reduce(lambda x, y: x + y, [TauList, CList]), group=self._group)
+        chNum_z = hex_hash_to_ZR(cH, self._group)
 
-            cH = get_hash_hex(nonce, *reduce(lambda x, y: x + y, [TauList, CList]), group=group)
-            chNum_z = hex_hash_to_ZR(cH, group)
-
-            XList.fromList([x - chNum_z * y for x, y in zip(tauListParams.asList(), cListParams.asList())])
+        XList.fromList([x - chNum_z * y for x, y in zip(tauListParams.asList(), cListParams.asList())])
 
         return RevocationProof(cH, XList, proofCList)
 
@@ -159,23 +154,6 @@ class ProofRevocationBuilder:
              (pair(1 / pk.g, pk.htilde) ** params.rPrimePrimePrime)
         return ProofTauList(T1, T2, T3, T4, T5, T6, T7, T8)
 
-    def testProof(self, witnessCreds: Dict[str, WitnessCredential], accums: Dict[str, Accumulator]):
-        for key, val in witnessCreds.items():
-            pk = self._revocationPks[key]
-            group = self._groups[key]
-            accum = accums[key]
-
-            cListParams = self._genCListParams(group, val)
-            proofCList = self._createCListValues(pk, val, cListParams)
-            proofTauList = self.createTauListValues(pk, accum, cListParams, proofCList)
-
-            proofTauListCalc = ProofRevocationBuilder.createTauListExpectedValues(pk, accum, proofCList)
-
-            if proofTauListCalc.asList() != proofTauList.asList():
-                raise ValueError("revocation proof is incorrect")
-
-        return True
-
     @staticmethod
     def createTauListExpectedValues(pk: RevocationPublicKey, accum: Accumulator,
                                     proofC: ProofCList) -> ProofTauList:
@@ -188,3 +166,16 @@ class ProofRevocationBuilder:
         T7 = pair(pk.pk * proofC.G, proofC.S) / pair(pk.g, pk.g)
         T8 = pair(proofC.G, pk.u) / pair(pk.g, proofC.U)
         return ProofTauList(T1, T2, T3, T4, T5, T6, T7, T8)
+
+
+    def testProof(self, witnessCred: WitnessCredential, accum: Accumulator):
+        cListParams = self._genCListParams(self._group, witnessCred)
+        proofCList = self._createCListValues(self._pk, witnessCred, cListParams)
+        proofTauList = self.createTauListValues(self._pk, accum, cListParams, proofCList)
+
+        proofTauListCalc = ProofRevocationBuilder.createTauListExpectedValues(self._pk, accum, proofCList)
+
+        if proofTauListCalc.asList() != proofTauList.asList():
+            raise ValueError("revocation proof is incorrect")
+
+        return True

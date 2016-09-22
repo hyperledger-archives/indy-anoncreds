@@ -2,29 +2,26 @@ from anoncreds.protocol.revocation.accumulators.accumulator_definition import Ac
 from anoncreds.protocol.revocation.accumulators.issuance_revocation_builder import IssuanceRevocationBuilder
 from anoncreds.protocol.revocation.accumulators.proof_revocation_builder import ProofRevocationBuilder
 
+L = 5
+issuerId = "issuer1"
+proverId = "prover1"
+accId = "acc1"
 
 def testUpdateWitness(prover):
-    L = 5
-    issuerId = "issuer1"
-    proverId = "prover1"
-
     accDef = AccumulatorDefinition()
-    revPk, revSk = accDef.genRevocationKeys(L)
-    acc, g, accSk = accDef.issueAccumulator(revPk)
+    revPk, revSk = accDef.genRevocationKeys()
+    acc, g, accSk = accDef.issueAccumulator(accId, revPk, L)
 
     issuanceRevBuilder = IssuanceRevocationBuilder(accDef.group, revPk, revSk)
-    proofRevBuilder = ProofRevocationBuilder({issuerId: accDef.group},
-                                             {issuerId: revPk},
-                                             prover._ms)
+    proofRevBuilder = ProofRevocationBuilder(issuerId, accDef.group, revPk, prover._ms)
 
-    witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                           g, proofRevBuilder.Ur[issuerId], 1)
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
     # in sync initially
     assert witCred.witi.V == acc.V
 
     # not changed as in sync
     oldOmega = witCred.witi.omega
-    proofRevBuilder.updateWitness({issuerId: witCred}, {issuerId: acc}, {issuerId: g})
+    proofRevBuilder._updateWitness(witCred, acc, g)
     assert witCred.witi.V == acc.V
     assert oldOmega == witCred.witi.omega
 
@@ -34,70 +31,94 @@ def testUpdateWitness(prover):
 
     # witness is updated
     oldOmega = witCred.witi.omega
-    proofRevBuilder.updateWitness({issuerId: witCred}, {issuerId: acc}, {issuerId: g})
+    proofRevBuilder._updateWitness(witCred, acc, g)
     assert witCred.witi.V == acc.V
     assert oldOmega != witCred.witi.omega
 
 
 def testPresentationWitnessCred(prover):
-    L = 5
-    issuerId = "issuer1"
-    proverId = "prover1"
-
     accDef = AccumulatorDefinition()
-    revPk, revSk = accDef.genRevocationKeys(L)
-    acc, g, accSk = accDef.issueAccumulator(revPk)
+    revPk, revSk = accDef.genRevocationKeys()
+    acc, g, accSk = accDef.issueAccumulator(accId, revPk, L)
 
     issuanceRevBuilder = IssuanceRevocationBuilder(accDef.group, revPk, revSk)
-    proofRevBuilder = ProofRevocationBuilder({issuerId: accDef.group},
-                                             {issuerId: revPk},
-                                             prover._ms)
+    proofRevBuilder = ProofRevocationBuilder(issuerId, accDef.group, revPk, prover._ms)
 
-    witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                           g, proofRevBuilder.Ur[issuerId], 1)
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
     oldV = witCred.v
-    witCred = proofRevBuilder.getPresentationWitnessCredential(issuerId, witCred)
-    assert oldV + proofRevBuilder._vrPrime[issuerId] == witCred.v
+    witCred = proofRevBuilder._getPresentationWitnessCredential( witCred)
+    assert oldV + proofRevBuilder._vrPrime == witCred.v
+
+
+def testWitnessCredentials(prover):
+    accDef = AccumulatorDefinition()
+    revPk, revSk = accDef.genRevocationKeys()
+    acc, g, accSk = accDef.issueAccumulator(accId, revPk, L)
+
+    issuanceRevBuilder = IssuanceRevocationBuilder(accDef.group, revPk, revSk)
+    proofRevBuilder = ProofRevocationBuilder(issuerId, accDef.group, revPk, prover._ms)
+
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    witCred = proofRevBuilder._getPresentationWitnessCredential(witCred)
+    assert proofRevBuilder._testWitnessCredential( witCred, acc)
+
+
+def testWitnessCredentialsMultipleIssued(prover):
+    accDef = AccumulatorDefinition()
+    revPk, revSk = accDef.genRevocationKeys()
+    acc, g, accSk = accDef.issueAccumulator(accId, revPk, L)
+
+    issuanceRevBuilder = IssuanceRevocationBuilder(accDef.group, revPk, revSk)
+    proofRevBuilder = ProofRevocationBuilder(issuerId, accDef.group, revPk, prover._ms)
+
+    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    witCred = proofRevBuilder._getPresentationWitnessCredential(witCred)
+    assert proofRevBuilder._testWitnessCredential( witCred, acc)
 
 
 def testCAndTauList(prover):
-    L = 5
-    issuerId = "issuer1"
-    proverId = "prover1"
-
     accDef = AccumulatorDefinition()
-    revPk, revSk = accDef.genRevocationKeys(L)
-    acc, g, accSk = accDef.issueAccumulator(revPk)
+    revPk, revSk = accDef.genRevocationKeys()
+    acc, g, accSk = accDef.issueAccumulator(accId, revPk, L)
 
     issuanceRevBuilder = IssuanceRevocationBuilder(accDef.group, revPk, revSk)
-    proofRevBuilder = ProofRevocationBuilder({issuerId: accDef.group},
-                                             {issuerId: revPk},
-                                             prover._ms)
+    proofRevBuilder = ProofRevocationBuilder(issuerId, accDef.group, revPk, prover._ms)
 
-    witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                           g, proofRevBuilder.Ur[issuerId], 1)
-    witCred = proofRevBuilder.getPresentationWitnessCredential(issuerId, witCred)
-    assert proofRevBuilder.testProof({issuerId: witCred}, {issuerId: acc})
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    witCred = proofRevBuilder._getPresentationWitnessCredential(witCred)
+    witCred = proofRevBuilder._updateWitness(witCred, acc, g)
+    assert proofRevBuilder.testProof(witCred, acc)
 
 
-def testCAndTauListTwoCred(prover):
-    L = 5
-    issuerId = "issuer1"
-    proverId = "prover1"
-
+def testCAndTauListMultipleIssued(prover):
     accDef = AccumulatorDefinition()
-    revPk, revSk = accDef.genRevocationKeys(L)
-    acc, g, accSk = accDef.issueAccumulator(revPk)
+    revPk, revSk = accDef.genRevocationKeys()
+    acc, g, accSk = accDef.issueAccumulator(accId, revPk, L)
 
     issuanceRevBuilder = IssuanceRevocationBuilder(accDef.group, revPk, revSk)
-    proofRevBuilder = ProofRevocationBuilder({issuerId: accDef.group},
-                                             {issuerId: revPk},
-                                             prover._ms)
+    proofRevBuilder = ProofRevocationBuilder(issuerId, accDef.group, revPk, prover._ms)
 
-    issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                 g, proofRevBuilder.Ur[issuerId], 1)
-    witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                           g, proofRevBuilder.Ur[issuerId], 2)
+    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
 
-    witCred = proofRevBuilder.getPresentationWitnessCredential(issuerId, witCred)
-    assert proofRevBuilder.testProof({issuerId: witCred}, {issuerId: acc})
+    witCred = proofRevBuilder._getPresentationWitnessCredential(witCred)
+    witCred = proofRevBuilder._updateWitness(witCred, acc, g)
+    assert proofRevBuilder.testProof(witCred, acc)
+
+
+def testPrepareNonRevocProof(prover):
+    accDef = AccumulatorDefinition()
+    revPk, revSk = accDef.genRevocationKeys()
+    acc, g, accSk = accDef.issueAccumulator(accId, revPk, L)
+
+    issuanceRevBuilder = IssuanceRevocationBuilder(accDef.group, revPk, revSk)
+    proofRevBuilder = ProofRevocationBuilder(issuerId, accDef.group, revPk, prover._ms)
+
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    witCred = proofRevBuilder._getPresentationWitnessCredential(witCred)
+    assert proofRevBuilder.testProof(witCred, acc)

@@ -1,56 +1,61 @@
+import pytest
+
 from anoncreds.protocol.revocation.accumulators.accumulator_definition import AccumulatorDefinition
 from anoncreds.protocol.revocation.accumulators.issuance_revocation_builder import IssuanceRevocationBuilder
 from anoncreds.protocol.revocation.accumulators.proof_revocation_builder import ProofRevocationBuilder
 from anoncreds.protocol.revocation.accumulators.proof_revocation_verifier import ProofRevocationVerifier
 
+L = 5
+issuerId = "issuer1"
+proverId = "prover1"
+accId = "acc1"
 
-def testSingleNonRevoked(prover, verifier):
-    L = 5
-    issuerId = "issuer1"
-    proverId = "prover1"
 
+def testVerifySingleNonRevoked(prover, verifier):
     accDef = AccumulatorDefinition()
-    revPk, revSk = accDef.genRevocationKeys(L)
-    acc, g, accSk = accDef.issueAccumulator(revPk)
+    revPk, revSk = accDef.genRevocationKeys()
+    acc, g, accSk = accDef.issueAccumulator(accId, revPk, L)
 
-    revPks = {issuerId: revPk}
-    accums = {issuerId: acc}
-    groups = {issuerId: accDef.group}
     issuanceRevBuilder = IssuanceRevocationBuilder(accDef.group, revPk, revSk)
-    proofRevBuilder = ProofRevocationBuilder(groups, revPks, prover._ms)
-    proofRevVerifier = ProofRevocationVerifier(groups, revPks, verifier.nonce)
+    proofRevBuilder = ProofRevocationBuilder(issuerId, accDef.group, revPk, prover._ms)
+    proofRevVerifier = ProofRevocationVerifier(accDef.group, revPk, verifier.nonce)
 
-    witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                           g, proofRevBuilder.Ur[issuerId], 1)
-    witCred = proofRevBuilder.getPresentationWitnessCredential(issuerId, witCred)
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    nonRevocProof = proofRevBuilder.prepareProofNonVerification(witCred, acc, g, verifier.nonce)
 
-    nonRevocProof = proofRevBuilder.prepareProofNonVerification({issuerId: witCred}, accums, verifier.nonce)
-
-    assert proofRevVerifier.verifyNonRevocation(issuerId, nonRevocProof, acc)
+    assert proofRevVerifier.verifyNonRevocation(nonRevocProof, acc)
 
 
-def testSingleRevoked(prover, verifier):
-    L = 5
-    issuerId = "issuer1"
-    proverId = "prover1"
-
+def testVerifyMultipleNonRevoked(prover, verifier):
     accDef = AccumulatorDefinition()
-    revPk, revSk = accDef.genRevocationKeys(L)
-    acc, g, accSk = accDef.issueAccumulator(revPk)
+    revPk, revSk = accDef.genRevocationKeys()
+    acc, g, accSk = accDef.issueAccumulator(accId, revPk, L)
 
-    revPks = {issuerId: revPk}
-    accums = {issuerId: acc}
-    groups = {issuerId: accDef.group}
     issuanceRevBuilder = IssuanceRevocationBuilder(accDef.group, revPk, revSk)
-    proofRevBuilder = ProofRevocationBuilder(groups, revPks, prover._ms)
-    proofRevVerifier = ProofRevocationVerifier(groups, revPks, verifier.nonce)
+    proofRevBuilder = ProofRevocationBuilder(issuerId, accDef.group, revPk, prover._ms)
+    proofRevVerifier = ProofRevocationVerifier(accDef.group, revPk, verifier.nonce)
 
-    i = 1
-    witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                           g, proofRevBuilder.Ur[issuerId], i)
-    issuanceRevBuilder.revoke(acc, g, i)
-    witCred = proofRevBuilder.getPresentationWitnessCredential(issuerId, witCred)
+    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    nonRevocProof = proofRevBuilder.prepareProofNonVerification(witCred, acc, g, verifier.nonce)
 
-    nonRevocProof = proofRevBuilder.prepareProofNonVerification({issuerId: witCred}, accums, verifier.nonce)
+    assert proofRevVerifier.verifyNonRevocation(nonRevocProof, acc)
 
-    assert not proofRevVerifier.verifyNonRevocation(issuerId, nonRevocProof, acc)
+
+def testVerifySingleRevoked(prover, verifier):
+    accDef = AccumulatorDefinition()
+    revPk, revSk = accDef.genRevocationKeys()
+    acc, g, accSk = accDef.issueAccumulator(accId, revPk, L)
+
+    issuanceRevBuilder = IssuanceRevocationBuilder(accDef.group, revPk, revSk)
+    proofRevBuilder = ProofRevocationBuilder(issuerId, accDef.group, revPk, prover._ms)
+    proofRevVerifier = ProofRevocationVerifier(accDef.group, revPk, verifier.nonce)
+
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    issuanceRevBuilder.revoke(acc, g, 1)
+
+    with pytest.raises(ValueError):
+        nonRevocProof = proofRevBuilder.prepareProofNonVerification(witCred, acc, g, verifier.nonce)
+        proofRevVerifier.verifyNonRevocation(nonRevocProof, acc)

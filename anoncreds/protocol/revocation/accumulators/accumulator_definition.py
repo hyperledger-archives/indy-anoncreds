@@ -8,7 +8,7 @@ class AccumulatorDefinition:
     def __init__(self, group: PairingGroup = None):
         self.group = group if group else PairingGroup('SS1024')  # super singular curve, 1024 bits
 
-    def genRevocationKeys(self, L):
+    def genRevocationKeys(self):
         h = self.group.random(G1)  # random element of the group G
         h0 = self.group.random(G1)
         h1 = self.group.random(G1)
@@ -25,21 +25,21 @@ class AccumulatorDefinition:
         pk = g ** sk
         y = h ** x
 
-        return (RevocationPublicKey(qr, g, h, h0, h1, h2, htilde, u, pk, y, L, x), RevocationSecretKey(x, sk))
+        return (RevocationPublicKey(qr, g, h, h0, h1, h2, htilde, u, pk, y, x), RevocationSecretKey(x, sk))
 
-    def issueAccumulator(self, pk: RevocationPublicKey):
-        gamma = self.group.random(ZR)  # random(pk.qr)
+    def issueAccumulator(self, iA, pk: RevocationPublicKey, L):
+        gamma = self.group.random(ZR)
 
         gi = {}
-        gCount = 2 * pk.L
+        gCount = 2 * L
         for i in range(gCount):
-            if i != pk.L + 1:
+            if i != L + 1:
                 gi[i] = pk.g ** (gamma ** i)
-        z = pair(pk.g, pk.g) ** (gamma ** (pk.L + 1))
+        z = pair(pk.g, pk.g) ** (gamma ** (L + 1))
 
         acc = 1
         V = set()
 
         accPK = AccumulatorPublicKey(z)
         accSK = AccumulatorSecretKey(gamma)
-        return (Accumulator(acc, V, accPK), gi, accSK)
+        return (Accumulator(iA, acc, V, accPK, L), gi, accSK)

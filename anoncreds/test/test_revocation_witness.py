@@ -1,6 +1,7 @@
 from anoncreds.protocol.revocation.accumulators.accumulator_definition import AccumulatorDefinition
-from anoncreds.protocol.revocation.accumulators.proof_revocation_builder import ProofRevocationBuilder
 from anoncreds.protocol.revocation.accumulators.issuance_revocation_builder import IssuanceRevocationBuilder
+from anoncreds.protocol.revocation.accumulators.proof_revocation_builder import ProofRevocationBuilder
+
 
 def testWitnessCredentialsOneCred(prover):
     L = 5
@@ -18,7 +19,7 @@ def testWitnessCredentialsOneCred(prover):
 
     i = 1;
     witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                 g, proofRevBuilder.Ur[issuerId], i)
+                                                           g, proofRevBuilder.Ur[issuerId], i)
 
     assert proofRevBuilder.testWitnessCredential(issuerId, witCred, acc)
 
@@ -40,7 +41,6 @@ def testWitnessCredentialsTwoCred(prover):
     issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
                                                  g, proofRevBuilder.Ur[issuerId], 1)
     witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                 g, proofRevBuilder.Ur[issuerId], 2)
+                                                           g, proofRevBuilder.Ur[issuerId], 2)
 
     assert proofRevBuilder.testWitnessCredential(issuerId, witCred, acc)
-

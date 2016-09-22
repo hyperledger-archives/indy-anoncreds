@@ -60,8 +60,8 @@ def credDefSecretRepo(credDefRepo):
 
 
 @pytest.fixture(scope="function")
-def genNonce():
-    return ProofVerifier({}).nonce
+def genNonce(credDefRepo):
+    return Verifier("verifierTmp", credDefRepo).nonce
 
 
 @pytest.fixture(scope="function")

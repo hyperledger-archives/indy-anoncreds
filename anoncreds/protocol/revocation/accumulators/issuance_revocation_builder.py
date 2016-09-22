@@ -1,7 +1,7 @@
-from charm.toolbox.pairinggroup import PairingGroup,ZR,G1,G2,GT,pair
+from charm.toolbox.pairinggroup import PairingGroup, ZR
 
 from anoncreds.protocol.revocation.accumulators.types import RevocationPublicKey, RevocationSecretKey, \
-    Accumulator, AccumulatorPublicKey, AccumulatorSecretKey, \
+    Accumulator, AccumulatorSecretKey, \
     Witness, WitnessCredential
 
 
@@ -11,7 +11,6 @@ class IssuanceRevocationBuilder:
         self._pk = revocPK
         self._sk = revocSK
 
-
     def issueRevocationCredential(self, iA, accum: Accumulator, accSk: AccumulatorSecretKey,
                                   g, Ur, i):
         vrPrimeprime = self._group.random(ZR)
@@ -20,8 +19,7 @@ class IssuanceRevocationBuilder:
         sigma = (self._pk.h0 * Ur * g[i] * (self._pk.h2 ** vrPrimeprime)) ** (1 / (self._sk.x + c))
         omega = g[0] / g[0]
         for j in accum.V:
-            omega *= g[self._pk.L + 1 - j  + i]
-
+            omega *= g[self._pk.L + 1 - j + i]
 
         sigmai = self._pk.g ** (1 / (self._sk.sk + (accSk.gamma ** i)))
         ui = self._pk.u ** (accSk.gamma ** i)
@@ -33,7 +31,6 @@ class IssuanceRevocationBuilder:
 
         return WitnessCredential(iA, sigma, c, vrPrimeprime, witi, g[i], i)
 
-
-    def revoke(self, accum: Accumulator, i):
+    def revoke(self, accum: Accumulator, g, i):
         accum.V.discard(i)
-        accum.acc = accum.acc / self._g[self._pk.L + 1 - i]
+        accum.acc = accum.acc / g[self._pk.L + 1 - i]

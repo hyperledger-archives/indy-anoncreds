@@ -14,7 +14,7 @@ def verifyEquality(attrRepo, revealedAttrs, issuers, prover, verifiers, primes, 
     verified = True
     for verifier in verifiers:
         proofVerifier = verifier.createProofVerifier(credDefIds)
-        nonce = defaultNonce if defaultNonce else proofVerifier.nonce
+        nonce = defaultNonce if defaultNonce else verifier.nonce
         proof = proofBuilder.prepareProofEquality(creds,
                                                   encodedAttrs, revealedAttrs,
                                                   nonce)
@@ -39,7 +39,7 @@ def verifyPredicateGreaterEq(attrRepo, revealedAttrs, issuers, prover, verifiers
     verified = True
     for verifier in verifiers:
         proofVerifier = verifier.createProofVerifier(credDefIds)
-        nonce = defaultNonce if defaultNonce else proofVerifier.nonce
+        nonce = defaultNonce if defaultNonce else verifier.nonce
         proof = proofBuilder.prepareProofPredicateGreaterEq(creds,
                                                   encodedAttrs, revealedAttrs,
                                                   nonce, predicate)

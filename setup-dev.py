@@ -1,7 +1,7 @@
-import sys
 import os
-from setuptools import setup, find_packages, __version__
+import sys
 
+from setuptools import setup, find_packages, __version__
 
 v = sys.version_info
 if sys.version_info < (3, 5):

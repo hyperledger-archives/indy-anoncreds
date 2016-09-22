@@ -7,6 +7,7 @@ from typing import Dict
 
 from charm.core.math.integer import random, isPrime, integer
 from charm.toolbox.conversion import Conversion
+from charm.toolbox.pairinggroup import PairingGroup, pc_element, ZR
 
 from anoncreds.protocol.types import T
 
@@ -27,7 +28,7 @@ def randomQR(n):
 #             for key, value in attrs.items()}
 
 
-def get_hash(*args):
+def get_hash(*args, group:PairingGroup=None):
     """
     Enumerate over the input tuple and generate a hash using the tuple values
 
@@ -37,9 +38,34 @@ def get_hash(*args):
 
     h_challenge = sha256()
     for arg in args:
-        h_challenge.update(Conversion.IP2OS(arg))
+        if (type(arg) == pc_element):
+            byteArg = group.serialize(arg)
+            h_challenge.update(byteArg)
+        else:
+            h_challenge.update(Conversion.IP2OS(arg))
     return h_challenge.digest()
 
+def get_hash_hex(*args, group:PairingGroup=None):
+    """
+    Enumerate over the input tuple and generate a hash using the tuple values
+
+    :param args:
+    :return:
+    """
+
+    h_challenge = sha256()
+    for arg in args:
+        if (type(arg) == pc_element):
+            byteArg = group.serialize(arg)
+            h_challenge.update(byteArg)
+        else:
+            print(arg)
+            h_challenge.update(Conversion.IP2OS(arg))
+    return h_challenge.hexdigest()
+
+def hex_hash_to_ZR(hexHash, group):
+    cHNum = int(hexHash, base=16)
+    return group.init(ZR, cHNum)
 
 def get_values_of_dicts(*args):
     l = list()

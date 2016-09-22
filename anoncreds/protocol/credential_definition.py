@@ -6,7 +6,7 @@ from charm.toolbox.conversion import Conversion
 
 from anoncreds.protocol.globals import LARGE_PRIME, KEYS, \
     MASTER_SEC_RAND, PK_N, PK_S, PK_Z, PK_R, NAME, VERSION, TYPE, IP, PORT, TYPE_CL
-from anoncreds.protocol.types import CredDefPublicKey, CredDefSecretKey, SerFmt
+from anoncreds.protocol.types import CredDefPublicKey, CredDefSecretKey
 from anoncreds.protocol.utils import randomQR, randomString, strToCharmInteger
 
 primes = {

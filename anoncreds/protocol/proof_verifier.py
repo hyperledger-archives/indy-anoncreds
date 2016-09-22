@@ -1,9 +1,9 @@
 from functools import reduce
 from typing import Dict, Sequence
 
-from charm.core.math.integer import integer, randomBits
+from charm.core.math.integer import integer
 
-from anoncreds.protocol.globals import LARGE_E_START, LARGE_NONCE, ITERATIONS, DELTA, TVAL, \
+from anoncreds.protocol.globals import LARGE_E_START, ITERATIONS, DELTA, TVAL, \
     NONCE, ZERO_INDEX
 from anoncreds.protocol.types import CredDefPublicKey
 from anoncreds.protocol.types import PredicateProof, T
@@ -13,19 +13,9 @@ from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
 
 class ProofVerifier:
 
-    def __init__(self, credDefPks: Dict[str, CredDefPublicKey]):
+    def __init__(self, credDefPks: Dict[str, CredDefPublicKey], nonce):
         self.credDefPks = credDefPks
-        self._nonce = self._generateNonce()
-
-
-    @property
-    def nonce(self):
-        return self._nonce
-
-
-    def _generateNonce(self):
-        return integer(randomBits(LARGE_NONCE))
-
+        self._nonce = nonce
 
     def verifyEquality(self, proof, attrs, revealedAttrs):
         """

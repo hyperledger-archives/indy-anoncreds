@@ -1,76 +1,11 @@
+from functools import reduce
 from typing import Dict
 
-from charm.toolbox.pairinggroup import PairingGroup,ZR,G1,G2,GT,pair
+from charm.toolbox.pairinggroup import PairingGroup, ZR, pair
 
-from anoncreds.protocol.revocation.accumulators.accumulator_definition import RevocationPublicKey
-from anoncreds.protocol.types import CredDefPublicKey
-from anoncreds.protocol.revocation.accumulators.types import RevocationPublicKey, RevocationSecretKey, \
-    Accumulator, AccumulatorPublicKey, AccumulatorSecretKey, \
-    Witness, WitnessCredential, GType
-from anoncreds.protocol.globals import LARGE_MASTER_SECRET
-
-class ProofCListParams:
-    def __init__(self, rho, rhoPrime, r, rPrime, rPrimePrime, rPrimePrimePrime, o, oPrime,
-                 m, mPrime, t, tPrime):
-        self.rho = rho
-        self.rhoPrime = rhoPrime
-        self.r = r
-        self.rPrime = rPrime
-        self.rPrimePrime = rPrimePrime
-        self.rPrimePrimePrime = rPrimePrimePrime
-        self.o = o
-        self.oPrime = oPrime
-        self.m = m
-        self.mPrime = mPrime
-        self.t = t
-        self.tPrime = tPrime
-
-class ProofTauListParams:
-    def __init__(self, tildeRho, tildeO, tildeOPrime, tildeC, tildeM, tildeMPrime, tildeT, tildeTPrime, tildeMR,
-                 tildeS, tildeR, tildeRPrime, tildeRPrimePrime, tildeRPrimePrimePrime):
-        self.tildeRho = tildeRho
-        self.tildeO = tildeO
-        self.tildeOPrime = tildeOPrime
-        self.tildeC =tildeC
-        self.tildeM = tildeM
-        self.tildeMPrime = tildeMPrime
-        self.tildeT = tildeT
-        self.tildeTPrime = tildeTPrime
-        self.tildeMR = tildeMR
-        self.tildeS =tildeS
-        self.tildeR = tildeR
-        self.tildeRPrime = tildeRPrime
-        self.tildeRPrimePrime = tildeRPrimePrime
-        self.tildeRPrimePrimePrime = tildeRPrimePrimePrime
-
-
-class ProofCList:
-    def __init__(self, E, D, A, G, W, S, U):
-        self.E = E
-        self.D = D
-        self.A = A
-        self.G = G
-        self.W = W
-        self.S = S
-        self.U = U
-
-    def asList(self):
-        return [self.E, self.D, self.A, self.G, self.W, self.S, self.U]
-
-
-class ProofTauList:
-    def __init__(self, T1, T2, T3, T4, T5, T6, T7, T8):
-        self.T1 = T1
-        self.T2 = T2
-        self.T3 = T3
-        self.T4 = T4
-        self.T5 = T5
-        self.T6 = T6
-        self.T7 = T7
-        self.T8 = T8
-
-    def asList(self):
-        return [self.T1, self.T2, self.T3, self.T4, self.T5, self.T6, self.T7, self.T8]
+from anoncreds.protocol.revocation.accumulators.types import RevocationPublicKey, Accumulator, WitnessCredential, GType, \
+    RevocationProof, ProofParams, ProofCList, ProofTauList
+from anoncreds.protocol.utils import get_hash_hex, hex_hash_to_ZR
 
 
 class ProofRevocationBuilder:
@@ -87,26 +22,18 @@ class ProofRevocationBuilder:
         for key, val in revocationPks.items():
             self._Ur[key] = (val.h1 ** self._ms) * (val.h2 ** self._vrPrime[key])
 
-
     @property
     def Ur(self):
         return self._Ur
 
-
-    @property
-    def vrPrime(self):
-        return self._vrPrime
-
-
-    def testWitnessCredential(self, Ws: Dict[str, WitnessCredential], accs: Dict[str, Accumulator]):
+    def testWitnessCredentials(self, Ws: Dict[str, WitnessCredential], accs: Dict[str, Accumulator]):
         result = True
         for key, val in Ws.items():
             result &= self.testWitnessCredential(key, val, accs[key])
         return result
 
-
-    def testWitnessCredential(self, issuerId,  W: WitnessCredential, acc: Accumulator):
-        W = self._getPresentationWitnessCredential(issuerId, W)
+    def testWitnessCredential(self, issuerId, W: WitnessCredential, acc: Accumulator):
+        W = self.getPresentationWitnessCredential(issuerId, W)
 
         pk = self._revocationPks[issuerId]
         zCalc = pair(W.gi, acc.acc) / pair(pk.g, W.witi.omega)
@@ -125,14 +52,12 @@ class ProofRevocationBuilder:
 
         return True
 
-
-    def _getPresentationWitnessCredential(self, issuerId, W: WitnessCredential):
+    def getPresentationWitnessCredential(self, issuerId, W: WitnessCredential):
         W.v += self._vrPrime[issuerId]
         return W
 
-
     def updateWitness(self, witnessCreds: Dict[str, WitnessCredential], newAccums: Dict[str, Accumulator],
-                          gAll: Dict[str, GType]):
+                      gAll: Dict[str, GType]):
         for key, val in witnessCreds.items():
             accum = newAccums[key]
             g = gAll[key]
@@ -155,13 +80,16 @@ class ProofRevocationBuilder:
 
                 val.witi.omega = val.witi.omega * omegaNum / omegaDenom
 
-
-    def proofNonVerification(self, witnessCreds: Dict[str, WitnessCredential], accums: Dict[str, Accumulator], nonce):
+    def prepareProofNonVerification(self, witnessCreds: Dict[str, WitnessCredential],
+                                    accums: Dict[str, Accumulator], nonce) -> RevocationProof:
         CList = []
         TauList = []
+        XList = ProofParams()
+        cH = None
 
+        # TODO: it works for one issuer only now
         for key, val in witnessCreds.items():
-            pk = self._vrPrime[key]
+            pk = self._revocationPks[key]
             group = self._groups[key]
             accum = accums[key]
 
@@ -170,14 +98,18 @@ class ProofRevocationBuilder:
             CList.extend(proofCList.asList())
 
             tauListParams = self._genTauListParams(group)
-            proofTauList = self._createTauListValues(pk, accum, tauListParams, proofCList)
+            proofTauList = self.createTauListValues(pk, accum, tauListParams, proofCList)
             TauList.extend(proofTauList.asList())
 
+            cH = get_hash_hex(nonce, *reduce(lambda x, y: x + y, [TauList, CList]), group=group)
+            chNum_z = hex_hash_to_ZR(cH, group)
 
+            XList.fromList([x - chNum_z * y for x, y in zip(tauListParams.asList(), cListParams.asList())])
 
-    def _genCListParams(self, group, w: WitnessCredential) -> ProofCListParams:
+        return RevocationProof(cH, XList, proofCList)
+
+    def _genCListParams(self, group, w: WitnessCredential) -> ProofParams:
         rho = group.random(ZR)
-        rhoPrime = group.random(ZR)
         r = group.random(ZR)
         rPrime = group.random(ZR)
         rPrimePrime = group.random(ZR)
@@ -185,12 +117,14 @@ class ProofRevocationBuilder:
         o = group.random(ZR)
         oPrime = group.random(ZR)
         m = rho * w.c
-        mPrime = r * w.c
+        mPrime = r * rPrimePrime
         t = o * w.c
-        tPrime = oPrime * w.c
-        return ProofCListParams(rho, rhoPrime, r, rPrime, rPrimePrime, rPrimePrimePrime, o, oPrime, m, mPrime, t, tPrime)
+        tPrime = oPrime * rPrimePrime
+        mR = group.init(ZR, self._ms)
+        return ProofParams(rho=rho, r=r, rPrime=rPrime, rPrimePrime=rPrimePrime, rPrimePrimePrime=rPrimePrimePrime,
+                           o=o, oPrime=oPrime, m=m, mPrime=mPrime, t=t, tPrime=tPrime, mR=mR, s=w.v, c=w.c)
 
-    def _createCListValues(self, pk: RevocationPublicKey, w: WitnessCredential, params: ProofCListParams) -> ProofCList:
+    def _createCListValues(self, pk: RevocationPublicKey, w: WitnessCredential, params: ProofParams) -> ProofCList:
         E = (pk.h ** params.rho) * (pk.htilde ** params.o)
         D = (pk.g ** params.r) * (pk.htilde ** params.oPrime)
         A = w.sigma * (pk.htilde ** params.rho)
@@ -200,46 +134,30 @@ class ProofRevocationBuilder:
         U = w.witi.ui * (pk.htilde ** params.rPrimePrimePrime)
         return ProofCList(E, D, A, G, W, S, U)
 
-    def _genTauListParams(self, group) -> ProofTauListParams:
-        tildeRho = group.random(ZR)
-        tildeO = group.random(ZR)
-        tildeOPrime = group.random(ZR)
-        tildeC = group.random(ZR)
-        tildeM = group.random(ZR)
-        tildeMPrime = group.random(ZR)
-        tildeT = group.random(ZR)
-        tildeTPrime = group.random(ZR)
-        tildeMR = group.random(ZR)
-        tildeS = group.random(ZR)
-        tildeR = group.random(ZR)
-        tildeRPrime = group.random(ZR)
-        tildeRPrimePrime = group.random(ZR)
-        tildeRPrimePrimePrime = group.random(ZR)
-        return ProofTauListParams(tildeRho, tildeO, tildeOPrime, tildeC, tildeM, tildeMPrime, tildeT, tildeTPrime,
-                                  tildeMR, tildeS, tildeR, tildeRPrime, tildeRPrimePrime, tildeRPrimePrimePrime)
+    def _genTauListParams(self, group) -> ProofParams:
+        return ProofParams(group=group)
 
-
-    def _createTauListValues(self, pk: RevocationPublicKey, accum: Accumulator, params: ProofTauListParams,
-                             proofC: ProofCList) -> ProofTauList:
-        T1 = (pk.h ** params.tildeRho) * (pk.htilde ** params.tildeO)
-        T2 = (proofC.E ** params.tildeC) * (pk.h ** (-params.tildeM)) * (pk.htilde ** (-params.tildeT))
-        T3 = (pair(proofC.A, pk.h) ** params.tildeC) * \
-             (pair(pk.htilde, pk.h) ** params.tildeR) * \
-             (pair(pk.htilde, pk.y) ** -params.tildeRho) * \
-             (pair(pk.htilde, pk.h) ** -params.tildeM) * \
-             (pair(pk.h1, pk.h) ** -params.tildeMR) * \
-             (pair(pk.h2, pk.h) ** -params.tildeS)
-        T4 = (pair(pk.htilde, accum.acc) ** params.tildeR) * \
-             (pair(1 / pk.g, pk.htilde) ** params.tildeRPrime)
-        T5 = (pk.g ** params.tildeR) * (pk.htilde ** params.tildeOPrime)
-        T6 = (proofC.D ** params.tildeC) * (pk.g ** -params.tildeMPrime) * (pk.htilde ** -params.tildeTPrime)
-        T7 = (pair(pk.pk * proofC.G, pk.htilde) ** params.tildeRPrimePrime) * \
-             (pair(pk.htilde, pk.htilde) ** -params.tildeMPrime) * \
-             (pair(pk.htilde, proofC.S) ** params.tildeR)
-        T8 = (pair(pk.htilde, pk.u) ** params.tildeR) * \
-             (pair(1 / pk.g, pk.htilde) ** params.tildeRPrimePrimePrime)
+    @staticmethod
+    def createTauListValues(pk: RevocationPublicKey, accum: Accumulator, params: ProofParams,
+                            proofC: ProofCList) -> ProofTauList:
+        T1 = (pk.h ** params.rho) * (pk.htilde ** params.o)
+        T2 = (proofC.E ** params.c) * (pk.h ** (-params.m)) * (pk.htilde ** (-params.t))
+        T3 = ((pair(proofC.A, pk.h) ** params.c) *
+              (pair(pk.htilde, pk.h) ** params.r)) / \
+             ((pair(pk.htilde, pk.y) ** params.rho) *
+              (pair(pk.htilde, pk.h) ** params.m) *
+              (pair(pk.h1, pk.h) ** params.mR) *
+              (pair(pk.h2, pk.h) ** params.s))
+        T4 = (pair(pk.htilde, accum.acc) ** params.r) * \
+             (pair(1 / pk.g, pk.htilde) ** params.rPrime)
+        T5 = (pk.g ** params.r) * (pk.htilde ** params.oPrime)
+        T6 = (proofC.D ** params.rPrimePrime) * (pk.g ** -params.mPrime) * (pk.htilde ** -params.tPrime)
+        T7 = (pair(pk.pk * proofC.G, pk.htilde) ** params.rPrimePrime) * \
+             (pair(pk.htilde, pk.htilde) ** -params.mPrime) * \
+             (pair(pk.htilde, proofC.S) ** params.r)
+        T8 = (pair(pk.htilde, pk.u) ** params.r) * \
+             (pair(1 / pk.g, pk.htilde) ** params.rPrimePrimePrime)
         return ProofTauList(T1, T2, T3, T4, T5, T6, T7, T8)
-
 
     def testProof(self, witnessCreds: Dict[str, WitnessCredential], accums: Dict[str, Accumulator]):
         for key, val in witnessCreds.items():
@@ -249,30 +167,24 @@ class ProofRevocationBuilder:
 
             cListParams = self._genCListParams(group, val)
             proofCList = self._createCListValues(pk, val, cListParams)
-            tauListParams = ProofTauListParams(cListParams.rho, cListParams.o, cListParams.oPrime, val.c,
-                                               cListParams.m, cListParams.mPrime, cListParams.t, cListParams.tPrime,
-                                               self._ms, val.v, cListParams.r, cListParams.rPrime,
-                                               cListParams.rPrimePrime, cListParams.rPrimePrimePrime)
-            proofTauList = self._createTauListValues(pk, accum, tauListParams, proofCList)
+            proofTauList = self.createTauListValues(pk, accum, cListParams, proofCList)
 
-            TCalc = [proofCList.E,
-                     pk.h/pk.h,
-                     pair(pk.h0 * proofCList.G, pk.h) / pair(proofCList.A, pk.y),
-                     pair(proofCList.G, accum.acc) / pair(pk.g, proofCList.W) * accum.pk.z,
-                     proofCList.D,
-                     pk.h/pk.h,
-                     pair(pk.pk * proofCList.G, proofCList.S) / pair(pk.g, pk.g),
-                     pair(proofCList.G, pk.u) / pair(pk.g, proofCList.U)]
+            proofTauListCalc = ProofRevocationBuilder.createTauListExpectedValues(pk, accum, proofCList)
 
-            l = proofTauList.asList()
-            for i in range(8):
-                if (l[i] != TCalc[i]):
-                    print()
-                    print(i)
-                    print(l[i])
-                    print (TCalc[i])
-
-            if TCalc != proofTauList.asList():
+            if proofTauListCalc.asList() != proofTauList.asList():
                 raise ValueError("revocation proof is incorrect")
 
         return True
+
+    @staticmethod
+    def createTauListExpectedValues(pk: RevocationPublicKey, accum: Accumulator,
+                                    proofC: ProofCList) -> ProofTauList:
+        T1 = proofC.E
+        T2 = pk.h / pk.h
+        T3 = pair(pk.h0 * proofC.G, pk.h) / pair(proofC.A, pk.y)
+        T4 = pair(proofC.G, accum.acc) / (pair(pk.g, proofC.W) * accum.pk.z)
+        T5 = proofC.D
+        T6 = pk.h / pk.h
+        T7 = pair(pk.pk * proofC.G, proofC.S) / pair(pk.g, pk.g)
+        T8 = pair(proofC.G, pk.u) / pair(pk.g, proofC.U)
+        return ProofTauList(T1, T2, T3, T4, T5, T6, T7, T8)

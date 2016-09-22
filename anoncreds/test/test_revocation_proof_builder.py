@@ -1,6 +1,7 @@
 from anoncreds.protocol.revocation.accumulators.accumulator_definition import AccumulatorDefinition
-from anoncreds.protocol.revocation.accumulators.proof_revocation_builder import ProofRevocationBuilder
 from anoncreds.protocol.revocation.accumulators.issuance_revocation_builder import IssuanceRevocationBuilder
+from anoncreds.protocol.revocation.accumulators.proof_revocation_builder import ProofRevocationBuilder
+
 
 def testUpdateWitness(prover):
     L = 5
@@ -17,7 +18,7 @@ def testUpdateWitness(prover):
                                              prover._ms)
 
     witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                 g, proofRevBuilder.Ur[issuerId], 1)
+                                                           g, proofRevBuilder.Ur[issuerId], 1)
     # in sync initially
     assert witCred.witi.V == acc.V
 
@@ -35,7 +36,28 @@ def testUpdateWitness(prover):
     oldOmega = witCred.witi.omega
     proofRevBuilder.updateWitness({issuerId: witCred}, {issuerId: acc}, {issuerId: g})
     assert witCred.witi.V == acc.V
-    assert oldOmega !=  witCred.witi.omega
+    assert oldOmega != witCred.witi.omega
+
+
+def testPresentationWitnessCred(prover):
+    L = 5
+    issuerId = "issuer1"
+    proverId = "prover1"
+
+    accDef = AccumulatorDefinition()
+    revPk, revSk = accDef.genRevocationKeys(L)
+    acc, g, accSk = accDef.issueAccumulator(revPk)
+
+    issuanceRevBuilder = IssuanceRevocationBuilder(accDef.group, revPk, revSk)
+    proofRevBuilder = ProofRevocationBuilder({issuerId: accDef.group},
+                                             {issuerId: revPk},
+                                             prover._ms)
+
+    witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
+                                                           g, proofRevBuilder.Ur[issuerId], 1)
+    oldV = witCred.v
+    witCred = proofRevBuilder.getPresentationWitnessCredential(issuerId, witCred)
+    assert oldV + proofRevBuilder._vrPrime[issuerId] == witCred.v
 
 
 def testCAndTauList(prover):
@@ -53,8 +75,8 @@ def testCAndTauList(prover):
                                              prover._ms)
 
     witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                 g, proofRevBuilder.Ur[issuerId], 1)
-
+                                                           g, proofRevBuilder.Ur[issuerId], 1)
+    witCred = proofRevBuilder.getPresentationWitnessCredential(issuerId, witCred)
     assert proofRevBuilder.testProof({issuerId: witCred}, {issuerId: acc})
 
 
@@ -75,6 +97,7 @@ def testCAndTauListTwoCred(prover):
     issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
                                                  g, proofRevBuilder.Ur[issuerId], 1)
     witCred = issuanceRevBuilder.issueRevocationCredential(proverId, acc, accSk,
-                                                 g, proofRevBuilder.Ur[issuerId], 2)
+                                                           g, proofRevBuilder.Ur[issuerId], 2)
 
+    witCred = proofRevBuilder.getPresentationWitnessCredential(issuerId, witCred)
     assert proofRevBuilder.testProof({issuerId: witCred}, {issuerId: acc})

@@ -44,9 +44,6 @@ def getProofParams(proof, pkIssuer: Dict[str, CredDefPublicKey],
     return Aprime, c, Tvect
 
 
-
-
-
 class Verifier:
     def __init__(self, id):
         self.id = id

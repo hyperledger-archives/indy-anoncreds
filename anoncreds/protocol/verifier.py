@@ -14,7 +14,6 @@ class Verifier:
         self.credDefsRepo = credDefsRepo
         self._nonce = self._generateNonce()
 
-
     @property
     def nonce(self):
         return self._nonce
@@ -24,3 +23,6 @@ class Verifier:
 
     def createProofVerifier(self, credDefIds: Dict[str, CredDefId]):
         return ProofVerifier(self.credDefsRepo.getCredentialDefPKs(credDefIds), self._nonce)
+
+    def __repr__(self):
+        return str(self.__dict__)

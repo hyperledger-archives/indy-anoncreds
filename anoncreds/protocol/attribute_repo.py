@@ -13,6 +13,9 @@ class AttrRepo:
     def addAttributes(self, proverId, issuerId, attributes: Attribs):
         raise NotImplementedError
 
+    def __repr__(self):
+        return str(self.__dict__)
+
 
 class InMemoryAttrRepo(AttrRepo):
     def __init__(self):

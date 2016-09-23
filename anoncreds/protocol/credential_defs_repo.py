@@ -11,15 +11,16 @@ class CredentialDefsRepo:
     def getCredentialDef(self, issuerId, credDefId: CredDefId) -> CredentialDefinition:
         raise NotImplementedError
 
-
     @abstractmethod
     def getCredentialDefPKs(self, credDefIds: Dict[str, CredDefId]) -> Dict[str, CredDefPublicKey]:
         raise NotImplementedError
 
-
     @abstractmethod
     def addCredentialDef(self, issuerId, credDef: CredentialDefinition):
         raise NotImplementedError
+
+    def __repr__(self):
+        return str(self.__dict__)
 
 
 class InMemoryCredentialDefsRepo(CredentialDefsRepo):

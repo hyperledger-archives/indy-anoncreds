@@ -15,6 +15,9 @@ class AttribType:
         self.name = name
         self.encode = encode
 
+    def __repr__(self):
+        return str(self.__dict__)
+
 
 class AttribDef:
     def __init__(self, name, attrTypes):
@@ -47,6 +50,9 @@ class AttribDef:
         return [at.name
                 for attr_types in self.attrTypes
                 for at in attr_types]
+
+    def __repr__(self):
+        return str(self.__dict__)
 
 
 class Attribs:
@@ -93,12 +99,17 @@ class Attribs:
     def items(self):
         return self._vals.items()
 
+    def __repr__(self):
+        return str(self.__dict__)
+
+
 class PublicParams:
     def __init__(self, Gamma, rho, g, h):
         self.Gamma = Gamma
         self.rho = rho
         self.g = g
         self.h = h
+
 
 class CredDefId:
     def __init__(self, name=None, version=None, attrNames: Sequence[str]=None):
@@ -136,6 +147,9 @@ class CredDefPublicKey:
                                 r,
                                 self.deser(self.S, self.N),
                                 self.deser(self.Z, self.N))
+
+    def __repr__(self):
+        return str(self.__dict__)
 
 
 class SerFmt(Enum):

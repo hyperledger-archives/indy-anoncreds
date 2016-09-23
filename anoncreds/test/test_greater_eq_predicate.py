@@ -1,3 +1,6 @@
+from pprint import pprint
+from random import random, randint
+
 import pytest
 
 from anoncreds.test.conftest import GVT
@@ -23,12 +26,24 @@ def testPredicateEqHolds(gvtIssuer, prover, verifier, attrRepo, primes1):
 
 def testPredicateGreaterEqMultiIssuers(attrRepo, gvtIssuer, xyzIssuer, prover, verifier, primes1):
     attrRepo.addAttributes(prover.id, gvtIssuer.id,
-                           GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male'))
+                           GVT.attribs(name='Aditya Pratap Singh',
+                                       age=25,
+                                       sex='male'))
     attrRepo.addAttributes(prover.id, xyzIssuer.id,
                            XYZCorp.attribs(status='ACTIVE'))
 
     predicate = {GVT.name: {'age': 18}}
-    assert verifyPredicateGreaterEq(attrRepo,  ['name'], [gvtIssuer, xyzIssuer], prover, [verifier], primes1, predicate)
+    result = verifyPredicateGreaterEq(attrRepo, ['name'], [gvtIssuer, xyzIssuer],
+                                      prover, [verifier], primes1, predicate)
+    if not result:
+        pprint(attrRepo)
+        pprint(gvtIssuer)
+        pprint(xyzIssuer)
+        pprint(prover)
+        pprint(verifier)
+        pprint(primes1)
+        pprint(predicate)
+    assert result
 
 
 def testPredicateGreaterEqNegativeDelta(attrRepo, gvtIssuer, xyzIssuer, prover, verifier, primes1):

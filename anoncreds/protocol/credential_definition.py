@@ -9,6 +9,8 @@ from anoncreds.protocol.globals import LARGE_PRIME, KEYS, \
 from anoncreds.protocol.types import CredDefPublicKey, CredDefSecretKey
 from anoncreds.protocol.utils import randomQR, randomString, strToCharmInteger
 
+
+# TODO this looks like test code. This is highly risky. It does not belong here.
 primes = {
     "prime1":
         (integer(157329491389375793912190594961134932804032426403110797476730107804356484516061051345332763141806005838436304922612495876180233509449197495032194146432047460167589034147716097417880503952139805241591622353828629383332869425029086898452227895418829799945650973848983901459733426212735979668835984691928193677469),
@@ -17,6 +19,7 @@ primes = {
         (integer(150619677884468353208058156632953891431975271416620955614548039937246769610622017033385394658879484186852231469238992217246264205570458379437126692055331206248530723117202131739966737760399755490935589223401123762051823602343810554978803032803606907761937587101969193241921351011430750970746500680609001799529),
         integer(171590857568436644992359347719703764048501078398666061921719064395827496970696879481740311141148273607392657321103691543916274965279072000206208571551864201305434022165176563363954921183576230072812635744629337290242954699427160362586102068962285076213200828451838142959637006048439307273563604553818326766703))
     }
+
 
 class CredentialDefinition:
     def __init__(self, PK: CredDefPublicKey, attrNames, name, version, ip, port):
@@ -51,6 +54,8 @@ class CredentialDefinition:
     def getAsBase58(self):
         serialize(self.data, base58encode)
 
+    def __repr__(self):
+        return str(self.__dict__)
 
 
 class CredentialDefinitionInternal:
@@ -65,6 +70,7 @@ class CredentialDefinitionInternal:
         :param attrNames: List of all attribute names
         """
 
+        # TODO let's not supply a random name; name should be required
         self._name = name or randomString(6)
         self._version = version or "1.0"
         self.ip = ip
@@ -78,7 +84,9 @@ class CredentialDefinitionInternal:
         self.p_prime = genPrime() if p_prime is None else primes.get(p_prime)[0] if isinstance(p_prime, str) else p_prime
         self.p = 2 * self.p_prime + 1
 
-        self.q_prime = genPrime() if q_prime is None else primes.get(q_prime)[1] if isinstance(q_prime, str) else q_prime
+        self.q_prime = genPrime() if q_prime is None else \
+            primes.get(q_prime)[1] if isinstance(q_prime, str) else \
+            q_prime
         self.q = 2 * self.q_prime + 1
 
         n = self.p * self.q
@@ -193,6 +201,9 @@ class CredentialDefinitionInternal:
         return {key: Conversion.bytes2integer(sha256(value.encode()).digest())
                 for key, value in attrs.items()}
 
+    def __repr__(self):
+        return str(self.__dict__)
+
 
 def genPrime():
     # Generate 2 large primes `p_prime` and `q_prime` and use them
@@ -217,6 +228,7 @@ def getPPrime(sk: CredDefSecretKey):
 
 def getQPrime(sk: CredDefSecretKey):
     return (sk.q - 1) / 2
+
 
 def serialize(data, serfunc):
     for k, v in data[KEYS].items():

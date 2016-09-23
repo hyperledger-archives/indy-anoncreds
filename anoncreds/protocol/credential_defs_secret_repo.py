@@ -4,6 +4,7 @@ from anoncreds.protocol.credential_definition import CredentialDefinitionInterna
 from anoncreds.protocol.credential_defs_repo import CredentialDefsRepo
 from anoncreds.protocol.types import CredDefId
 
+
 class CredentialDefsSecretRepo:
 
     @abstractmethod
@@ -14,6 +15,9 @@ class CredentialDefsSecretRepo:
     def addCredentialDef(self, issuerId, credDef: CredentialDefinitionInternal):
         raise NotImplementedError
 
+    def __repr__(self):
+        return str(self.__dict__)
+
 
 class InMemoryCredentialDefsSecretRepo(CredentialDefinitionInternal):
 
@@ -22,14 +26,12 @@ class InMemoryCredentialDefsSecretRepo(CredentialDefinitionInternal):
         self.credDefsForAttribs = {}    # Dict[Tuple, List]
         self.credDefsRepo = credDefsRepo
 
-
     def getCredentialDef(self, issuerId, credDefId: CredDefId):
         if credDefId.name and credDefId.version:
             return self.credDefs[(issuerId, credDefId.name, credDefId.version)]
         else:
             defs = self.credDefsForAttribs.get(self._getAttrsKey(issuerId, credDefId.attrNames))
             return defs[-1] if defs else None
-
 
     def addCredentialDef(self, issuerId, credDef: CredentialDefinitionInternal):
         self.credDefsRepo.addCredentialDef(issuerId, credDef.credentialDefinition)
@@ -40,7 +42,6 @@ class InMemoryCredentialDefsSecretRepo(CredentialDefinitionInternal):
         if key not in self.credDefsForAttribs:
             self.credDefsForAttribs[key] = []
         self.credDefsForAttribs[key].append(credDef)
-
 
     def _getAttrsKey(self, issuerId, attrNames):
         return tuple(issuerId, ) + tuple(sorted(attrNames))

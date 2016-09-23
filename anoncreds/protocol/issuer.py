@@ -14,14 +14,12 @@ class Issuer:
         self.attributeRepo = attributeRepo
         self.credDefsRepo = credDefsRepo
 
-
     def addNewCredDef(self, attrNames, name, version,
                    p_prime=None, q_prime=None, ip=None, port=None):
         credDef = CredentialDefinitionInternal(attrNames, name, version,
                                        p_prime, q_prime, ip, port)
         self.credDefsRepo.addCredentialDef(self.id, credDef)
         return credDef
-
 
     def createCred(self, proverId, credDefId: CredDefId, U):
         # This method works for one credDef only.
@@ -31,7 +29,6 @@ class Issuer:
         return Issuer.generateCredential(
             U, next(iter(encAttrs.values())), credDef.PK, None, credDef.p_prime,
             credDef.q_prime)
-
 
     @classmethod
     def generateCredential(cls, uValue, attributes, pk, sk=None, p_prime=None, q_prime=None):
@@ -67,8 +64,6 @@ class Issuer:
     #     p_prime, q_prime = getPPrime(sk), getQPrime(sk)
     #     return Issuer.generateCredential(uValue, attributes, pk, p_prime, q_prime)
 
-
-
     def _sign(pk: CredDefPublicKey, attrs, v, u, e, p_prime, q_prime):
         Rx = 1 % pk.N
         # Get the product sequence for the (R[i] and attrs[i]) combination
@@ -83,3 +78,5 @@ class Issuer:
         A = Q ** (einverse ** -1) % pk.N
         return A
 
+    def __repr__(self):
+        return str(self.__dict__)

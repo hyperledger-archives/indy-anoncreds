@@ -4,7 +4,7 @@ from charm.toolbox.pairinggroup import PairingGroup, ZR, pair
 
 from anoncreds.protocol.revocation.accumulators.types import RevocationPublicKey, Accumulator, WitnessCredential, GType, \
     RevocationProof, ProofParams, ProofCList, ProofTauList
-from anoncreds.protocol.utils import get_hash_hex, hex_hash_to_ZR
+from anoncreds.protocol.utils import get_hash, bytes_to_ZR
 
 
 # TODO: it works for one issuer only now
@@ -95,8 +95,8 @@ class ProofRevocationBuilder:
         proofTauList = self.createTauListValues(self._pk, accum, tauListParams, proofCList)
         TauList.extend(proofTauList.asList())
 
-        cH = get_hash_hex(nonce, *reduce(lambda x, y: x + y, [TauList, CList]), group=self._group)
-        chNum_z = hex_hash_to_ZR(cH, self._group)
+        cH = get_hash(nonce, *reduce(lambda x, y: x + y, [TauList, CList]), group=self._group)
+        chNum_z = bytes_to_ZR(cH, self._group)
 
         XList.fromList([x - chNum_z * y for x, y in zip(tauListParams.asList(), cListParams.asList())])
 

@@ -4,6 +4,7 @@ from hashlib import sha256
 from math import sqrt, floor
 from random import randint, sample
 from typing import Dict
+from sys import byteorder
 
 from charm.core.math.integer import random, isPrime, integer
 from charm.toolbox.conversion import Conversion
@@ -46,27 +47,8 @@ def get_hash(*args, group: PairingGroup = None):
     return h_challenge.digest()
 
 
-def get_hash_hex(*args, group: PairingGroup = None):
-    """
-    Enumerate over the input tuple and generate a hash using the tuple values
-
-    :param args:
-    :return:
-    """
-
-    h_challenge = sha256()
-    for arg in args:
-        if (type(arg) == pc_element):
-            byteArg = group.serialize(arg)
-            h_challenge.update(byteArg)
-        else:
-            print(arg)
-            h_challenge.update(Conversion.IP2OS(arg))
-    return h_challenge.hexdigest()
-
-
-def hex_hash_to_ZR(hexHash, group):
-    cHNum = int(hexHash, base=16)
+def bytes_to_ZR(bytesHash, group):
+    cHNum = int.from_bytes(bytesHash, byteorder=byteorder)
     return group.init(ZR, cHNum)
 
 

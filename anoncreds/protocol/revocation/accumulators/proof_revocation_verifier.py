@@ -4,7 +4,7 @@ from charm.toolbox.pairinggroup import PairingGroup
 
 from anoncreds.protocol.revocation.accumulators.proof_revocation_builder import ProofRevocationBuilder
 from anoncreds.protocol.revocation.accumulators.types import RevocationPublicKey, Accumulator, RevocationProof
-from anoncreds.protocol.utils import get_hash_hex, hex_hash_to_ZR
+from anoncreds.protocol.utils import get_hash, bytes_to_ZR
 
 
 class ProofRevocationVerifier:
@@ -24,9 +24,9 @@ class ProofRevocationVerifier:
 
         THatExpected = ProofRevocationBuilder.createTauListExpectedValues(self._pk, accum, CProof)
         THatCalc = ProofRevocationBuilder.createTauListValues(self._pk, accum, XList, CProof)
-        chNum_z = hex_hash_to_ZR(cHProof, self._group)
+        chNum_z = bytes_to_ZR(cHProof, self._group)
         THat = [(x ** chNum_z) * y for x, y in zip(THatExpected.asList(), THatCalc.asList())]
 
-        cHVerif = get_hash_hex(self._nonce, *reduce(lambda x, y: x + y, [THat, CProof.asList()]), group=self._group)
+        cHVerif = get_hash(self._nonce, *reduce(lambda x, y: x + y, [THat, CProof.asList()]), group=self._group)
 
         return cHVerif == cHProof

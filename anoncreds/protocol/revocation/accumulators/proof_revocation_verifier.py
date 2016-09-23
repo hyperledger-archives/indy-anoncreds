@@ -8,9 +8,9 @@ from anoncreds.protocol.utils import get_hash_hex, hex_hash_to_ZR
 
 
 class ProofRevocationVerifier:
-    def __init__(self, group: PairingGroup, pk: RevocationPublicKey, nonce):
-        self._group = group
-        self._pk = pk
+    def __init__(self, revocPK: RevocationPublicKey, nonce):
+        self._group = PairingGroup(revocPK.groupType)
+        self._pk = revocPK
         self._nonce = nonce
 
     @property

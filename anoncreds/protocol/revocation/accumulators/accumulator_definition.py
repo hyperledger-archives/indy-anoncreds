@@ -5,30 +5,32 @@ from anoncreds.protocol.revocation.accumulators.types import RevocationPublicKey
 
 
 class AccumulatorDefinition:
-    def __init__(self, group: PairingGroup = None):
-        self.group = group if group else PairingGroup('SS1024')  # super singular curve, 1024 bits
+    def __init__(self):
+        self._groupType = 'SS1024' # super singular curve, 1024 bits
+        self._group = PairingGroup(self._groupType)
 
     def genRevocationKeys(self):
-        h = self.group.random(G1)  # random element of the group G
-        h0 = self.group.random(G1)
-        h1 = self.group.random(G1)
-        h2 = self.group.random(G1)
-        g = self.group.random(G1)
-        htilde = self.group.random(G1)
-        u = self.group.random(G1)
+        h = self._group.random(G1)  # random element of the group G
+        h0 = self._group.random(G1)
+        h1 = self._group.random(G1)
+        h2 = self._group.random(G1)
+        g = self._group.random(G1)
+        htilde = self._group.random(G1)
+        u = self._group.random(G1)
 
-        qr = self.group.order()  # order q_R of the group
+        qr = self._group.order()  # order q_R of the group
 
-        x = self.group.random(ZR)  # random(qr)
-        sk = self.group.random(ZR)  # random(qr)
+        x = self._group.random(ZR)  # random(qr)
+        sk = self._group.random(ZR)  # random(qr)
 
         pk = g ** sk
         y = h ** x
 
-        return (RevocationPublicKey(qr, g, h, h0, h1, h2, htilde, u, pk, y, x), RevocationSecretKey(x, sk))
+        return (RevocationPublicKey(qr, g, h, h0, h1, h2, htilde, u, pk, y, x, self._groupType),
+                RevocationSecretKey(x, sk))
 
     def issueAccumulator(self, iA, pk: RevocationPublicKey, L):
-        gamma = self.group.random(ZR)
+        gamma = self._group.random(ZR)
 
         gi = {}
         gCount = 2 * L

@@ -6,8 +6,8 @@ from anoncreds.protocol.revocation.accumulators.types import RevocationPublicKey
 
 
 class IssuanceRevocationBuilder:
-    def __init__(self, group: PairingGroup, revocPK: RevocationPublicKey, revocSK: RevocationSecretKey):
-        self._group = group
+    def __init__(self, revocPK: RevocationPublicKey, revocSK: RevocationSecretKey):
+        self._group = PairingGroup(revocPK.groupType)
         self._pk = revocPK
         self._sk = revocSK
 

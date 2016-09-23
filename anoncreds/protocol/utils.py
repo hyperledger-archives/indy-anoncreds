@@ -28,7 +28,7 @@ def randomQR(n):
 #             for key, value in attrs.items()}
 
 
-def get_hash(*args, group:PairingGroup=None):
+def get_hash(*args, group: PairingGroup = None):
     """
     Enumerate over the input tuple and generate a hash using the tuple values
 
@@ -45,7 +45,8 @@ def get_hash(*args, group:PairingGroup=None):
             h_challenge.update(Conversion.IP2OS(arg))
     return h_challenge.digest()
 
-def get_hash_hex(*args, group:PairingGroup=None):
+
+def get_hash_hex(*args, group: PairingGroup = None):
     """
     Enumerate over the input tuple and generate a hash using the tuple values
 
@@ -63,9 +64,11 @@ def get_hash_hex(*args, group:PairingGroup=None):
             h_challenge.update(Conversion.IP2OS(arg))
     return h_challenge.hexdigest()
 
+
 def hex_hash_to_ZR(hexHash, group):
     cHNum = int(hexHash, base=16)
     return group.init(ZR, cHNum)
+
 
 def get_values_of_dicts(*args):
     l = list()
@@ -81,7 +84,7 @@ def get_prime_in_range(start, end):
         r = randint(start, end)
         if isPrime(r):
             logging.debug("Found prime in {} iteration between {} and {}".
-                  format(n, start, end))
+                          format(n, start, end))
             return r
         n += 1
     raise Exception("Cannot find prime in {} iterations".format(maxIter))
@@ -134,6 +137,7 @@ def strToCharmInteger(n):
         return integer(int(a.strip())) % integer(int(b.strip()))
     else:
         return integer(int(n))
+
 
 def largestSquareLessThan(x: int):
     sqrtx = int(floor(sqrt(x)))

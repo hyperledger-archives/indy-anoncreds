@@ -9,10 +9,10 @@ from anoncreds.protocol.utils import get_hash_hex, hex_hash_to_ZR
 
 # TODO: it works for one issuer only now
 class ProofRevocationBuilder:
-    def __init__(self, issuerId, group: PairingGroup, pk: RevocationPublicKey, ms):
+    def __init__(self, issuerId, revocPK: RevocationPublicKey, ms):
         self._issuerId = issuerId
-        self._group = group
-        self._pk = pk
+        self._group = PairingGroup(revocPK.groupType)
+        self._pk = revocPK
         self._ms = int(ms)
 
         self._vrPrime = self._group.random(ZR)
@@ -81,9 +81,8 @@ class ProofRevocationBuilder:
 
         return True
 
-
     def _prepareProof(self, witnessCred: WitnessCredential,
-                                    accum: Accumulator, nonce) -> RevocationProof:
+                      accum: Accumulator, nonce) -> RevocationProof:
         CList = []
         TauList = []
         XList = ProofParams()
@@ -166,7 +165,6 @@ class ProofRevocationBuilder:
         T7 = pair(pk.pk * proofC.G, proofC.S) / pair(pk.g, pk.g)
         T8 = pair(proofC.G, pk.u) / pair(pk.g, proofC.U)
         return ProofTauList(T1, T2, T3, T4, T5, T6, T7, T8)
-
 
     def testProof(self, witnessCred: WitnessCredential, accum: Accumulator):
         cListParams = self._genCListParams(self._group, witnessCred)

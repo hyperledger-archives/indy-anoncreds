@@ -1,4 +1,5 @@
 import pytest
+from charm.toolbox.pairinggroup import PairingGroup, G1
 
 from anoncreds.protocol.attribute_repo import InMemoryAttrRepo
 from anoncreds.protocol.credential_definition import CredentialDefinitionInternal, primes
@@ -6,6 +7,10 @@ from anoncreds.protocol.credential_defs_repo import InMemoryCredentialDefsRepo
 from anoncreds.protocol.credential_defs_secret_repo import InMemoryCredentialDefsSecretRepo
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
+from anoncreds.protocol.revocation.accumulators.accumulator_definition import AccumulatorDefinition
+from anoncreds.protocol.revocation.accumulators.issuance_revocation_builder import IssuanceRevocationBuilder
+from anoncreds.protocol.revocation.accumulators.proof_revocation_builder import ProofRevocationBuilder
+from anoncreds.protocol.revocation.accumulators.proof_revocation_verifier import ProofRevocationVerifier
 from anoncreds.protocol.types import AttribDef, AttribType
 from anoncreds.protocol.verifier import Verifier
 
@@ -110,3 +115,55 @@ def primes2():
     return dict(p_prime=P_PRIME2, q_prime=Q_PRIME2)
 
 
+@pytest.fixture(scope="function")
+def accumulatorWithAllKeys():
+    accDef = AccumulatorDefinition()
+    revPk, revSk = accDef.genRevocationKeys()
+    acc, g, accSk = accDef.issueAccumulator("accum1", revPk, L=5)
+    return (revPk, revSk, acc, g, accSk)
+
+
+@pytest.fixture(scope="function")
+def accumulatorWithKeys(accumulatorWithAllKeys):
+    return (accumulatorWithAllKeys[0], accumulatorWithAllKeys[2], accumulatorWithAllKeys[3])
+
+
+@pytest.fixture(scope="function")
+def g(accumulatorWithKeys):
+    return accumulatorWithKeys[2]
+
+@pytest.fixture(scope="function")
+def issuanceRevBuilder(accumulatorWithAllKeys):
+    return IssuanceRevocationBuilder(accumulatorWithAllKeys[0], accumulatorWithAllKeys[1])
+
+@pytest.fixture(scope="function")
+def proofRevBuilder(accumulatorWithKeys, gvtIssuer, prover):
+    return ProofRevocationBuilder(gvtIssuer.id, accumulatorWithKeys[0], prover._ms)
+
+@pytest.fixture(scope="function")
+def proofRevVerifier(accumulatorWithKeys, verifier):
+    return ProofRevocationVerifier(accumulatorWithKeys[0], verifier.nonce)
+
+@pytest.fixture(scope="function")
+def witnessCredentialsAndAccum(accumulatorWithAllKeys, issuanceRevBuilder, proofRevBuilder):
+    revPk, revSk, acc, g, accSk = accumulatorWithAllKeys
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    return (witCred, acc)
+
+@pytest.fixture(scope="function")
+def witnessCredentials(accumulatorWithAllKeys, issuanceRevBuilder, proofRevBuilder):
+    revPk, revSk, acc, g, accSk = accumulatorWithAllKeys
+    return issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+
+@pytest.fixture(scope="function")
+def witnessCredentialsAndAccumMultiple(accumulatorWithAllKeys, issuanceRevBuilder, proofRevBuilder):
+    revPk, revSk, acc, g, accSk = accumulatorWithAllKeys
+    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
+    return (witCred, acc)
+
+@pytest.fixture(scope="function")
+def genUr(accumulatorWithKeys):
+    group = PairingGroup(accumulatorWithKeys[0].groupType)
+    return group.random(G1)

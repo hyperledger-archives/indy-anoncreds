@@ -23,12 +23,9 @@ def getPresentationToken(credDefs,
         pk = pks[key]
         sk = issuerSecretKeys[key].sk
         A, e, vprimeprime = Issuer.generateCredential(proofBuilder.U[key],
-                                               encodedAttrs[key],
-                                               pk,
-                                               None,
-                                               sk.p_prime,
-                                               sk.q_prime
-                                               )
+                                                      encodedAttrs[key],
+                                                      pk,
+                                                      sk)
         v = proofBuilder.vprime[key] + vprimeprime
         presentationToken[key] = Credential(A, e, v)
     return presentationToken

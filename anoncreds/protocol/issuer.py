@@ -59,15 +59,12 @@ class Issuer:
             U,
             next(iter(encAttrs.values())),
             isk.PK,
-            None,
-            isk.sk.p_prime,
-            isk.sk.q_prime)
+            isk.sk)
 
     @classmethod
     def generateCredential(cls,
                            uValue, attributes, pk,
-                           sk=None,
-                           p_prime=None, q_prime=None):
+                           sk: CredDefSecretKey):
         """
         Issue the credential for the defined attributes
 
@@ -76,9 +73,6 @@ class Issuer:
         :return: The presentation token as a combination of (A, e, vprimeprime)
         """
         u = strToCharmInteger(uValue) if isinstance(uValue, str) else uValue
-
-        if sk:
-            sk = CredDefSecretKey.fromStr(sk)
 
         if not u:
             raise ValueError("u must be provided to issue a credential")
@@ -90,7 +84,7 @@ class Issuer:
         estart = 2 ** LARGE_E_START
         eend = (estart + 2 ** LARGE_E_END_RANGE)
         e = get_prime_in_range(estart, eend)
-        A = cls._sign(pk, attributes, vprimeprime, u, e, p_prime, q_prime)
+        A = cls._sign(pk, attributes, vprimeprime, u, e, sk.p_prime, sk.q_prime)
         return A, e, vprimeprime
 
     # @classmethod

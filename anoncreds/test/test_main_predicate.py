@@ -4,22 +4,44 @@ from anoncreds.test.helper import getPresentationToken, verifyPredicateProof
 from anoncreds.test.conftest import GVT
 
 
-def testMainPredicate(gvtCredDef, gvtCredDefPks, proofBuilderWithGvtAttribs,
+def testMainPredicate(gvtCredDef,
+                      gvtCredDefPks,
+                      gvtAndXyzIssuerSecretKeys,
+                      proofBuilderWithGvtAttribs,
                       verifier1):
-    assert verifyPredicateProof({GVT.name: gvtCredDef}, gvtCredDefPks,
-                proofBuilderWithGvtAttribs, ['name'], {GVT.name: {'age': 18}}, verifier1)
+    assert verifyPredicateProof({GVT.name: gvtCredDef},
+                                gvtCredDefPks,
+                                gvtAndXyzIssuerSecretKeys,
+                                proofBuilderWithGvtAttribs,
+                                ['name'],
+                                {GVT.name: {'age': 18}},
+                                verifier1)
 
 
-def testPredicateMultipleIssuers(gvtAndXyzCredDefs, gvtAndXyzCredDefPks,
-                                 proofBuilderWithGvtAndXyzAttribs, verifierMulti1):
-    assert verifyPredicateProof(gvtAndXyzCredDefs, gvtAndXyzCredDefPks, proofBuilderWithGvtAndXyzAttribs,
-                ['name'], {GVT.name: {'age': 18}}, verifierMulti1)
+def testPredicateMultipleIssuers(gvtAndXyzCredDefs,
+                                 gvtAndXyzCredDefPks,
+                                 gvtAndXyzIssuerSecretKeys,
+                                 proofBuilderWithGvtAndXyzAttribs,
+                                 verifierMulti1):
+    assert verifyPredicateProof(gvtAndXyzCredDefs,
+                                gvtAndXyzCredDefPks,
+                                gvtAndXyzIssuerSecretKeys,
+                                proofBuilderWithGvtAndXyzAttribs,
+                                ['name'],
+                                {GVT.name: {'age': 18}},
+                                verifierMulti1)
 
 
-def testNegativePredicateDeltaShouldFail(gvtAndXyzCredDefs, verifierMulti1,
+def testNegativePredicateDeltaShouldFail(gvtAndXyzCredDefs,
+                                         gvtAndXyzCredDefPks,
+                                         gvtAndXyzIssuerSecretKeys,
+                                         verifierMulti1,
                                          proofBuilderWithGvtAndXyzAttribs):
     proofBuilder, attrs = proofBuilderWithGvtAndXyzAttribs
-    presentationToken = getPresentationToken(gvtAndXyzCredDefs, proofBuilder,
+    presentationToken = getPresentationToken(gvtAndXyzCredDefs,
+                                             gvtAndXyzCredDefPks,
+                                             gvtAndXyzIssuerSecretKeys,
+                                             proofBuilder,
                                              attrs.encoded())
     nonce = verifierMulti1.generateNonce(interactionId=1)
     revealedAttrs = ['name']

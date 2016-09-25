@@ -43,7 +43,7 @@ setup(
     package_data={
         '':       ['*.txt',  '*.md', '*.rst', '*.json', '*.conf', '*.html',
                    '*.css', '*.ico', '*.png', 'LICENSE', 'LEGAL']},
-    install_requires=['Charm-Crypto==0.43'],
+    install_requires=['Charm-Crypto==0.43', 'lazy-object-proxy'],
     setup_requires=['pytest-runner'],
     tests_require=['pytest']
 )

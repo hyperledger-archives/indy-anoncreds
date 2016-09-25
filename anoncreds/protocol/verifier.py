@@ -3,15 +3,17 @@ from typing import Dict, Sequence
 
 from charm.core.math.integer import integer, randomBits
 
+from anoncreds.protocol.cred_def_store import CredDefStore
 from anoncreds.protocol.globals import LARGE_E_START, LARGE_NONCE, ITERATIONS, DELTA, TVAL, KEYS, PK_R, PK_N, PK_S, PK_Z, \
     NONCE, ZERO_INDEX
-from anoncreds.protocol.types import CredDefPublicKey
+from anoncreds.protocol.issuer_key import IssuerKey
+from anoncreds.protocol.issuer_key_store import IssuerKeyStore
 from anoncreds.protocol.types import PredicateProof, T
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     splitRevealedAttrs
 
 
-def getProofParams(proof, pkIssuer: Dict[str, CredDefPublicKey],
+def getProofParams(proof, pkIssuer: Dict[str, IssuerKey],
                    attrs, revealedAttrs):
 
     flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
@@ -44,37 +46,44 @@ def getProofParams(proof, pkIssuer: Dict[str, CredDefPublicKey],
     return Aprime, c, Tvect
 
 
-
-
-
 class Verifier:
-    def __init__(self, id):
+    def __init__(self,
+                 id,
+                 credDefStore: CredDefStore,
+                 issuerKeyStore: IssuerKeyStore):
         self.id = id
         self.interactionDetail = {}  # Dict[String, String]
-        self.credDefs = {}           # Dict[(issuer id, credential name, credential version), Credential Definition]
+        self.credDefStore = credDefStore
+        self.issuerKeyStore = issuerKeyStore
+        # DEPR
+        # self.credDefs = {}           # Dict[(issuer id, credential name, credential version), Credential Definition]
 
     def generateNonce(self, interactionId):
         nv = integer(randomBits(LARGE_NONCE))
         self.interactionDetail[str(nv)] = interactionId
         return nv
 
-    def _getIssuerPkByCredDef(self, credDef) -> CredDefPublicKey:
-        keys = credDef.get()[KEYS]
-        R = {}
-        for key, val in keys[PK_R].items():
-            R[str(key)] = val
-        return CredDefPublicKey(keys[PK_N], R, keys[PK_S], keys[PK_Z])
+    # DEPR
+    # def _getIssuerPkByCredDef(self, credDef) -> IssuerKey:
+    #     keys = credDef.fetch()[KEYS]
+    #     R = {}
+    #     for key, val in keys[PK_R].items():
+    #         R[str(key)] = val
+    #     return IssuerKey(keys[PK_N], R, keys[PK_S], keys[PK_Z])
+    #
+    # def getCredDef(self, issuerId, name, version):
+    #     key = (issuerId, name, version)
+    #     credDdef = self.credDefs.get(key)
+    #     if not credDdef:
+    #         credDdef = self.fetchCredDef(*key)
+    #     return credDdef
 
-    def getCredDef(self, issuerId, name, version):
-        key = (issuerId, name, version)
-        credDdef = self.credDefs.get(key)
-        if not credDdef:
-            credDdef = self.fetchCredDef(*key)
-        return credDdef
-
-    def verify(self, issuer, name, version, proof, nonce, attrs, revealedAttrs):
-        credDef = self.fetchCredDef(issuer, name, version)
-        pk = self._getIssuerPkByCredDef(credDef)
+    def verify(self, issuer, name, version, proof, nonce, attrs, revealedAttrs,
+               credDefId, issuerKeyId):
+        credDef = self.credDefStore.fetch(credDefId)
+        # DEPR
+        # credDef = self.fetchCredDef(issuer, name, version)
+        pk = self.issuerKeyStore.fetch(issuerKeyId)
         result = Verifier.verifyProof({issuer.id: pk}, proof, nonce, attrs, revealedAttrs)
         return result
 

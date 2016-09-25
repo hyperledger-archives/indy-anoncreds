@@ -13,4 +13,4 @@ def testIssuerShouldBePassedAttributesList():
     # This test should fail to add credential definition as
     # Credential definition requires attributes name list
     with pytest.raises(ValueError):
-        CredentialDefinition(list())
+        CredentialDefinition(1, list())

@@ -1,11 +1,16 @@
 import pytest
+from charm.core.math.integer import integer
 
 from anoncreds.protocol.attribute_repo import InMemoryAttrRepo
+from anoncreds.protocol.cred_def_secret_key import CredDefSecretKey
 from anoncreds.protocol.issuer import Issuer
-from anoncreds.protocol.credential_definition import CredentialDefinition, primes
+from anoncreds.protocol.credential_definition import CredentialDefinition
+from anoncreds.protocol.issuer_secret_key import IssuerSecretKey
 from anoncreds.protocol.types import AttribDef, AttribType
 from anoncreds.protocol.verifier import Verifier
+from anoncreds.test.cred_def_test_store import MemoryCredDefStore
 from anoncreds.test.helper import getProofBuilderAndAttribs
+from anoncreds.test.issuer_key_test_store import MemoryIssuerKeyStore
 
 GVT = AttribDef('gvt',
                 [AttribType('name', encode=True),
@@ -38,49 +43,84 @@ def xyzAttrNames():
 
 
 @pytest.fixture(scope="module")
-def gvtCredDef(gvtAttrNames, primes1):
-    return CredentialDefinition(gvtAttrNames, **primes1)
+def gvtCredDefId():
+    return 578
 
 
 @pytest.fixture(scope="module")
-def xyzCredDef(xyzAttrNames, primes2):
-    return CredentialDefinition(xyzAttrNames, **primes2)
+def gvtCredDef(gvtCredDefId, gvtAttrNames):
+    return CredentialDefinition(gvtCredDefId, gvtAttrNames)
 
 
 @pytest.fixture(scope="module")
-def gvtCredDefPks(gvtCredDef):
-    credDefPks = {}
-    credDefPks[GVT.name] = gvtCredDef.PK
-    return credDefPks
+def gvtIssuerSecretKey(gvtCredDef, gvtSecretKey):
+    return IssuerSecretKey(cd=gvtCredDef, sk=gvtSecretKey)
+
 
 @pytest.fixture(scope="module")
-def xyzCredDefPks(xyzCredDef):
-    credDefPks = {}
-    credDefPks[XYZCorp.name] = xyzCredDef.PK
-    return credDefPks
+def xyzCredDefId():
+    return 8165867
+
+
+@pytest.fixture(scope="module")
+def xyzCredDef(xyzCredDefId, xyzAttrNames):
+    return CredentialDefinition(xyzCredDefId, xyzAttrNames)
+
+
+@pytest.fixture(scope="module")
+def xyzIssuerSecretKey(xyzCredDef, xyzSecretKey):
+    return IssuerSecretKey(cd=xyzCredDef, sk=xyzSecretKey)
+
+
+@pytest.fixture(scope="module")
+def gvtCredDefPks(gvtIssuerSecretKey):
+    return {GVT.name: gvtIssuerSecretKey.PK}
+
+
+@pytest.fixture(scope="module")
+def xyzCredDefPks(xyzIssuerSecretKey):
+    return {XYZCorp.name: xyzIssuerSecretKey.PK}
+
 
 @pytest.fixture(scope="module")
 def gvtAndXyzCredDefs(gvtCredDef, xyzCredDef):
-    return {GVT.name: gvtCredDef, XYZCorp.name: xyzCredDef}
-
-@pytest.fixture(scope="module")
-def gvtAndXyzCredDefPks(gvtAndXyzCredDefs):
-    credDefPks = {}
-    for k, v in gvtAndXyzCredDefs.items():
-        credDefPks[k] = v.PK
-    return credDefPks
+    return {GVT.name: gvtCredDef,
+            XYZCorp.name: xyzCredDef}
 
 
 @pytest.fixture(scope="module")
-def primes1():
-    P_PRIME1, Q_PRIME1 = primes.get("prime1")
-    return dict(p_prime=P_PRIME1, q_prime=Q_PRIME1)
+def gvtAndXyzCredDefPks(gvtCredDefPks, xyzCredDefPks):
+    _ = {}
+    _.update(gvtCredDefPks)
+    _.update(xyzCredDefPks)
+    return _
 
 
 @pytest.fixture(scope="module")
-def primes2():
-    P_PRIME2, Q_PRIME2 = primes.get("prime2")
-    return dict(p_prime=P_PRIME2, q_prime=Q_PRIME2)
+def gvtAndXyzIssuerSecretKeys(gvtIssuerSecretKey, xyzIssuerSecretKey):
+    return {GVT.name: gvtIssuerSecretKey,
+            XYZCorp.name: xyzIssuerSecretKey}
+
+
+testPrimes = {
+    "prime1": (
+        integer(157329491389375793912190594961134932804032426403110797476730107804356484516061051345332763141806005838436304922612495876180233509449197495032194146432047460167589034147716097417880503952139805241591622353828629383332869425029086898452227895418829799945650973848983901459733426212735979668835984691928193677469),
+        integer(151323892648373196579515752826519683836764873607632072057591837216698622729557534035138587276594156320800768525825023728398410073692081011811496168877166664537052088207068061172594879398773872352920912390983199416927388688319207946493810449203702100559271439586753256728900713990097168484829574000438573295723)
+    ),
+    "prime2": (
+        integer(150619677884468353208058156632953891431975271416620955614548039937246769610622017033385394658879484186852231469238992217246264205570458379437126692055331206248530723117202131739966737760399755490935589223401123762051823602343810554978803032803606907761937587101969193241921351011430750970746500680609001799529),
+        integer(171590857568436644992359347719703764048501078398666061921719064395827496970696879481740311141148273607392657321103691543916274965279072000206208571551864201305434022165176563363954921183576230072812635744629337290242954699427160362586102068962285076213200828451838142959637006048439307273563604553818326766703)
+    )}
+
+
+@pytest.fixture(scope="module")
+def gvtSecretKey():
+    return CredDefSecretKey(*testPrimes.get("prime1"))
+
+
+@pytest.fixture(scope="module")
+def xyzSecretKey():
+    return CredDefSecretKey(*testPrimes.get("prime2"))
 
 
 @pytest.fixture(scope="module")
@@ -93,23 +133,23 @@ def xyzAttrList():
     return XYZCorp.attribs(status='ACTIVE')
 
 
+# @pytest.fixture(scope="module")
+# def credDefPk(gvtCredDef):
+#     """Return gvtCredDef's public key"""
+#
+#     return {GVT.name: gvtCredDef.PK}
+
+
 @pytest.fixture(scope="module")
-def credDefPk(gvtCredDef):
-    """Return gvtCredDef's public key"""
-
-    return {GVT.name: gvtCredDef.PK}
-
-
-@pytest.fixture(scope="module")
-def gvtProofBuilderWithProver1(credDefPk):
+def gvtProofBuilderWithProver1(gvtCredDefPks):
     attribs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
-    return getProofBuilderAndAttribs(attribs, credDefPk)
+    return getProofBuilderAndAttribs(attribs, gvtCredDefPks)
 
 
 @pytest.fixture(scope="module")
-def gvtProofBuilderWithProver2(credDefPk):
+def gvtProofBuilderWithProver2(gvtCredDefPks):
     attribs = GVT.attribs(name='Jason Law', age=42, sex='male')
-    return getProofBuilderAndAttribs(attribs, credDefPk)
+    return getProofBuilderAndAttribs(attribs, gvtCredDefPks)
 
 
 @pytest.fixture(scope="module")
@@ -131,16 +171,32 @@ def proofBuilderWithGvtAndXyzAttribs(gvtAndXyzCredDefPks, gvtAttrList, xyzAttrLi
 
 
 @pytest.fixture(scope="module")
-def verifier1():
-    return Verifier('verifier1')
+def credDefStore():
+    return MemoryCredDefStore()
 
 
 @pytest.fixture(scope="module")
-def verifierMulti1():
-    return Verifier('verifierMulti1')
+def issuerKeyStore():
+    return MemoryIssuerKeyStore()
 
 
 @pytest.fixture(scope="module")
-def verifierMulti2():
-    return Verifier('verifierMulti2')
+def verifier1(credDefStore, issuerKeyStore):
+    return Verifier('verifier1',
+                    credDefStore=credDefStore,
+                    issuerKeyStore=issuerKeyStore)
+
+
+@pytest.fixture(scope="module")
+def verifierMulti1(credDefStore, issuerKeyStore):
+    return Verifier('verifierMulti1',
+                    credDefStore=credDefStore,
+                    issuerKeyStore=issuerKeyStore)
+
+
+@pytest.fixture(scope="module")
+def verifierMulti2(credDefStore, issuerKeyStore):
+    return Verifier('verifierMulti2',
+                    credDefStore=credDefStore,
+                    issuerKeyStore=issuerKeyStore)
 

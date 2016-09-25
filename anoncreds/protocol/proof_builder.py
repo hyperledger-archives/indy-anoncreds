@@ -5,19 +5,21 @@ from typing import Dict, Sequence
 
 from charm.core.math.integer import randomBits, integer
 
-from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, LARGE_E_START, LARGE_ETILDE, \
-    LARGE_VTILDE, LARGE_MASTER_SECRET, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, APRIME, DELTA, TVAL, \
-    NONCE, ZERO_INDEX, C_VALUE, EVECT, MVECT, VVECT, ISSUER, PROOF
-from anoncreds.protocol.types import Credential, CredDefPublicKey,\
-    PredicateProof, SubProofPredicate, T, Proof, SecretValue, TildValue, PrimeValue, ProofComponent, \
-    PredicateProofComponent
+from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, \
+    LARGE_E_START, LARGE_ETILDE, LARGE_VTILDE, LARGE_MASTER_SECRET, \
+    LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, APRIME, DELTA, \
+    TVAL, NONCE, ZERO_INDEX, C_VALUE, EVECT, MVECT, VVECT, ISSUER, PROOF
+from anoncreds.protocol.issuer_key import IssuerKey
+from anoncreds.protocol.types import Credential, PredicateProof, \
+    SubProofPredicate, T, Proof, SecretValue, TildValue, PrimeValue, \
+    ProofComponent, PredicateProofComponent
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
     getUnrevealedAttrs, strToCharmInteger
 from anoncreds.protocol import types
 
 
 class ProofBuilder:
-    def __init__(self, credDefPks: Dict[str, CredDefPublicKey], masterSecret=None):
+    def __init__(self, credDefPks: Dict[str, IssuerKey], masterSecret=None):
         """
         Create a proof instance
 
@@ -271,7 +273,7 @@ class ProofBuilder:
 
 def findSecretValues(encodedAttrs: Dict[str, T], unrevealedAttrs: Dict,
                      creds: Dict[str, Credential],
-                     credDefPks: Dict[str, CredDefPublicKey]):
+                     credDefPks: Dict[str, IssuerKey]):
 
     def getMTilde(unrevealedAttrs):
         mtilde = {}

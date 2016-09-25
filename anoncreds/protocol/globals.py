@@ -53,7 +53,9 @@ PROOF = "proof"
 NAME = "name"
 VERSION = "version"
 TYPE = "type"
-IP = "ip"
-PORT = "port"
+
+# DEPR
+# IP = "ip"
+# PORT = "port"
 
 TYPE_CL = "CL"

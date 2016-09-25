@@ -12,16 +12,22 @@ from anoncreds.protocol.types import Credential
 from anoncreds.protocol.verifier import Verifier
 
 
-def getPresentationToken(credDefs, proofBuilder, encodedAttrs):
+def getPresentationToken(credDefs,
+                         pks,
+                         issuerSecretKeys,
+                         proofBuilder,
+                         encodedAttrs):
     presentationToken = {}
     for key, val in proofBuilder.U.items():
         credDef = credDefs[key]
+        pk = pks[key]
+        sk = issuerSecretKeys[key].sk
         A, e, vprimeprime = Issuer.generateCredential(proofBuilder.U[key],
                                                encodedAttrs[key],
-                                               credDef.PK,
+                                               pk,
                                                None,
-                                               credDef.p_prime,
-                                               credDef.q_prime
+                                               sk.p_prime,
+                                               sk.q_prime
                                                )
         v = proofBuilder.vprime[key] + vprimeprime
         presentationToken[key] = Credential(A, e, v)
@@ -33,11 +39,19 @@ def getProofBuilderAndAttribs(attribs, credDefPks):
     return proofBuilder, attribs
 
 
-def verifyPredicateProof(credDefs, credDefPks, proofBuilderWithAttribs,
-                             revealedAttrs, predicate, verifier: Verifier):
+def verifyPredicateProof(credDefs,
+                         credDefPks,
+                         issuerSecretKeys,
+                         proofBuilderWithAttribs,
+                         revealedAttrs,
+                         predicate,
+                         verifier: Verifier):
 
     proofBuilder, attrs = proofBuilderWithAttribs
-    presentationToken = getPresentationToken(credDefs, proofBuilder, attrs.encoded())
+    presentationToken = getPresentationToken(credDefs,
+                                             credDefPks,
+                                             issuerSecretKeys,
+                                             proofBuilder, attrs.encoded())
     nonce = verifier.generateNonce(interactionId=1)
     proof = proofBuilder.preparePredicateProof(creds=presentationToken,
                                                attrs=attrs.encoded(),
@@ -52,13 +66,18 @@ def verifyPredicateProof(credDefs, credDefPks, proofBuilderWithAttribs,
                                          predicate=predicate)
 
 
-def prepareProofAndVerify(credDefs, credDefPks, proofBuilder,
-                          attrs, revealedAttrs,
-                          proofNonce=None, verifyNonce=None):
+def prepareProofAndVerify(credDefs,
+                          credDefPks,
+                          issuerSecretKeys,
+                          proofBuilder,
+                          attrs,
+                          revealedAttrs,
+                          proofNonce=None,
+                          verifyNonce=None):
 
     presentationToken = getPresentationToken(
-        credDefs, proofBuilder,
-        attrs.encoded())
+        credDefs, credDefPks, issuerSecretKeys,
+        proofBuilder, attrs.encoded())
 
     proof = ProofBuilder.prepareProof(credDefPks=proofBuilder.credDefPks,
                                       masterSecret=proofBuilder.masterSecret,
@@ -75,8 +94,8 @@ def prepareProofAndVerify(credDefs, credDefPks, proofBuilder,
                                revealedAttrs=revealedAttrs)
 
 
-def verifyProof(credDefs, credDefPks, attrNames,
-                proofBuilderWithAttribs, revealedAttrs, *verifiers):
+def verifyProof(credDefs, credDefPks, issuerSecretKeys,
+                attrNames, proofBuilderWithAttribs, revealedAttrs, *verifiers):
 
     proofBuilder, attrs = proofBuilderWithAttribs
 
@@ -92,6 +111,7 @@ def verifyProof(credDefs, credDefPks, attrNames,
         nonce = verifier.generateNonce(interactionId=1)
         verifStatus = prepareProofAndVerify(credDefs,
                                             credDefPks,
+                                            issuerSecretKeys,
                                             proofBuilder,
                                             attrs,
                                             revealedAttrs,

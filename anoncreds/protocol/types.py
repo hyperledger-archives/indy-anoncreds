@@ -1,13 +1,12 @@
 from collections import namedtuple
 from enum import Enum
 from hashlib import sha256
-from typing import TypeVar, Dict
+from typing import TypeVar
 
-from charm.core.math.integer import integer
 from charm.toolbox.conversion import Conversion
 
-from anoncreds.protocol.globals import APRIME, EVECT, MVECT, VVECT, C_VALUE, ETILDE, MTILDE, VTILDE, EPRIME, VPRIME, \
-    CRED_A, CRED_E, CRED_V
+from anoncreds.protocol.globals import APRIME, EVECT, MVECT, VVECT, C_VALUE, \
+    ETILDE, MTILDE, VTILDE, EPRIME, VPRIME, CRED_A, CRED_E, CRED_V
 
 
 class AttribType:
@@ -57,11 +56,7 @@ class Attribs:
     def encoded(self):
         """
         This function will encode all the attributes to 256 bit integers
-
-        :param attrs: The attributes to pass in credentials
-        :return:
         """
-
         named = {}
         for i in range(len(self.credType.names)):
             name = self.credType.names[i]
@@ -94,34 +89,6 @@ class Attribs:
         return self._vals.items()
 
 
-class CredDefPublicKey:
-    def __init__(self, N, R, S, Z):
-        self.N = N
-        self.R = R
-        self.S = S
-        self.Z = Z
-
-    @staticmethod
-    def deser(v, n):
-        if isinstance(v, integer):
-            return v % n
-        elif isinstance(v, int):
-            return integer(v) % n
-        else:
-            raise RuntimeError("unknown type: {}".format(type(v)))
-
-    def inFieldN(self):
-        """
-        Returns new Public Key with same values, in field N
-        :return:
-        """
-
-        r = {k: self.deser(v, self.N) for k, v in self.R.items()}
-        return CredDefPublicKey(self.N, r,
-                                self.deser(self.S, self.N),
-                                self.deser(self.Z, self.N))
-
-
 class SerFmt(Enum):
     default = 1
     py3Int = 2
@@ -139,6 +106,7 @@ class ProofComponent:
         self.primeValues = None
         self.T = None
         self.c = None
+
 
 class PredicateProofComponent(ProofComponent):
     def __init__(self):
@@ -167,8 +135,6 @@ TildValue = namedtuple("TildValue", [MTILDE, ETILDE, VTILDE])
 PrimeValue = namedtuple("PrimeValue", [APRIME, VPRIME, EPRIME])
 
 SecretValue = namedtuple("SecretValue", ["tildValues", "primeValues", "T"])
-
-CredDefSecretKey = namedtuple("CredDefSecretKey", ["p", "q"])
 
 Proof = namedtuple('Proof', [C_VALUE, EVECT, MVECT, VVECT, APRIME])
 

@@ -124,7 +124,6 @@ class CredentialDefinition:
 
         :return: Secret key for the credential definition
         """
-
         return CredDefSecretKey(**self.sk)
 
     @property
@@ -204,6 +203,7 @@ def getPPrime(sk: CredDefSecretKey):
 
 def getQPrime(sk: CredDefSecretKey):
     return (sk.q - 1) / 2
+
 
 def serialize(data, serfunc):
     for k, v in data[KEYS].items():

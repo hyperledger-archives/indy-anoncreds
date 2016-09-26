@@ -101,7 +101,6 @@ class ProofBuilder:
 
         proofComponent = initProofComponent(credDefPks, creds, encodedAttrs, revealedAttrs, nonce)
 
-
         for credIssuer, _ in creds.items():
             proofComponent.evect[credIssuer] = proofComponent.tildeValues.etilde[credIssuer] + (proofComponent.c * proofComponent.primeValues.eprime[credIssuer])
             proofComponent.vvect[credIssuer] = proofComponent.tildeValues.vtilde[credIssuer] + (proofComponent.c * proofComponent.primeValues.vprime[credIssuer])

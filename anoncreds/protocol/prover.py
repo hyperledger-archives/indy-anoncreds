@@ -24,7 +24,7 @@ class Prover:
         return self.fetchCredential(*key)
 
     @staticmethod
-    def getPk(credDef: CredentialDefinition):
+    def getPk(credDef: CredentialDefinition) -> CredDefPublicKey:
         credDef = credDef.get()
         R = credDef[KEYS][PK_R]
         R["0"] = credDef[KEYS][MASTER_SEC_RAND]
@@ -55,8 +55,7 @@ class Prover:
             credential[0], credential[1],
             proofBuilder.vprime[issuer.id] + credential[2])
         }
-        proofBuilder.setParams(presentationToken,
-                        revealedAttrs, nonce)
+        proofBuilder.setParams(presentationToken, revealedAttrs, nonce)
         return proofBuilder
 
     def fetchNonce(self, interactionId, verifier: Verifier):

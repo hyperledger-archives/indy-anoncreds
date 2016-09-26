@@ -3,7 +3,7 @@ from _sha256 import sha256
 from charm.core.math.integer import integer
 from charm.toolbox.conversion import Conversion
 
-from anoncreds.protocol.globals import NAME, VERSION, TYPE, TYPE_CL
+from anoncreds.protocol.globals import NAME, VERSION, TYPE, TYPE_CL, ATTR_NAMES
 from anoncreds.protocol.types import SerFmt
 from anoncreds.protocol.utils import randomString, serialize, base58encode
 
@@ -79,7 +79,8 @@ class CredentialDefinition:
         data = {
             NAME: self.name,
             VERSION: self.version,
-            TYPE: TYPE_CL
+            TYPE: TYPE_CL,
+            ATTR_NAMES: self.attrNames
         }
         return serialize(data, serFmt)
 

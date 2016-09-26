@@ -53,6 +53,7 @@ PROOF = "proof"
 NAME = "name"
 VERSION = "version"
 TYPE = "type"
+ATTR_NAMES = "attr_names"
 
 # DEPR
 # IP = "ip"

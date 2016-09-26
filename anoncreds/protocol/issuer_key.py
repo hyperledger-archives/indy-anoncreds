@@ -1,6 +1,12 @@
+from copy import copy
+
 from charm.core.math.integer import integer
 
 from anoncreds.protocol.utils import strToCharmInteger, base58decode
+from anoncreds.protocol.globals import MASTER_SEC_RAND, \
+    PK_N, PK_S, PK_Z, PK_R
+from anoncreds.protocol.types import SerFmt
+from anoncreds.protocol.utils import serialize
 
 
 class IssuerKey:
@@ -45,3 +51,15 @@ class IssuerKey:
                          self.N, r,
                          self.deser(self.S, self.N),
                          self.deser(self.Z, self.N))
+
+    def get(self, serFmt: SerFmt=SerFmt.default):
+        R = copy(self.R)
+        data = {
+            MASTER_SEC_RAND: R["0"],
+            PK_N: self.N,
+            PK_S: self.S,
+            PK_Z: self.Z,
+            PK_R: R  # TODO Master secret rand number, R[0] is still passed,
+            #  remove that
+        }
+        return serialize(data, serFmt)

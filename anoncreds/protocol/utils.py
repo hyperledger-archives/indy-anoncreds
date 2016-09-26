@@ -156,4 +156,4 @@ def serialize(data, serFmt):
                 data[KEYS][k] = serfunc(v)
             if k == PK_R :
                 data[KEYS][k] = {key: serfunc(val) for key, val in v.items()}
-        return data
+    return data

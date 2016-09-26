@@ -22,13 +22,13 @@ class IssuerKey:
         self.Z = Z
 
     @classmethod
-    def fromKeys(cls, keys):
-        N = strToCharmInteger(base58decode(keys["N"]))
-        S = strToCharmInteger(base58decode(keys["S"]))
-        Z = strToCharmInteger(base58decode(keys["Z"]))
+    def fromKeys(cls, keys, desz=base58decode):
+        N = strToCharmInteger(desz(keys["N"]))
+        S = strToCharmInteger(desz(keys["S"]))
+        Z = strToCharmInteger(desz(keys["Z"]))
         R = {}
         for k, v in keys["R"].items():
-            R[k] = strToCharmInteger(base58decode(v))
+            R[k] = strToCharmInteger(desz(v))
         return cls(N, R, S, Z)
 
     @staticmethod

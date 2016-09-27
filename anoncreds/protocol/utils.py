@@ -3,8 +3,12 @@ import string
 from hashlib import sha256
 from random import randint, sample
 
-from charm.core.math.integer import random, isPrime, integer
+import base58
+from charm.core.math.integer import random, isPrime, integer, randomPrime
 from charm.toolbox.conversion import Conversion
+
+from anoncreds.protocol.globals import LARGE_PRIME, KEYS, PK_R
+from anoncreds.protocol.types import SerFmt
 
 
 def randomQR(n):
@@ -104,3 +108,52 @@ def strToCharmInteger(n):
         return integer(int(a.strip())) % integer(int(b.strip()))
     else:
         return integer(int(n))
+
+
+def genPrime():
+    """
+    Generate 2 large primes `p_prime` and `q_prime` and use them
+    to generate another 2 primes `p` and `q` of 1024 bits
+    """
+    prime = randomPrime(LARGE_PRIME)
+    i = 0
+    while not isPrime(2 * prime + 1):
+        prime = randomPrime(LARGE_PRIME)
+        i += 1
+    print("In {} iterations, found prime {}".format(i, prime))
+    return prime
+
+
+def base58encode(i):
+    return base58.b58encode(str(i).encode())
+
+
+def base58decode(i):
+    return base58.b58decode(str(i)).decode()
+
+
+def base58decodedInt(i):
+    try:
+        return int(base58.b58decode(str(i)).decode())
+    except Exception as ex:
+        raise AttributeError from ex
+
+
+SerFuncs = {
+    SerFmt.py3Int: int,
+    SerFmt.default: integer,
+    SerFmt.base58: base58encode,
+}
+
+
+def serialize(data, serFmt):
+    serfunc = SerFuncs[serFmt]
+    if KEYS in data:
+        for k, v in data[KEYS].items():
+            if isinstance(v, integer):
+                # int casting works with Python 3 only.
+                # for Python 2, charm's serialization api must be used.
+                data[KEYS][k] = serfunc(v)
+            if k == PK_R :
+                data[KEYS][k] = {key: serfunc(val) for key, val in v.items()}
+    return data

@@ -1,55 +1,62 @@
-from anoncreds.protocol.credential_definition import CredentialDefinition
-from anoncreds.protocol.globals import KEYS, PK_R, MASTER_SEC_RAND, PK_N, PK_S, PK_Z
+from anoncreds.protocol.cred_def_store import CredDefStore
+from anoncreds.protocol.issuer_key import IssuerKey
+from anoncreds.protocol.issuer_key_store import IssuerKeyStore
 from anoncreds.protocol.proof_builder import ProofBuilder
-from anoncreds.protocol.types import CredDefPublicKey
 from anoncreds.protocol.verifier import Verifier
 
 
 class Prover:
-    def __init__(self, id):
+    def __init__(self, id, cds: CredDefStore, iks: IssuerKeyStore):
         self.id = id
-        self.credDefs = {}          # Dict[(issuer, attribute names), credentialDefinition]
         self.proofBuilders = {}     # Dict[ProofBuilder, ProofBuilder]
+        self.cds = cds
+        self.iks = iks
 
-    def _getCredDef(self, issuer, attrNames):
-        key = (issuer, tuple(sorted(attrNames)))
-        credDef = self.credDefs.get(key)
+    def _getCredDef(self, uid):
+        credDef = self.cds.fetch(uid)
         if not credDef:
-            credDef = self.fetchCredentialDefinition(*key)
-            self.credDefs[key] = credDef
+            credDef = self.fetchCredentialDefinition(uid)
+            self.credDefs[uid] = credDef
         return credDef
 
-    def _getCred(self, issuer, credName, credVersion, U):
-        key = issuer, credName, credVersion, U
+    def _getCred(self, issuer, cduid, credName, credVersion, U):
+        key = issuer, cduid, credName, credVersion, U
         return self.fetchCredential(*key)
 
-    @staticmethod
-    def getPk(credDef: CredentialDefinition) -> CredDefPublicKey:
-        credDef = credDef.get()
-        R = credDef[KEYS][PK_R]
-        R["0"] = credDef[KEYS][MASTER_SEC_RAND]
-        return CredDefPublicKey(
-            credDef[KEYS][PK_N],
-            R,
-            credDef[KEYS][PK_S],
-            credDef[KEYS][PK_Z],
-        )
+    # DEPR
+    # @staticmethod
+    # def getPk(credDef: CredentialDefinition):
+    #     credDef = credDef.get()
+    #     R = credDef[KEYS][PK_R]
+    #     R["0"] = credDef[KEYS][MASTER_SEC_RAND]
+    #     return IssuerKey(
+    #         credDef[KEYS][PK_N],
+    #         R,
+    #         credDef[KEYS][PK_S],
+    #         credDef[KEYS][PK_Z],
+    #     )
 
-    def _initProofBuilder(self, issuer, attrNames):
-        credDef = self._getCredDef(issuer, attrNames)
-        pk = self.getPk(credDef)
-        pk = {issuer.id: pk}
+    def _initProofBuilder(self, cduid, ikuid, issuerId):
+
+        credDef = self.cds.fetch(cduid)
+        # DEPR
+        # credDef = _getCredDef(issuer, attrNames)
+        pk = self.iks.fetch(ikuid)
+        pk = {issuerId: pk}
         proofBuilder = ProofBuilder(pk)
         self.proofBuilders[proofBuilder.id] = proofBuilder
         return proofBuilder
 
-    def createProofBuilder(self, issuer, attrNames, interactionId, verifier,
-                           revealedAttrs):
-        credDef = self._getCredDef(issuer, attrNames)
-        proofBuilder = self._initProofBuilder(issuer, attrNames)
+    def createProofBuilder(self, cduid, ikuid, issuer, attrNames, interactionId,
+                           verifier, revealedAttrs):
+        credDef = self._getCredDef(cduid)
+        proofBuilder = self._initProofBuilder(cduid, ikuid, issuer.id)
         nonce = self.fetchNonce(interactionId, verifier)
-        credential = self._getCred(issuer, credDef.name,
-                                  credDef.version, proofBuilder.U[issuer.id])
+        credential = self._getCred(issuer=issuer,
+                                   cduid=cduid,
+                                   credName=credDef.name,
+                                   credVersion=credDef.version,
+                                   U=proofBuilder.U[issuer.id])
         presentationToken = {
             issuer.id: (
             credential[0], credential[1],
@@ -61,8 +68,9 @@ class Prover:
     def fetchNonce(self, interactionId, verifier: Verifier):
         return verifier.generateNonce(interactionId)
 
-    def fetchCredentialDefinition(self, issuer, attributes):
-        return issuer.getCredDef(attributes=attributes)
-
-    def fetchCredential(self, issuer, credName, credVersion, U):
-        return issuer.createCred(self.id, credName, credVersion, U)
+    def fetchCredential(self, issuer, cduid, credName, credVersion, U):
+        return issuer.createCred(self.id,
+                                 cduid=cduid,
+                                 name=credName,
+                                 version=credVersion,
+                                 U=U)

@@ -3,8 +3,8 @@ from typing import TypeVar, Generic
 
 T = TypeVar('T')
 
-class IssuerProverRepo(Generic[T]):
 
+class IssuerProverRepo(Generic[T]):
     @abstractmethod
     def addValue(self, issuerId, proverId, value: T):
         raise NotImplementedError
@@ -15,7 +15,6 @@ class IssuerProverRepo(Generic[T]):
 
 
 class InMemoryIssuerProverRepo(Generic[T]):
-
     def __init__(self):
         self.values = {}
 

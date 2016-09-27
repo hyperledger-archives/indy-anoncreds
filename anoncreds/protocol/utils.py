@@ -3,8 +3,8 @@ import string
 from hashlib import sha256
 from math import sqrt, floor
 from random import randint, sample
-from typing import Dict
 from sys import byteorder
+from typing import Dict
 
 from charm.core.math.integer import random, isPrime, integer
 from charm.toolbox.conversion import Conversion
@@ -36,7 +36,7 @@ def get_hash(*args, group: PairingGroup = None):
     :param args:
     :return:
     """
-
+    group = group if group else PairingGroup('SS1024')
     h_challenge = sha256()
     for arg in args:
         if (type(arg) == pc_element):
@@ -47,8 +47,12 @@ def get_hash(*args, group: PairingGroup = None):
     return h_challenge.digest()
 
 
+def bytes_to_int(bytesHash):
+    return int.from_bytes(bytesHash, byteorder=byteorder)
+
+
 def bytes_to_ZR(bytesHash, group):
-    cHNum = int.from_bytes(bytesHash, byteorder=byteorder)
+    cHNum = bytes_to_int(bytesHash)
     return group.init(ZR, cHNum)
 
 
@@ -103,9 +107,8 @@ def randomString(size: int = 20,
 
 
 def getUnrevealedAttrs(encodedAttrs, revealedAttrsList):
-    flatAttrs = flattenDict(encodedAttrs)
-    revealedAttrs, unrevealedAttrs = splitRevealedAttrs(flatAttrs, revealedAttrsList)
-    return flatAttrs, unrevealedAttrs
+    revealedAttrs, unrevealedAttrs = splitRevealedAttrs(encodedAttrs, revealedAttrsList)
+    return unrevealedAttrs
 
 
 def flattenDict(attrs):
@@ -127,12 +130,13 @@ def largestSquareLessThan(x: int):
 
 
 def fourSquares(delta: int):
+    u = {}
     u1 = largestSquareLessThan(delta)
     u2 = largestSquareLessThan(delta - (u1 ** 2))
     u3 = largestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2))
     u4 = largestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2) - (u3 ** 2))
     if (u1 ** 2) + (u2 ** 2) + (u3 ** 2) + (u4 ** 2) == delta:
-        return list((u1, u2, u3, u4))
+        return {'0': u1, '1': u2, '2': u3, '3': u4}
     else:
         raise Exception("Cannot get the four squares for delta {0}".format(delta))
 

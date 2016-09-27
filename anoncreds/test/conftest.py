@@ -1,106 +1,47 @@
 import pytest
-from charm.toolbox.pairinggroup import PairingGroup, G1
+from charm.core.math.integer import integer
 
-from anoncreds.protocol.attribute_repo import InMemoryAttrRepo
-from anoncreds.protocol.credential_definition import CredentialDefinitionInternal, primes
-from anoncreds.protocol.credential_defs_repo import InMemoryCredentialDefsRepo
-from anoncreds.protocol.credential_defs_secret_repo import InMemoryCredentialDefsSecretRepo
+from anoncreds.protocol.credential_definition import primes
 from anoncreds.protocol.issuer import Issuer
-from anoncreds.protocol.prover import Prover
-from anoncreds.protocol.revocation.accumulators.accumulator_definition import AccumulatorDefinition
-from anoncreds.protocol.revocation.accumulators.issuance_revocation_builder import IssuanceRevocationBuilder
-from anoncreds.protocol.revocation.accumulators.proof_revocation_builder import ProofRevocationBuilder
-from anoncreds.protocol.revocation.accumulators.proof_revocation_verifier import ProofRevocationVerifier
-from anoncreds.protocol.types import AttribDef, AttribType
+from anoncreds.protocol.prover import Prover, ProverInitializer
+from anoncreds.protocol.types import AttribDef, AttribType, SecretData, PublicData, Claims
 from anoncreds.protocol.verifier import Verifier
+
+primes = {
+    "prime1":
+        (integer(
+            157329491389375793912190594961134932804032426403110797476730107804356484516061051345332763141806005838436304922612495876180233509449197495032194146432047460167589034147716097417880503952139805241591622353828629383332869425029086898452227895418829799945650973848983901459733426212735979668835984691928193677469),
+         integer(
+             151323892648373196579515752826519683836764873607632072057591837216698622729557534035138587276594156320800768525825023728398410073692081011811496168877166664537052088207068061172594879398773872352920912390983199416927388688319207946493810449203702100559271439586753256728900713990097168484829574000438573295723))
+    , "prime2":
+        (integer(
+            150619677884468353208058156632953891431975271416620955614548039937246769610622017033385394658879484186852231469238992217246264205570458379437126692055331206248530723117202131739966737760399755490935589223401123762051823602343810554978803032803606907761937587101969193241921351011430750970746500680609001799529),
+         integer(
+             171590857568436644992359347719703764048501078398666061921719064395827496970696879481740311141148273607392657321103691543916274965279072000206208571551864201305434022165176563363954921183576230072812635744629337290242954699427160362586102068962285076213200828451838142959637006048439307273563604553818326766703))
+}
 
 GVT = AttribDef('gvt',
                 [AttribType('name', encode=True),
                  AttribType('age', encode=False),
+                 AttribType('height', encode=False),
                  AttribType('sex', encode=True)])
 XYZCorp = AttribDef('xyz',
-                    [AttribType('status', encode=True)])
+                    [AttribType('status', encode=True),
+                     AttribType('period', encode=False)])
 NASEMP = GVT + XYZCorp
 
-@pytest.fixture(scope="module")
-def gvtAttrNames():
-    return GVT.attribNames()
+issuerId1 = 111
+issuerId2 = 112
 
+iA1 = 100
+iA2 = 101
 
-@pytest.fixture(scope="module")
-def gvtCredDef(gvtAttrNames, primes1):
-    return CredentialDefinitionInternal(gvtAttrNames, **primes1)
+proverId1 = 222
+proverId2 = 333
 
+verifierId1 = 555
 
-@pytest.fixture(scope="function")
-def attrRepo():
-    return InMemoryAttrRepo()
-
-
-@pytest.fixture(scope="function")
-def gvtAttrRepo(attrRepo, gvtIssuer, prover):
-    attrRepo.addAttributes(prover.id, gvtIssuer.id,
-                           GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male'))
-    return attrRepo
-
-
-@pytest.fixture(scope="function")
-def gvtXyzAttrRepo(attrRepo, gvtIssuer, xyzIssuer, prover):
-    attrRepo.addAttributes(prover.id, gvtIssuer.id,
-                          GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male'))
-    attrRepo.addAttributes(prover.id, xyzIssuer.id,
-                           XYZCorp.attribs(status='ACTIVE'))
-    return attrRepo
-
-
-@pytest.fixture(scope="function")
-def credDefRepo():
-    return InMemoryCredentialDefsRepo()
-
-
-@pytest.fixture(scope="function")
-def credDefSecretRepo(credDefRepo):
-    return InMemoryCredentialDefsSecretRepo(credDefRepo)
-
-
-@pytest.fixture(scope="function")
-def genNonce(credDefRepo):
-    return Verifier("verifierTmp", credDefRepo).nonce
-
-
-@pytest.fixture(scope="function")
-def gvtIssuer(credDefSecretRepo, attrRepo):
-    return Issuer(GVT.name, credDefSecretRepo, attrRepo)
-
-
-@pytest.fixture(scope="function")
-def xyzIssuer(credDefSecretRepo, attrRepo):
-    return Issuer(XYZCorp.name, credDefSecretRepo, attrRepo)
-
-
-@pytest.fixture(scope="function")
-def xyzIssuer(credDefSecretRepo, attrRepo):
-    return Issuer(XYZCorp.name, credDefSecretRepo, attrRepo)
-
-
-@pytest.fixture(scope="function")
-def prover(credDefRepo):
-    return Prover("prover1", credDefRepo)
-
-
-@pytest.fixture(scope="function")
-def prover2(credDefRepo):
-    return Prover("prover2", credDefRepo)
-
-
-@pytest.fixture(scope="function")
-def verifier(credDefRepo):
-    return Verifier("verifier1", credDefRepo)
-
-
-@pytest.fixture(scope="function")
-def verifier2(credDefRepo):
-    return Verifier("verifier2", credDefRepo)
+L = 5
 
 
 @pytest.fixture(scope="module")
@@ -115,55 +56,281 @@ def primes2():
     return dict(p_prime=P_PRIME2, q_prime=Q_PRIME2)
 
 
-@pytest.fixture(scope="function")
-def accumulatorWithAllKeys():
-    accDef = AccumulatorDefinition()
-    revPk, revSk = accDef.genRevocationKeys()
-    acc, g, accSk = accDef.issueAccumulator("accum1", revPk, L=5)
-    return (revPk, revSk, acc, g, accSk)
+@pytest.fixture(scope="module")
+def keysGvt(primes1):
+    return Issuer.genKeys(GVT.attribNames(), **primes1)
+
+
+@pytest.fixture(scope="module")
+def keysXyz(primes2):
+    return Issuer.genKeys(XYZCorp.attribNames(), **primes2)
+
+
+@pytest.fixture(scope="module")
+def revocKeysGvt():
+    return Issuer.genRevocationKeys()
+
+
+@pytest.fixture(scope="module")
+def revocKeysXyz():
+    return Issuer.genRevocationKeys()
+
+
+@pytest.fixture(scope="module")
+def issueAccumulatorGvt(revocKeysGvt):
+    return Issuer.issueAccumulator(iA1, revocKeysGvt[0], L)
+
+
+@pytest.fixture(scope="module")
+def issueAccumulatorXyz(revocKeysXyz):
+    return Issuer.issueAccumulator(iA2, revocKeysXyz[0], L)
+
+
+@pytest.fixture(scope="module")
+def secretDataGvtIssuer(keysGvt, revocKeysGvt, issueAccumulatorGvt):
+    return SecretData(keysGvt[0], keysGvt[1],
+                      revocKeysGvt[0], revocKeysGvt[1],
+                      issueAccumulatorGvt[0], issueAccumulatorGvt[1], issueAccumulatorGvt[2], issueAccumulatorGvt[3])
+
+
+@pytest.fixture(scope="module")
+def secretDataXyzIssuer(keysXyz, revocKeysXyz, issueAccumulatorXyz):
+    return SecretData(keysXyz[0], keysXyz[1],
+                      revocKeysXyz[0], revocKeysXyz[1],
+                      issueAccumulatorXyz[0], issueAccumulatorXyz[1], issueAccumulatorXyz[2], issueAccumulatorXyz[3])
+
+
+@pytest.fixture(scope="module")
+def issuerGvt(secretDataGvtIssuer):
+    return Issuer(issuerId1, secretDataGvtIssuer)
+
+
+@pytest.fixture(scope="module")
+def issuerXyz(secretDataXyzIssuer):
+    return Issuer(issuerId2, secretDataXyzIssuer)
+
+
+@pytest.fixture(scope="module")
+def m2GvtProver1(issueAccumulatorGvt):
+    return Issuer.genContxt(issueAccumulatorGvt[0].iA, proverId1)
+
+
+@pytest.fixture(scope="module")
+def m2GvtProver2(issueAccumulatorGvt):
+    return Issuer.genContxt(issueAccumulatorGvt[0].iA, proverId2)
+
+
+@pytest.fixture(scope="module")
+def m2XyzProver1(issueAccumulatorXyz):
+    return Issuer.genContxt(issueAccumulatorXyz[0].iA, proverId1)
+
+
+@pytest.fixture(scope="module")
+def m2XyzProver2(issueAccumulatorXyz):
+    return Issuer.genContxt(issueAccumulatorXyz[0].iA, proverId2)
+
+
+@pytest.fixture(scope="module")
+def m1Prover1():
+    return ProverInitializer.genMasterSecret()
+
+
+@pytest.fixture(scope="module")
+def m1Prover2():
+    return ProverInitializer.genMasterSecret()
+
+
+@pytest.fixture(scope="module")
+def publicDataGvtIssuer(secretDataGvtIssuer):
+    return PublicData(secretDataGvtIssuer.pk, secretDataGvtIssuer.pkR,
+                      secretDataGvtIssuer.accum, secretDataGvtIssuer.g, secretDataGvtIssuer.pkAccum)
+
+
+@pytest.fixture(scope="module")
+def publicDataXyzIssuer(secretDataXyzIssuer):
+    return PublicData(secretDataXyzIssuer.pk, secretDataXyzIssuer.pkR,
+                      secretDataXyzIssuer.accum, secretDataXyzIssuer.g, secretDataXyzIssuer.pkAccum)
+
+
+@pytest.fixture(scope="module")
+def prover1Initializer(m2GvtProver1, m2XyzProver1, m1Prover1, publicDataGvtIssuer, publicDataXyzIssuer):
+    return ProverInitializer(proverId1,
+                             {issuerId1: m2GvtProver1, issuerId2: m2XyzProver1},
+                             {issuerId1: publicDataGvtIssuer, issuerId2: publicDataXyzIssuer},
+                             m1Prover1)
+
+
+@pytest.fixture(scope="module")
+def prover2Initializer(m2GvtProver2, m2XyzProver2, m1Prover2, publicDataGvtIssuer, publicDataXyzIssuer):
+    return ProverInitializer(proverId2,
+                             {issuerId1: m2GvtProver2, issuerId2: m2XyzProver2},
+                             {issuerId1: publicDataGvtIssuer, issuerId2: publicDataXyzIssuer},
+                             m1Prover2)
+
+
+@pytest.fixture(scope="module")
+def prover1UGvt(prover1Initializer):
+    return prover1Initializer.getU(issuerId1), prover1Initializer.getUr(issuerId1)
+
+
+@pytest.fixture(scope="module")
+def prover1UXyz(prover1Initializer):
+    return prover1Initializer.getU(issuerId2), prover1Initializer.getUr(issuerId2)
+
+
+@pytest.fixture(scope="module")
+def prover2UGvt(prover2Initializer):
+    return prover2Initializer.getU(issuerId1), prover2Initializer.getUr(issuerId1)
+
+
+@pytest.fixture(scope="module")
+def prover2UXyz(prover2Initializer):
+    return prover2Initializer.getU(issuerId2), prover2Initializer.getUr(issuerId2)
+
+
+@pytest.fixture(scope="module")
+def attrsProver1Gvt(issuerGvt):
+    attrs = GVT.attribs(name='Alex', age=28, height=175, sex='male')
+    return issuerGvt.encodeAttrs(attrs)
+
+
+@pytest.fixture(scope="module")
+def attrsProver2Gvt(issuerGvt):
+    attrs = GVT.attribs(name='Jason', age=42, height=180, sex='male')
+    return issuerGvt.encodeAttrs(attrs)
+
+
+@pytest.fixture(scope="module")
+def attrsProver1Xyz(issuerXyz):
+    attrs = XYZCorp.attribs(status='partial', period=8)
+    return issuerXyz.encodeAttrs(attrs)
+
+
+@pytest.fixture(scope="module")
+def attrsProver2Xyz(issuerXyz):
+    attrs = XYZCorp.attribs(status='full-time', period=22)
+    return issuerXyz.encodeAttrs(attrs)
+
+
+@pytest.fixture(scope="module")
+def primaryClaimProver1Gvt(issuerGvt, attrsProver1Gvt, m2GvtProver1, prover1UGvt):
+    return issuerGvt.issuePrimaryClaim(attrsProver1Gvt, m2GvtProver1, prover1UGvt[0])
+
+
+@pytest.fixture(scope="module")
+def primaryClaimProver2Gvt(issuerGvt, attrsProver2Gvt, m2GvtProver2, prover2UGvt):
+    return issuerGvt.issuePrimaryClaim(attrsProver2Gvt, m2GvtProver2, prover2UGvt[0])
+
+
+@pytest.fixture(scope="module")
+def primaryClaimProver1Xyz(issuerXyz, attrsProver1Xyz, m2XyzProver1, prover1UXyz):
+    return issuerXyz.issuePrimaryClaim(attrsProver1Xyz, m2XyzProver1, prover1UXyz[0])
+
+
+@pytest.fixture(scope="module")
+def primaryClaimProver2Xyz(issuerXyz, attrsProver2Xyz, m2XyzProver2, prover2UXyz):
+    return issuerXyz.issuePrimaryClaim(attrsProver2Xyz, m2XyzProver2, prover2UXyz[0])
+
+
+@pytest.fixture(scope="module")
+def nonRevocClaimProver1Gvt(issuerGvt, m2GvtProver1, prover1UGvt):
+    return issuerGvt.issueNonRevocationClaim(m2GvtProver1, prover1UGvt[1])
+
+
+@pytest.fixture(scope="module")
+def nonRevocClaimProver2Gvt(issuerGvt, m2GvtProver2, prover2UGvt):
+    return issuerGvt.issueNonRevocationClaim(m2GvtProver2, prover2UGvt[1])
+
+
+@pytest.fixture(scope="module")
+def nonRevocClaimProver1Xyz(issuerXyz, m2XyzProver1, prover1UXyz):
+    return issuerXyz.issueNonRevocationClaim(m2XyzProver1, prover1UXyz[1])
+
+
+@pytest.fixture(scope="module")
+def nonRevocClaimProver2Xyz(issuerXyz, m2XyzProver2, prover2UXyz):
+    return issuerXyz.issueNonRevocationClaim(m2XyzProver2, prover2UXyz[1])
+
+
+@pytest.fixture(scope="module")
+def initPrimaryClaimProver1Gvt(prover1Initializer, primaryClaimProver1Gvt):
+    return prover1Initializer.initPrimaryClaim(issuerId1, primaryClaimProver1Gvt)
+
+
+@pytest.fixture(scope="module")
+def initPrimaryClaimProver1Xyz(prover1Initializer, primaryClaimProver1Xyz):
+    return prover1Initializer.initPrimaryClaim(issuerId2, primaryClaimProver1Xyz)
+
+
+@pytest.fixture(scope="module")
+def initPrimaryClaimProver2Gvt(prover2Initializer, primaryClaimProver2Gvt):
+    return prover2Initializer.initPrimaryClaim(issuerId1, primaryClaimProver2Gvt)
+
+
+@pytest.fixture(scope="module")
+def initPrimaryClaimProver2Xyz(prover2Initializer, primaryClaimProver2Xyz):
+    return prover2Initializer.initPrimaryClaim(issuerId2, primaryClaimProver2Xyz)
+
+
+@pytest.fixture(scope="module")
+def initNonRevocClaimProver1Gvt(prover1Initializer, nonRevocClaimProver1Gvt):
+    return prover1Initializer.initNonRevocationClaim(issuerId1, nonRevocClaimProver1Gvt)
+
+
+@pytest.fixture(scope="module")
+def initNonRevocClaimProver1Xyz(prover1Initializer, nonRevocClaimProver1Xyz):
+    return prover1Initializer.initNonRevocationClaim(issuerId2, nonRevocClaimProver1Xyz)
+
+
+@pytest.fixture(scope="module")
+def initNonRevocClaimProver2Gvt(prover2Initializer, nonRevocClaimProver2Gvt):
+    return prover2Initializer.initNonRevocationClaim(issuerId1, nonRevocClaimProver2Gvt)
+
+
+@pytest.fixture(scope="module")
+def initNonRevocClaimProver2Xyz(prover2Initializer, nonRevocClaimProver2Xyz):
+    return prover2Initializer.initNonRevocationClaim(issuerId2, nonRevocClaimProver2Xyz)
+
+
+@pytest.fixture(scope="module")
+def allClaimsProver1(initPrimaryClaimProver1Gvt, initPrimaryClaimProver1Xyz,
+                     initNonRevocClaimProver1Gvt, initNonRevocClaimProver1Xyz):
+    return {issuerId1: Claims(initPrimaryClaimProver1Gvt, initNonRevocClaimProver1Gvt),
+            issuerId2: Claims(initPrimaryClaimProver1Xyz, initNonRevocClaimProver1Xyz)}
+
+
+@pytest.fixture(scope="module")
+def allClaimsProver2(initPrimaryClaimProver2Gvt, initPrimaryClaimProver2Xyz,
+                     initNonRevocClaimProver2Gvt, initNonRevocClaimProver2Xyz):
+    return {issuerId1: Claims(initPrimaryClaimProver2Gvt, initNonRevocClaimProver2Gvt),
+            issuerId2: Claims(initPrimaryClaimProver2Xyz, initNonRevocClaimProver2Xyz)}
+
+
+@pytest.fixture(scope="module")
+def prover1(publicDataGvtIssuer, publicDataXyzIssuer, m1Prover1):
+    return Prover(proverId1,
+                  {issuerId1: publicDataGvtIssuer, issuerId2: publicDataXyzIssuer},
+                  m1Prover1)
+
+
+@pytest.fixture(scope="module")
+def prover2(publicDataGvtIssuer, publicDataXyzIssuer, m1Prover2):
+    return Prover(proverId2,
+                  {issuerId1: publicDataGvtIssuer, issuerId2: publicDataXyzIssuer},
+                  m1Prover2)
+
+
+@pytest.fixture(scope="module")
+def nonce():
+    return Verifier.generateNonce()
 
 
 @pytest.fixture(scope="function")
-def accumulatorWithKeys(accumulatorWithAllKeys):
-    return (accumulatorWithAllKeys[0], accumulatorWithAllKeys[2], accumulatorWithAllKeys[3])
+def genNonce():
+    return Verifier.generateNonce()
 
 
-@pytest.fixture(scope="function")
-def g(accumulatorWithKeys):
-    return accumulatorWithKeys[2]
-
-@pytest.fixture(scope="function")
-def issuanceRevBuilder(accumulatorWithAllKeys):
-    return IssuanceRevocationBuilder(accumulatorWithAllKeys[0], accumulatorWithAllKeys[1])
-
-@pytest.fixture(scope="function")
-def proofRevBuilder(accumulatorWithKeys, gvtIssuer, prover):
-    return ProofRevocationBuilder(gvtIssuer.id, accumulatorWithKeys[0], prover._ms)
-
-@pytest.fixture(scope="function")
-def proofRevVerifier(accumulatorWithKeys, verifier):
-    return ProofRevocationVerifier(accumulatorWithKeys[0], verifier.nonce)
-
-@pytest.fixture(scope="function")
-def witnessCredentialsAndAccum(accumulatorWithAllKeys, issuanceRevBuilder, proofRevBuilder):
-    revPk, revSk, acc, g, accSk = accumulatorWithAllKeys
-    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
-    return (witCred, acc)
-
-@pytest.fixture(scope="function")
-def witnessCredentials(accumulatorWithAllKeys, issuanceRevBuilder, proofRevBuilder):
-    revPk, revSk, acc, g, accSk = accumulatorWithAllKeys
-    return issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
-
-@pytest.fixture(scope="function")
-def witnessCredentialsAndAccumMultiple(accumulatorWithAllKeys, issuanceRevBuilder, proofRevBuilder):
-    revPk, revSk, acc, g, accSk = accumulatorWithAllKeys
-    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
-    issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
-    witCred = issuanceRevBuilder.issueRevocationCredential(acc, accSk, g, proofRevBuilder.Ur)
-    return (witCred, acc)
-
-@pytest.fixture(scope="function")
-def genUr(accumulatorWithKeys):
-    group = PairingGroup(accumulatorWithKeys[0].groupType)
-    return group.random(G1)
+@pytest.fixture(scope="module")
+def verifier(publicDataGvtIssuer, publicDataXyzIssuer):
+    return Verifier(verifierId1,
+                    {issuerId1: publicDataGvtIssuer, issuerId2: publicDataXyzIssuer})

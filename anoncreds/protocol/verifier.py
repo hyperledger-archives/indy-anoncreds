@@ -1,28 +1,37 @@
+from functools import reduce
 from typing import Dict
 
 from charm.core.math.integer import integer, randomBits
 
-from anoncreds.protocol.credential_defs_repo import CredentialDefsRepo
 from anoncreds.protocol.globals import LARGE_NONCE
 from anoncreds.protocol.proof_verifier import ProofVerifier
-from anoncreds.protocol.types import CredDefId
+from anoncreds.protocol.revocation.accumulators.non_revocation_proof_verifier import NonRevocationProofVerifier
+from anoncreds.protocol.types import PublicData, FullProof
+from anoncreds.protocol.utils import get_hash
+
 
 class Verifier:
-
-    def __init__(self, id, credDefsRepo: CredentialDefsRepo):
+    def __init__(self, id, publicData: Dict[str, PublicData]):
         self.id = id
-        self.credDefsRepo = credDefsRepo
-        self._nonce = self._generateNonce()
+        self._nonRevocVerifier = NonRevocationProofVerifier(publicData)
+        self._primaryVerifier = ProofVerifier(publicData)
 
-    @property
-    def nonce(self):
-        return self._nonce
-
-    def _generateNonce(self):
+    @classmethod
+    def generateNonce(self):
         return integer(randomBits(LARGE_NONCE))
 
-    def createProofVerifier(self, credDefIds: Dict[str, CredDefId]):
-        return ProofVerifier(self.credDefsRepo.getCredentialDefPKs(credDefIds), self._nonce)
+    def verify(self, proof: FullProof, allRevealedAttrs, nonce):
+        TauList = []
+        for issuerId, proofItem in proof.proofs.items():
+            TauList += self._nonRevocVerifier.verifyNonRevocation(issuerId, proof.cHash, proofItem.nonRevocProof)
+            TauList += self._primaryVerifier.verify(issuerId, proof.cHash, proofItem.primaryProof, allRevealedAttrs)
+
+        CHver = self._get_hash(proof.CList, TauList, nonce)
+
+        return CHver == proof.cHash
+
+    def _get_hash(self, CList, TauList, nonce):
+        return get_hash(nonce, *reduce(lambda x, y: x + y, [TauList, CList]))
 
     def __repr__(self):
         return str(self.__dict__)

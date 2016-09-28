@@ -1,7 +1,7 @@
 from functools import reduce
 from typing import Dict, Sequence
 
-from charm.core.math.integer import integer, randomBits
+from config.config import cmod
 
 from anoncreds.protocol.cred_def_store import CredDefStore
 from anoncreds.protocol.globals import LARGE_E_START, LARGE_NONCE, ITERATIONS, DELTA, TVAL, KEYS, PK_R, PK_N, PK_S, PK_Z, \
@@ -59,7 +59,7 @@ class Verifier:
         # self.credDefs = {}           # Dict[(issuer id, credential name, credential version), Credential Definition]
 
     def generateNonce(self, interactionId):
-        nv = integer(randomBits(LARGE_NONCE))
+        nv = cmod.integer(cmod.randomBits(LARGE_NONCE))
         self.interactionDetail[str(nv)] = interactionId
         return nv
 
@@ -140,7 +140,7 @@ class Verifier:
                 Qvect = Qvect1 * Tuproduct * (p.S ** alphavect) % p.N
                 Tau.append(Qvect)
 
-        cvect = integer(get_hash(nonce, *reduce(lambda x, y: x+y, [Tau, CList])))
+        cvect = cmod.integer(get_hash(nonce, *reduce(lambda x, y: x+y, [Tau, CList])))
 
         return c == cvect
 
@@ -158,6 +158,6 @@ class Verifier:
         # Calculate the `cvect` value based on proof.
         # This value is mathematically proven to be equal to `c`
         # if proof is created correctly from credentials. Refer 2.8 in document
-        cvect = integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
+        cvect = cmod.integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
                                                       {NONCE: nonce})))
         return c == cvect

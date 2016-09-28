@@ -1,6 +1,6 @@
 from copy import copy
 
-from charm.core.math.integer import integer
+from config.config import cmod
 
 from anoncreds.protocol.utils import strToCharmInteger, base58decode
 from anoncreds.protocol.globals import MASTER_SEC_RAND, \
@@ -33,10 +33,10 @@ class IssuerKey:
 
     @staticmethod
     def deser(v, n):
-        if isinstance(v, integer):
+        if isinstance(v, cmod.integer):
             return v % n
         elif isinstance(v, int):
-            return integer(v) % n
+            return cmod.integer(v) % n
         else:
             raise RuntimeError("unknown type: {}".format(type(v)))
 

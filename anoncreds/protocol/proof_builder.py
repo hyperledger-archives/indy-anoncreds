@@ -3,7 +3,7 @@ from functools import reduce
 from math import sqrt, floor
 from typing import Dict, Sequence
 
-from charm.core.math.integer import randomBits, integer
+from config.config import cmod
 
 from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, \
     LARGE_E_START, LARGE_ETILDE, LARGE_VTILDE, LARGE_MASTER_SECRET, \
@@ -33,7 +33,7 @@ class ProofBuilder:
         self.revealedAttrs = None
 
         # Generate the master secret
-        self._ms = masterSecret or integer(randomBits(LARGE_MASTER_SECRET))
+        self._ms = masterSecret or cmod.integer(cmod.randomBits(LARGE_MASTER_SECRET))
 
         # Set the credential definition pub keys
         self.credDefPks = credDefPks
@@ -43,7 +43,7 @@ class ProofBuilder:
 
         self._vprime = {}
         for key, val in self.credDefPks.items():
-            self._vprime[key] = randomBits(LARGE_VPRIME)
+            self._vprime[key] = cmod.randomBits(LARGE_VPRIME)
 
         # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
         self._U = {}
@@ -98,7 +98,7 @@ class ProofBuilder:
 
             # Calculate the `c` value as the hash result of Aprime, T and nonce.
             # This value will be used to verify the proof against the credential
-            proofComponent.c = integer(get_hash(*get_values_of_dicts(proofComponent.primeValues.Aprime, proofComponent.T, {NONCE: nonce})))
+            proofComponent.c = cmod.integer(get_hash(*get_values_of_dicts(proofComponent.primeValues.Aprime, proofComponent.T, {NONCE: nonce})))
             return proofComponent
 
         proofComponent = initProofComponent(credDefPks, creds, encodedAttrs, revealedAttrs, nonce)
@@ -172,16 +172,16 @@ class ProofBuilder:
                     proofComponent.u = fourSquares(delta)
 
                     for i in range(0, ITERATIONS):
-                        proofComponent.r[str(i)] = integer(randomBits(LARGE_VPRIME))
-                    proofComponent.r[DELTA] = integer(randomBits(LARGE_VPRIME))
+                        proofComponent.r[str(i)] = cmod.integer(cmod.randomBits(LARGE_VPRIME))
+                    proofComponent.r[DELTA] = cmod.integer(cmod.randomBits(LARGE_VPRIME))
 
                     Tval = {}
                     for i in range(0, ITERATIONS):
                         Tval[str(i)] = (x.Z ** proofComponent.u[i]) * (x.S ** proofComponent.r[str(i)]) % x.N
-                        proofComponent.utilde[str(i)] = integer(randomBits(LARGE_UTILDE))
-                        proofComponent.rtilde[str(i)] = integer(randomBits(LARGE_RTILDE))
+                        proofComponent.utilde[str(i)] = cmod.integer(cmod.randomBits(LARGE_UTILDE))
+                        proofComponent.rtilde[str(i)] = cmod.integer(cmod.randomBits(LARGE_RTILDE))
                     Tval[DELTA] = (x.Z ** delta) * (x.S ** proofComponent.r[DELTA]) % x.N
-                    proofComponent.rtilde[DELTA] = integer(randomBits(LARGE_RTILDE))
+                    proofComponent.rtilde[DELTA] = cmod.integer(cmod.randomBits(LARGE_RTILDE))
 
                     proofComponent.CList.extend(get_values_of_dicts(Tval))
                     updateDict(proofComponent.C, key, TVAL, Tval)
@@ -194,7 +194,7 @@ class ProofBuilder:
                         (x.Z ** proofComponent.tildeValues.mtilde[k]) * (
                             x.S ** proofComponent.rtilde[DELTA]) % x.N)
 
-                    proofComponent.alphatilde = integer(randomBits(LARGE_ALPHATILDE))
+                    proofComponent.alphatilde = cmod.integer(cmod.randomBits(LARGE_ALPHATILDE))
 
                     Q = 1 % x.N
                     for i in range(0, ITERATIONS):
@@ -202,7 +202,7 @@ class ProofBuilder:
                     Q *= x.S ** proofComponent.alphatilde % x.N
                     proofComponent.TauList.append(Q)
 
-            proofComponent.c = integer(get_hash(nonce, *reduce(lambda x, y: x + y, [proofComponent.TauList,
+            proofComponent.c = cmod.integer(get_hash(nonce, *reduce(lambda x, y: x + y, [proofComponent.TauList,
                                                                                     proofComponent.CList])))
 
         def getSubProof(creds, predProofComponent):
@@ -277,8 +277,8 @@ def findSecretValues(encodedAttrs: Dict[str, T], unrevealedAttrs: Dict,
     def getMTilde(unrevealedAttrs):
         mtilde = {}
         for key, value in unrevealedAttrs.items():
-            mtilde[key] = integer(randomBits(LARGE_MVECT))
-        mtilde[ZERO_INDEX] = integer(randomBits(LARGE_MVECT))
+            mtilde[key] = cmod.integer(cmod.randomBits(LARGE_MVECT))
+        mtilde[ZERO_INDEX] = cmod.integer(cmod.randomBits(LARGE_MVECT))
         return mtilde
 
     def getRur(credDefPk, includedAttrs, mtilde, unrevealedAttrs):
@@ -293,7 +293,7 @@ def findSecretValues(encodedAttrs: Dict[str, T], unrevealedAttrs: Dict,
     mtilde = getMTilde(unrevealedAttrs)
 
     for issuer, credential in creds.items():
-        Ra = integer(randomBits(LARGE_VPRIME))
+        Ra = cmod.integer(cmod.randomBits(LARGE_VPRIME))
         credDefPk = credDefPks[issuer]
         A, e, v = credential
 
@@ -301,8 +301,8 @@ def findSecretValues(encodedAttrs: Dict[str, T], unrevealedAttrs: Dict,
         vprime[issuer] = (v - e * Ra)
         eprime[issuer] = e - (2 ** LARGE_E_START)
 
-        etilde[issuer] = integer(randomBits(LARGE_ETILDE))
-        vtilde[issuer] = integer(randomBits(LARGE_VTILDE))
+        etilde[issuer] = cmod.integer(cmod.randomBits(LARGE_ETILDE))
+        vtilde[issuer] = cmod.integer(cmod.randomBits(LARGE_VTILDE))
 
         Rur = getRur(credDefPk, encodedAttrs[issuer], mtilde, unrevealedAttrs)
 

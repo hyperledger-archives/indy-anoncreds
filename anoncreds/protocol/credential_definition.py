@@ -1,7 +1,6 @@
 from _sha256 import sha256
 
-from charm.core.math.integer import integer
-from charm.toolbox.conversion import Conversion
+from config.config import cmod
 
 from anoncreds.protocol.globals import NAME, VERSION, TYPE, TYPE_CL, ATTR_NAMES
 from anoncreds.protocol.types import SerFmt
@@ -72,7 +71,7 @@ class CredentialDefinition:
         :return:
         """
 
-        return {key: Conversion.bytes2integer(sha256(value.encode()).digest())
+        return {key: cmod.Conversion.bytes2integer(sha256(value.encode()).digest())
                 for key, value in attrs.items()}
 
     def get(self, serFmt: SerFmt=SerFmt.default):

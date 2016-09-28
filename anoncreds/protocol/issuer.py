@@ -7,13 +7,11 @@ from typing import Tuple
 from anoncreds.protocol.attribute_repo import AttrRepo
 from anoncreds.protocol.cred_def_secret_key import CredDefSecretKey
 from anoncreds.protocol.cred_def_store import CredDefStore
-from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.globals import LARGE_VPRIME_PRIME, LARGE_E_START, LARGE_E_END_RANGE
 from anoncreds.protocol.issuer_key import IssuerKey
 from anoncreds.protocol.issuer_secret_key import IssuerSecretKey
 from anoncreds.protocol.utils import get_prime_in_range, strToCharmInteger
-from charm.core.math.integer import integer, randomBits
-
+from config.config import cmod
 
 class Issuer:
     def __init__(self, id, attributeRepo: AttrRepo=None,
@@ -78,7 +76,7 @@ class Issuer:
             raise ValueError("u must be provided to issue a credential")
         # Generate a random prime and
         # Set the Most-significant-bit to 1
-        vprimeprime = integer(randomBits(LARGE_VPRIME_PRIME) |
+        vprimeprime = cmod.integer(cmod.randomBits(LARGE_VPRIME_PRIME) |
                               (2 ** (LARGE_VPRIME_PRIME - 1)))
         # Generate prime number in the range (2^596, 2^596 + 2^119)
         estart = 2 ** LARGE_E_START

@@ -6,10 +6,12 @@ from random import randint, sample
 from sys import byteorder
 from typing import Dict
 
+import base58
 from charm.core.math.integer import random, isPrime, integer
 from charm.toolbox.conversion import Conversion
 from charm.toolbox.pairinggroup import PairingGroup, pc_element, ZR
 
+from anoncreds.protocol.globals import KEYS, PK_R
 from anoncreds.protocol.types import T
 
 
@@ -130,7 +132,6 @@ def largestSquareLessThan(x: int):
 
 
 def fourSquares(delta: int):
-    u = {}
     u1 = largestSquareLessThan(delta)
     u2 = largestSquareLessThan(delta - (u1 ** 2))
     u3 = largestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2))
@@ -146,3 +147,27 @@ def updateDict(obj: Dict[str, Dict[str, T]], parentKey: str,
     parentVal = obj.get(parentKey, {})
     parentVal[key] = val
     obj[parentKey] = parentVal
+
+
+def serialize(data, serfunc):
+    for k, v in data[KEYS].items():
+        if isinstance(v, integer):
+            # int casting works with Python 3 only.
+            # for Python 2, charm's serialization api must be used.
+            data[KEYS][k] = serfunc(v)
+        if k == PK_R:
+            data[KEYS][k] = {key: serfunc(val) for key, val in v.items()}
+    return data
+
+
+def base58encode(i):
+    return base58.b58encode(str(i).encode())
+
+
+def base58decode(i):
+    return base58.b58decode(str(i)).decode()
+
+
+def base58decodedInt(i):
+    # TODO: DO exception handling
+    return int(base58.b58decode(str(i)).decode())

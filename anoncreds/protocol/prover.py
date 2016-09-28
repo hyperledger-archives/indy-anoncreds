@@ -4,7 +4,7 @@ from typing import Dict
 from charm.core.math.integer import randomBits, integer
 
 from anoncreds.protocol.globals import LARGE_MASTER_SECRET, LARGE_M2_TILDE
-from anoncreds.protocol.proof_builder import PrimaryClaimInitializer, PrimaryProofBuilder
+from anoncreds.protocol.primary.primary_proof_builder import PrimaryClaimInitializer, PrimaryProofBuilder
 from anoncreds.protocol.revocation.accumulators.non_revocation_proof_builder import NonRevocationClaimInitializer, \
     NonRevocationProofBuilder
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, PublicData, \
@@ -61,9 +61,11 @@ class Prover:
 
     @classmethod
     def findClaims(cls, allClaims: Dict[str, Claims], proofInput: ProofInput) -> Dict[str, ProofClaims]:
-        revealedAttrs, predicates = proofInput.revealedAttrs, proofInput.predicates
+        revealedAttrs, predicates = set(proofInput.revealedAttrs), set(proofInput.predicates)
 
         proofClaims = {}
+        foundRevealedAttrs = set()
+        foundPredicates = set()
         for issuerId, claim in allClaims.items():
             revealedAttrsForClaim = []
             predicatesForClaim = []
@@ -71,13 +73,20 @@ class Prover:
             for revealedAttr in revealedAttrs:
                 if revealedAttr in claim.primaryClaim.attrs:
                     revealedAttrsForClaim.append(revealedAttr)
+                    foundRevealedAttrs.add(revealedAttr)
 
             for predicate in predicates:
                 if predicate.attrName in claim.primaryClaim.attrs:
                     predicatesForClaim.append(predicate)
+                    foundPredicates.add(predicate)
 
             if revealedAttrsForClaim or predicatesForClaim:
                 proofClaims[issuerId] = ProofClaims(claim, revealedAttrsForClaim, predicatesForClaim)
+
+        if foundRevealedAttrs != revealedAttrs:
+            raise ValueError("A claim isn't found for the following attributes: {}", revealedAttrs - foundRevealedAttrs)
+        if foundPredicates != predicates:
+            raise ValueError("A claim isn't found for the following predicates: {}", predicates - foundPredicates)
 
         return proofClaims
 
@@ -91,24 +100,31 @@ class Prover:
         CList = []
         TauList = []
 
+        # 1. init proofs
         for issuerId, val in claims.items():
             c1, c2, revealedAttrs, predicates = val.claims.primaryClaim, val.claims.nonRevocClaim, val.revealedAttrs, val.predicates
 
-            nonRevocInitProof = self._nonRevocProofBuilder.initProof(issuerId, c2)
-            CList += nonRevocInitProof.asCList()
-            TauList += nonRevocInitProof.asTauList()
+            nonRevocInitProof = None
+            if c2:
+                nonRevocInitProof = self._nonRevocProofBuilder.initProof(issuerId, c2)
+                CList += nonRevocInitProof.asCList()
+                TauList += nonRevocInitProof.asTauList()
 
-            m2Tilde = integer(int(nonRevocInitProof.TauListParams.m2))
-            primaryInitProof = self._primaryProofBuilder.initProof(issuerId, c1, revealedAttrs, predicates,
-                                                                   m1Tilde, m2Tilde)
-            CList += primaryInitProof.asCList()
-            TauList += primaryInitProof.asTauList()
+            primaryInitProof = None
+            if c1:
+                m2Tilde = integer(int(nonRevocInitProof.TauListParams.m2)) if nonRevocInitProof else None
+                primaryInitProof = self._primaryProofBuilder.initProof(issuerId, c1, revealedAttrs, predicates,
+                                                                       m1Tilde, m2Tilde)
+                CList += primaryInitProof.asCList()
+                TauList += primaryInitProof.asTauList()
 
             initProof = InitProof(nonRevocInitProof, primaryInitProof)
             initProofs[issuerId] = initProof
 
+        # 2. hash
         cH = self._get_hash(CList, TauList, nonce)
 
+        # 3. finalize proofs
         proofs = {}
         for issuerId, initProof in initProofs.items():
             nonRevocProof = self._nonRevocProofBuilder.finalizeProof(issuerId, cH, initProof.nonRevocInitProof)

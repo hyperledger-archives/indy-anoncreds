@@ -1,7 +1,6 @@
 import pytest
 from charm.core.math.integer import integer
 
-from anoncreds.protocol.credential_definition import primes
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover, ProverInitializer
 from anoncreds.protocol.types import AttribDef, AttribType, SecretData, PublicData, Claims
@@ -43,6 +42,8 @@ verifierId1 = 555
 
 L = 5
 
+
+############ module scope
 
 @pytest.fixture(scope="module")
 def primes1():
@@ -334,3 +335,64 @@ def genNonce():
 def verifier(publicDataGvtIssuer, publicDataXyzIssuer):
     return Verifier(verifierId1,
                     {issuerId1: publicDataGvtIssuer, issuerId2: publicDataXyzIssuer})
+
+
+############ function scope
+
+@pytest.fixture(scope="function")
+def newIssueAccumulatorGvt(revocKeysGvt):
+    return Issuer.issueAccumulator(iA1, revocKeysGvt[0], L)
+
+
+@pytest.fixture(scope="function")
+def newSecretDataGvtIssuer(keysGvt, revocKeysGvt, newIssueAccumulatorGvt):
+    return SecretData(keysGvt[0], keysGvt[1],
+                      revocKeysGvt[0], revocKeysGvt[1],
+                      newIssueAccumulatorGvt[0], newIssueAccumulatorGvt[1], newIssueAccumulatorGvt[2],
+                      newIssueAccumulatorGvt[3])
+
+
+@pytest.fixture(scope="function")
+def newPublicDataGvtIssuer(newSecretDataGvtIssuer):
+    return PublicData(newSecretDataGvtIssuer.pk, newSecretDataGvtIssuer.pkR,
+                      newSecretDataGvtIssuer.accum, newSecretDataGvtIssuer.g, newSecretDataGvtIssuer.pkAccum)
+
+
+@pytest.fixture(scope="function")
+def newIssuerGvt(newSecretDataGvtIssuer):
+    return Issuer(issuerId1, newSecretDataGvtIssuer)
+
+
+@pytest.fixture(scope="function")
+def newM2GvtProver1(newIssueAccumulatorGvt):
+    return Issuer.genContxt(newIssueAccumulatorGvt[0].iA, proverId1)
+
+
+@pytest.fixture(scope="function")
+def newProver1Initializer(newM2GvtProver1, m1Prover1, newPublicDataGvtIssuer):
+    return ProverInitializer(proverId1,
+                             {issuerId1: newM2GvtProver1},
+                             {issuerId1: newPublicDataGvtIssuer},
+                             m1Prover1)
+
+
+@pytest.fixture(scope="function")
+def newProver1UGvt(newProver1Initializer):
+    return newProver1Initializer.getU(issuerId1), newProver1Initializer.getUr(issuerId1)
+
+
+@pytest.fixture(scope="function")
+def newNonRevocClaimProver1Gvt(newIssuerGvt, newM2GvtProver1, newProver1UGvt):
+    return newIssuerGvt.issueNonRevocationClaim(newM2GvtProver1, newProver1UGvt[1])
+
+
+@pytest.fixture(scope="function")
+def newInitNonRevocClaimProver1Gvt(newProver1Initializer, newNonRevocClaimProver1Gvt):
+    return newProver1Initializer.initNonRevocationClaim(issuerId1, newNonRevocClaimProver1Gvt)
+
+
+@pytest.fixture(scope="function")
+def newProver1(newPublicDataGvtIssuer, m1Prover1):
+    return Prover(proverId1,
+                  {issuerId1: newPublicDataGvtIssuer},
+                  m1Prover1)

@@ -1,7 +1,43 @@
 import pytest
 
-from anoncreds.protocol.types import ProofInput, PredicateGE, Claims
+from anoncreds.protocol.types import ProofInput, PredicateGE, Claims, ProofClaims
 from anoncreds.test.conftest import issuerId1
+
+
+def testNoClaims(prover1, verifier, nonce):
+    proof = prover1.prepareProof(
+        {issuerId1: ProofClaims(Claims())},
+        nonce)
+    assert verifier.verify(proof, [], nonce)
+
+
+def testNonRevocClaimOnly(prover1, verifier, initNonRevocClaimProver1Gvt, nonce):
+    proof = prover1.prepareProof(
+        {issuerId1: ProofClaims(Claims(nonRevocClaim=initNonRevocClaimProver1Gvt))},
+        nonce)
+    assert verifier.verify(proof, [], nonce)
+
+
+def testPrimaryClaimOnlyEmpty(prover1, verifier, initPrimaryClaimProver1Gvt, nonce):
+    proof = prover1.prepareProof(
+        {issuerId1: ProofClaims(Claims(primaryClaim=initPrimaryClaimProver1Gvt))},
+        nonce)
+    assert verifier.verify(proof, [], nonce)
+
+
+def testPrimaryClaimNoPredicates(prover1, verifier, initPrimaryClaimProver1Gvt, attrsProver1Gvt, nonce):
+    revealedAttrs = {'name': attrsProver1Gvt['name']}
+    proofCliams = ProofClaims(Claims(primaryClaim=initPrimaryClaimProver1Gvt),
+                              revealedAttrs=['name'])
+    proof = prover1.prepareProof({issuerId1: proofCliams}, nonce)
+    assert verifier.verify(proof, revealedAttrs, nonce)
+
+
+def testPrimaryClaimPredicatesOnly(prover1, verifier, initPrimaryClaimProver1Gvt, nonce):
+    proofCliams = ProofClaims(Claims(primaryClaim=initPrimaryClaimProver1Gvt),
+                              predicates=[PredicateGE('age', 18)])
+    proof = prover1.prepareProof({issuerId1: proofCliams}, nonce)
+    assert verifier.verify(proof, [], nonce)
 
 
 def testNoPredicates(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt):

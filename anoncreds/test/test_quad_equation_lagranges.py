@@ -1,6 +1,6 @@
 import pytest
 
-from anoncreds.protocol.proof_builder import fourSquares
+from anoncreds.protocol.primary.primary_proof_builder import fourSquares
 
 
 def testQuadEquationLagranges():

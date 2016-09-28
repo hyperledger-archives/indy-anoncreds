@@ -202,6 +202,15 @@ class Predicate:
         self.value = value
         self.type = type
 
+    def __key(self):
+        return (self.attrName, self.value, self.type)
+
+    def __eq__(x, y):
+        return x.__key() == y.__key()
+
+    def __hash__(self):
+        return hash(self.__key())
+
 
 class PredicateGE(Predicate):
     def __init__(self, attrName, value):
@@ -283,16 +292,19 @@ class ProofInput:
 
 
 class Claims:
-    def __init__(self, primaryClaim: PrimaryClaim, nonRevocClaim: NonRevocationClaim):
+    def __init__(self, primaryClaim: PrimaryClaim = None, nonRevocClaim: NonRevocationClaim = None):
         self.nonRevocClaim = nonRevocClaim
         self.primaryClaim = primaryClaim
 
 
 class ProofClaims:
-    def __init__(self, claims: Claims, revealedAttrs: Sequence[str], predicates: Sequence[Predicate]):
+    def __init__(self, claims: Claims, revealedAttrs: Sequence[str] = None, predicates: Sequence[Predicate] = None):
         self.claims = claims
-        self.revealedAttrs = revealedAttrs
-        self.predicates = predicates
+        self.revealedAttrs = revealedAttrs if revealedAttrs else []
+        self.predicates = predicates if predicates else []
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
 
 
 class NonRevocProofXList:
@@ -451,7 +463,7 @@ class PrimaryInitProof:
 
 
 class InitProof:
-    def __init__(self, nonRevocInitProof: NonRevocInitProof, primaryInitProof: PrimaryInitProof):
+    def __init__(self, nonRevocInitProof: NonRevocInitProof = None, primaryInitProof: PrimaryInitProof = None):
         self.nonRevocInitProof = nonRevocInitProof
         self.primaryInitProof = primaryInitProof
 

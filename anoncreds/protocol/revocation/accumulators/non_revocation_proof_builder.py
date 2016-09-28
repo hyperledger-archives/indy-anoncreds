@@ -86,9 +86,11 @@ class NonRevocationProofBuilder:
         return c2
 
     def initProof(self, issuerId, c2: NonRevocationClaim) -> NonRevocInitProof:
+        if not c2:
+            return None
+
         CList = []
         TauList = []
-        XList = NonRevocProofXList()
 
         cListParams = self._genCListParams(self._groups[issuerId], c2)
         proofCList = self._createCListValues(self._data[issuerId].pkR, c2, cListParams)
@@ -102,6 +104,9 @@ class NonRevocationProofBuilder:
         return NonRevocInitProof(proofCList, proofTauList, cListParams, tauListParams)
 
     def finalizeProof(self, issuerId, cH, initProof: NonRevocInitProof) -> NonRevocProof:
+        if not initProof:
+            return None
+
         chNum_z = bytes_to_ZR(cH, self._groups[issuerId])
         XList = NonRevocProofXList()
         XList.fromList(

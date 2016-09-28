@@ -1,7 +1,7 @@
 from charm.core.math.integer import integer
 
 from anoncreds.protocol.globals import LARGE_MASTER_SECRET
-from anoncreds.protocol.primary_claim_issuer import PrimaryClaimIssuer
+from anoncreds.protocol.primary.primary_claim_issuer import PrimaryClaimIssuer
 from anoncreds.protocol.revocation.accumulators.non_revocation_claim_issuer import NonRevocationClaimIssuer
 from anoncreds.protocol.types import SecretKey, PublicKey, SecretData, Attribs, PrimaryClaim, NonRevocationClaim, \
     RevocationPublicKey, RevocationSecretKey, Accumulator, GType, AccumulatorPublicKey, AccumulatorSecretKey

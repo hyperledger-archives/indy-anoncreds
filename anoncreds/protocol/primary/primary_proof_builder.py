@@ -57,6 +57,9 @@ class PrimaryProofBuilder:
 
     def initProof(self, issuerId, c1: PrimaryClaim, revealedAttrs: Sequence[str], predicates: Sequence[Predicate],
                   m1Tilde, m2Tilde) -> PrimaryInitProof:
+        if not c1:
+            return None
+
         eqProof = self._initEqProof(issuerId, c1, revealedAttrs, m1Tilde, m2Tilde)
         geProofs = []
         for predicate in predicates:
@@ -65,6 +68,9 @@ class PrimaryProofBuilder:
         return PrimaryInitProof(eqProof, geProofs)
 
     def finalizeProof(self, issuerId, cH, initProof: PrimaryInitProof) -> PrimaryProof:
+        if not initProof:
+            return None
+
         cH = integer(cH)
         eqProof = self._finalizeEqProof(issuerId, cH, initProof.eqProof)
         geProofs = []
@@ -75,6 +81,7 @@ class PrimaryProofBuilder:
 
     def _initEqProof(self, issuerId, c1: PrimaryClaim, revealedAttrs: Sequence[str], m1Tilde, m2Tilde) \
             -> PrimaryEqualInitProof:
+        m2Tilde = m2Tilde if m2Tilde else integer(randomBits(LARGE_MVECT))
         unrevealedAttrs = getUnrevealedAttrs(c1.attrs, revealedAttrs)
         mtilde = self._getMTilde(unrevealedAttrs)
 
@@ -138,7 +145,6 @@ class PrimaryProofBuilder:
         return PrimaryPrecicateGEInitProof(CList, TauList, u, utilde, r, rtilde, alphatilde, predicate, T)
 
     def _finalizeEqProof(self, issuerId, cH, initProof: PrimaryEqualInitProof) -> PrimaryEqualProof:
-
         e = initProof.eTilde + (cH * initProof.ePrime)
         v = initProof.vTilde + (cH * initProof.vPrime)
 

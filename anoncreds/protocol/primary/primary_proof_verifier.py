@@ -1,12 +1,12 @@
 from charm.core.math.integer import integer
 
 from anoncreds.protocol.globals import LARGE_E_START, ITERATIONS, DELTA
-from anoncreds.protocol.proof_builder import PrimaryProofBuilder
+from anoncreds.protocol.primary.primary_proof_builder import PrimaryProofBuilder
 from anoncreds.protocol.types import PublicData, PrimaryEqualProof, \
     PrimaryPredicateGEProof, PrimaryProof
 
 
-class ProofVerifier:
+class PrimaryProofVerifier:
     def __init__(self, publicData: PublicData):
         self._data = publicData
 

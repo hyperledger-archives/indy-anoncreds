@@ -88,6 +88,9 @@ class Attribs:
     def items(self):
         return self._vals.items()
 
+    def get(self, key):
+        return self._vals.get(key)
+
 
 class SerFmt(Enum):
     default = 1

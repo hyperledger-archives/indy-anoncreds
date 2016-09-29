@@ -2,6 +2,8 @@ from typing import Sequence
 
 from charm.toolbox.pairinggroup import PairingGroup
 
+from anoncreds.protocol.revocation.accumulators.non_revocation_common import createTauListExpectedValues, \
+    createTauListValues
 from anoncreds.protocol.revocation.accumulators.non_revocation_proof_builder import NonRevocationProofBuilder
 from anoncreds.protocol.types import T, PublicData, \
     NonRevocProof
@@ -24,8 +26,8 @@ class NonRevocationProofVerifier:
         CProof = nonRevocProof.CProof
         XList = nonRevocProof.XList
 
-        THatExpected = NonRevocationProofBuilder.createTauListExpectedValues(pk, accum, accumPk, CProof)
-        THatCalc = NonRevocationProofBuilder.createTauListValues(pk, accum, XList, CProof)
+        THatExpected = createTauListExpectedValues(pk, accum, accumPk, CProof)
+        THatCalc = createTauListValues(pk, accum, XList, CProof)
         chNum_z = bytes_to_ZR(cHash, self._groups[issuerId])
 
         return [(x ** chNum_z) * y for x, y in zip(THatExpected.asList(), THatCalc.asList())]

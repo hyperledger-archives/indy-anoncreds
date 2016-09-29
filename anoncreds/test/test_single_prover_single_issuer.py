@@ -107,8 +107,10 @@ def testNonceShouldBeSame(prover1, allClaimsProver1, verifier, nonce, genNonce, 
 
 def testUParamShouldBeSame(issuerGvt, prover1, verifier,
                            attrsProver1Gvt, m2GvtProver1,
-                           prover1Initializer, nonRevocClaimProver1Gvt, nonce):
-    c1 = issuerGvt.issuePrimaryClaim(attrsProver1Gvt, m2GvtProver1, U=1)
+                           prover1Initializer, nonRevocClaimProver1Gvt,
+                           prover1UGvt, nonce):
+    incorrectU = prover1UGvt[0] ** 2
+    c1 = issuerGvt.issuePrimaryClaim(attrsProver1Gvt, m2GvtProver1, U=incorrectU)
     c1 = prover1Initializer.initPrimaryClaim(issuerId1, c1)
 
     allClaims = {issuerId1: Claims(c1, nonRevocClaimProver1Gvt)}
@@ -119,7 +121,8 @@ def testUParamShouldBeSame(issuerGvt, prover1, verifier,
     assert not verifier.verify(proof, revealedAttrs, nonce)
 
 
-def testUrParamShouldBeSame(issuerGvt, m2GvtProver1, prover1Initializer):
-    c2 = issuerGvt.issueNonRevocationClaim(m2GvtProver1, Ur=1)
+def testUrParamShouldBeSame(issuerGvt, m2GvtProver1, prover1Initializer, prover1UGvt):
+    incorrectUr = prover1UGvt[1] ** 2
+    c2 = issuerGvt.issueNonRevocationClaim(m2GvtProver1, Ur=incorrectUr)
     with pytest.raises(ValueError):
         prover1Initializer.initNonRevocationClaim(issuerId1, c2)

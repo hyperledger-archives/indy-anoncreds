@@ -6,6 +6,7 @@ from charm.core.math.integer import randomBits, integer
 from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, LARGE_E_START, LARGE_ETILDE, \
     LARGE_VTILDE, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, APRIME, DELTA, TVAL, \
     ZERO_INDEX
+from anoncreds.protocol.primary.primary_proof_common import calcTge, calcTeq
 from anoncreds.protocol.types import Credential, PredicateProof, SubProofPredicate, T, Proof, PredicateProofComponent, \
     PrimaryClaim, PublicData, Predicate, PrimaryInitProof, \
     PrimaryEqualInitProof, PrimaryPrecicateGEInitProof, PrimaryProof, PrimaryEqualProof, PrimaryPredicateGEProof
@@ -104,7 +105,7 @@ class PrimaryProofBuilder:
         Rur *= pk.Rctxt ** m2Tilde
 
         # T = ((Aprime ** etilde) * Rur * (pk.S ** vtilde)) % pk.N
-        T = PrimaryProofBuilder.calcTeq(pk, Aprime, etilde, vtilde, mtilde, m1Tilde, m2Tilde, unrevealedAttrs.keys())
+        T = calcTeq(pk, Aprime, etilde, vtilde, mtilde, m1Tilde, m2Tilde, unrevealedAttrs.keys())
 
         return PrimaryEqualInitProof(c1, Aprime, T, etilde, eprime, vtilde, vprime, mtilde, m1Tilde, m2Tilde,
                                      unrevealedAttrs.keys(), revealedAttrs)
@@ -141,7 +142,7 @@ class PrimaryProofBuilder:
         rtilde[DELTA] = integer(randomBits(LARGE_RTILDE))
         alphatilde = integer(randomBits(LARGE_ALPHATILDE))
 
-        TauList = PrimaryProofBuilder.calcTge(pk, utilde, rtilde, eqProof.mTilde[k], alphatilde, T)
+        TauList = calcTge(pk, utilde, rtilde, eqProof.mTilde[k], alphatilde, T)
         return PrimaryPrecicateGEInitProof(CList, TauList, u, utilde, r, rtilde, alphatilde, predicate, T)
 
     def _finalizeEqProof(self, issuerId, cH, initProof: PrimaryEqualInitProof) -> PrimaryEqualProof:
@@ -177,33 +178,6 @@ class PrimaryProofBuilder:
         for key, value in unrevealedAttrs.items():
             mtilde[key] = integer(randomBits(LARGE_MVECT))
         return mtilde
-
-    @classmethod
-    def calcTeq(cls, pk, Aprime, e, v, mtilde, m1Tilde, m2Tilde, unrevealedAttrNames):
-        Rur = 1 % pk.N
-        for k in unrevealedAttrNames:
-            Rur = Rur * (pk.R[k] ** mtilde[k])
-        Rur *= pk.Rms ** m1Tilde
-        Rur *= pk.Rctxt ** m2Tilde
-        return ((Aprime ** e) * Rur * (pk.S ** v)) % pk.N
-
-    @classmethod
-    def calcTge(cls, pk, u, r, mj, alpha, T):
-        TauList = []
-        for i in range(0, ITERATIONS):
-            Ttau = (pk.Z ** u[str(i)]) * (pk.S ** r[str(i)]) % pk.N
-            TauList.append(Ttau)
-        Ttau = (pk.Z ** mj) * (pk.S ** r[DELTA]) % pk.N
-        TauList.append(Ttau)
-
-        # gen Q
-        Q = 1 % pk.N
-        for i in range(0, ITERATIONS):
-            Q *= T[str(i)] ** u[str(i)]
-        Q = Q * (pk.S ** alpha) % pk.N
-        TauList.append(Q)
-
-        return TauList
 
     def prepareProofPredicateGreaterEq(self,
                                        creds: Dict[str, Credential],

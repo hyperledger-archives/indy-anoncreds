@@ -1,7 +1,7 @@
 from charm.core.math.integer import integer
 
 from anoncreds.protocol.globals import LARGE_E_START, ITERATIONS, DELTA
-from anoncreds.protocol.primary.primary_proof_builder import PrimaryProofBuilder
+from anoncreds.protocol.primary.primary_proof_common import calcTeq, calcTge
 from anoncreds.protocol.types import PublicData, PrimaryEqualProof, \
     PrimaryPredicateGEProof, PrimaryProof
 
@@ -30,9 +30,9 @@ class PrimaryProofVerifier:
         pk = self._data[issuerId].pk
         unrevealedAttrNames = set(pk.attrNames) - set(proof.revealedAttrNames)
 
-        T1 = PrimaryProofBuilder.calcTeq(pk, proof.Aprime, proof.e, proof.v,
-                                         proof.m, proof.m1, proof.m2,
-                                         unrevealedAttrNames)
+        T1 = calcTeq(pk, proof.Aprime, proof.e, proof.v,
+                     proof.m, proof.m1, proof.m2,
+                     unrevealedAttrNames)
 
         Rar = 1 % pk.N
         for attrName in proof.revealedAttrNames:
@@ -48,7 +48,8 @@ class PrimaryProofVerifier:
         pk = self._data[issuerId].pk
         k, v = proof.predicate.attrName, proof.predicate.value
 
-        TauList = PrimaryProofBuilder.calcTge(pk, proof.u, proof.r, proof.mj, proof.alpha, proof.T)
+        TauList = calcTge(pk, proof.u, proof.r, proof.mj, proof.alpha, proof.T)
+
         for i in range(0, ITERATIONS):
             TT = proof.T[str(i)] ** (-1 * cH) % pk.N
             TauList[i] = TauList[i] * TT % pk.N

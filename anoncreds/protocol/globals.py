@@ -55,8 +55,4 @@ VERSION = "version"
 TYPE = "type"
 ATTR_NAMES = "attr_names"
 
-# DEPR
-# IP = "ip"
-# PORT = "port"
-
 TYPE_CL = "CL"

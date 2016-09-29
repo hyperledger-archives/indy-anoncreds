@@ -18,34 +18,9 @@ class Issuer:
                  credDefStore: CredDefStore=None,
                  issuerSecretKeyStore=None):
         self.id = id
-        # DEPR
-        # self.credDefs = {}              # type: Dict[Any, CredentialDefinition]
-        # self.credDefsForAttribs = {}    # type: Dict[Tuple, List]
         self.issuerSecretKeyStore = issuerSecretKeyStore
         self.attributeRepo = attributeRepo
         self.credDefStore = credDefStore
-
-    # DEPR
-    # def addNewCredDef(self, credDef: CredentialDefinition):
-    #     self.credDefs[(credDef.name, credDef.version)] = credDef
-    #     key = tuple(sorted(credDef.attrNames))
-    #     if key not in self.credDefsForAttribs:
-    #         self.credDefsForAttribs[key] = []
-    #     self.credDefsForAttribs[key].append(credDef)
-    #     return credDef
-    #
-    # def getCredDef(self,
-    #                uid=None,
-    #                name=None,
-    #                version=None,
-    #                attributes: Sequence[str]=None):
-    #     if uid:
-    #         return self.cds.fetchcredDefs[uid]
-    #     if name and version:
-    #         raise NotImplementedError
-    #     else:
-    #         defs = self.credDefsForAttribs.get(tuple(sorted(attributes)))
-    #         return defs[-1] if defs else None
 
     def createCred(self, proverId, cduid, name, version, U):
         # This method works for one credDef only.
@@ -84,12 +59,6 @@ class Issuer:
         e = get_prime_in_range(estart, eend)
         A = cls._sign(pk, attributes, vprimeprime, u, e, sk.p_prime, sk.q_prime)
         return A, e, vprimeprime
-
-    # @classmethod
-    # def generateCredential(cls, uValue, attributes, pk, sk):
-    #     sk = getDeserializedSK(sk)
-    #     p_prime, q_prime = getPPrime(sk), getQPrime(sk)
-    #     return Issuer.generateCredential(uValue, attributes, pk, p_prime, q_prime)
 
     @staticmethod
     def _sign(pk: IssuerKey, attrs, v, u, e, p_prime, q_prime):

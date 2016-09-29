@@ -23,19 +23,6 @@ class Prover:
         key = issuer, cduid, credName, credVersion, U
         return self.fetchCredential(*key)
 
-    # DEPR
-    # @staticmethod
-    # def getPk(credDef: CredentialDefinition):
-    #     credDef = credDef.get()
-    #     R = credDef[KEYS][PK_R]
-    #     R["0"] = credDef[KEYS][MASTER_SEC_RAND]
-    #     return IssuerKey(
-    #         credDef[KEYS][PK_N],
-    #         R,
-    #         credDef[KEYS][PK_S],
-    #         credDef[KEYS][PK_Z],
-    #     )
-
     def _initProofBuilder(self, cduid, ikuid, issuerId):
 
         credDef = self.cds.fetch(cduid)

@@ -3,7 +3,7 @@ from enum import Enum
 from hashlib import sha256
 from typing import TypeVar
 
-from charm.toolbox.conversion import Conversion
+from config.config import cmod
 
 from anoncreds.protocol.globals import APRIME, EVECT, MVECT, VVECT, C_VALUE, \
     ETILDE, MTILDE, VTILDE, EPRIME, VPRIME, CRED_A, CRED_E, CRED_V
@@ -64,7 +64,7 @@ class Attribs:
             encoded = {}
             for at in attr_types:
                 if at.encode:
-                    encoded[at.name] = Conversion.bytes2integer(
+                    encoded[at.name] = cmod.Conversion.bytes2integer(
                         sha256(str(self._vals[at.name]).encode()).digest())
                 else:
                     encoded[at.name] = self._vals[at.name]

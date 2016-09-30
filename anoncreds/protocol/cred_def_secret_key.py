@@ -1,10 +1,9 @@
-from charm.core.math.integer import integer, random as charm_random
-
 from anoncreds.protocol.utils import genPrime
+from config.config import cmod
 
 
 class CredDefSecretKey:
-    def __init__(self, p: integer=None, q: integer=None):
+    def __init__(self, p: cmod.integer=None, q: cmod.integer=None):
         self._p = p if p else genPrime() * 2 + 1
         self._q = q if q else genPrime() * 2 + 1
         self._n = self.p * self.q
@@ -12,7 +11,7 @@ class CredDefSecretKey:
     @classmethod
     def fromStr(cls, serializedSK):
         p, q = serializedSK.split(",")
-        return cls(integer(int(p)), integer(int(q)))
+        return cls(cmod.integer(int(p)), cmod.integer(int(q)))
 
     @property
     def p(self):
@@ -43,4 +42,4 @@ class CredDefSecretKey:
     def genX(self):
         maxValue = self.p_prime * self.q_prime - 1
         minValue = 2
-        return integer(charm_random(maxValue - minValue)) + minValue
+        return cmod.integer(cmod.random(maxValue - minValue)) + minValue

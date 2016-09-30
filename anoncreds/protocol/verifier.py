@@ -1,10 +1,11 @@
 from functools import reduce
 from typing import Dict, Sequence
 
-from charm.core.math.integer import integer, randomBits
+from config.config import cmod
 
 from anoncreds.protocol.cred_def_store import CredDefStore
-from anoncreds.protocol.globals import LARGE_E_START, LARGE_NONCE, ITERATIONS, DELTA, TVAL, KEYS, PK_R, PK_N, PK_S, PK_Z, \
+from anoncreds.protocol.globals import LARGE_E_START, LARGE_NONCE, ITERATIONS, \
+    DELTA, TVAL, KEYS, PK_R, PK_N, PK_S, PK_Z, \
     NONCE, ZERO_INDEX
 from anoncreds.protocol.issuer_key import IssuerKey
 from anoncreds.protocol.issuer_key_store import IssuerKeyStore
@@ -15,7 +16,6 @@ from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
 
 def getProofParams(proof, pkIssuer: Dict[str, IssuerKey],
                    attrs, revealedAttrs):
-
     flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
     Ar, unrevealedAttrs = splitRevealedAttrs(flatAttrs, revealedAttrs)
     Tvect = {}
@@ -55,28 +55,11 @@ class Verifier:
         self.interactionDetail = {}  # Dict[String, String]
         self.credDefStore = credDefStore
         self.issuerKeyStore = issuerKeyStore
-        # DEPR
-        # self.credDefs = {}           # Dict[(issuer id, credential name, credential version), Credential Definition]
 
     def generateNonce(self, interactionId):
-        nv = integer(randomBits(LARGE_NONCE))
+        nv = cmod.integer(cmod.randomBits(LARGE_NONCE))
         self.interactionDetail[str(nv)] = interactionId
         return nv
-
-    # DEPR
-    # def _getIssuerPkByCredDef(self, credDef) -> IssuerKey:
-    #     keys = credDef.fetch()[KEYS]
-    #     R = {}
-    #     for key, val in keys[PK_R].items():
-    #         R[str(key)] = val
-    #     return IssuerKey(keys[PK_N], R, keys[PK_S], keys[PK_Z])
-    #
-    # def getCredDef(self, issuerId, name, version):
-    #     key = (issuerId, name, version)
-    #     credDdef = self.credDefs.get(key)
-    #     if not credDdef:
-    #         credDdef = self.fetchCredDef(*key)
-    #     return credDdef
 
     def verify(self, issuer, name, version, proof, nonce, attrs, revealedAttrs,
                credDefId, issuerKeyId):
@@ -84,7 +67,8 @@ class Verifier:
         # DEPR
         # credDef = self.fetchCredDef(issuer, name, version)
         pk = self.issuerKeyStore.fetch(issuerKeyId)
-        result = Verifier.verifyProof({issuer.id: pk}, proof, nonce, attrs, revealedAttrs)
+        result = Verifier.verifyProof({issuer.id: pk}, proof, nonce, attrs,
+                                      revealedAttrs)
         return result
 
     def fetchCredDef(self, issuer, name, version):
@@ -96,7 +80,8 @@ class Verifier:
                              predicate: Dict[str, Sequence[str]]):
         """
         Verify the proof for Predicate implementation
-        :param proof: The proof which is a combination of sub-proof for credential and proof, C
+        :param proof: The proof which is a combination of sub-proof for
+        credential and proof, C
         :param nonce: The nonce used
         :param attrs: The encoded attributes
         :param revealedAttrs: The list of revealed attributes
@@ -111,7 +96,8 @@ class Verifier:
         c, evect, mvect, vvect, Aprime = subProofC
         alphavect, rvect, uvect = subProofPredicate
 
-        Aprime, c, Tvect = getProofParams(subProofC, credDefPks, attrs, revealedAttrs)
+        Aprime, c, Tvect = getProofParams(subProofC, credDefPks, attrs,
+                                          revealedAttrs)
 
         Tau.extend(get_values_of_dicts(Tvect))
 
@@ -140,7 +126,8 @@ class Verifier:
                 Qvect = Qvect1 * Tuproduct * (p.S ** alphavect) % p.N
                 Tau.append(Qvect)
 
-        cvect = integer(get_hash(nonce, *reduce(lambda x, y: x+y, [Tau, CList])))
+        cvect = cmod.integer(
+            get_hash(nonce, *reduce(lambda x, y: x + y, [Tau, CList])))
 
         return c == cvect
 
@@ -154,10 +141,11 @@ class Verifier:
         :return: A boolean with the verification status for the proof
         """
 
-        Aprime, c, Tvect = getProofParams(proof, credDefPks, attrs, revealedAttrs)
+        Aprime, c, Tvect = getProofParams(proof, credDefPks, attrs,
+                                          revealedAttrs)
         # Calculate the `cvect` value based on proof.
         # This value is mathematically proven to be equal to `c`
         # if proof is created correctly from credentials. Refer 2.8 in document
-        cvect = integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
-                                                      {NONCE: nonce})))
+        cvect = cmod.integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
+                                                           {NONCE: nonce})))
         return c == cvect

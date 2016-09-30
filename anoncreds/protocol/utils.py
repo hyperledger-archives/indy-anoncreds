@@ -4,27 +4,15 @@ from hashlib import sha256
 from random import randint, sample
 
 import base58
-from charm.core.math.integer import random, isPrime, integer, randomPrime
-from charm.toolbox.conversion import Conversion
+
+from config.config import cmod
 
 from anoncreds.protocol.globals import LARGE_PRIME, KEYS, PK_R
 from anoncreds.protocol.types import SerFmt
 
 
 def randomQR(n):
-    return random(n) ** 2
-
-
-# def encodeAttrs(attrs):
-#     """
-#     This function will encode all the attributes to 256 bit integers
-#
-#     :param attrs: The attributes to pass in credentials
-#     :return:
-#     """
-#
-#     return {key: Conversion.bytes2integer(sha256(value.encode()).digest())
-#             for key, value in attrs.items()}
+    return cmod.random(n) ** 2
 
 
 def get_hash(*args):
@@ -37,7 +25,7 @@ def get_hash(*args):
 
     h_challenge = sha256()
     for arg in args:
-        h_challenge.update(Conversion.IP2OS(arg))
+        h_challenge.update(cmod.Conversion.IP2OS(arg))
     return h_challenge.digest()
 
 
@@ -53,7 +41,7 @@ def get_prime_in_range(start, end):
     maxIter = 100000
     while n < maxIter:
         r = randint(start, end)
-        if isPrime(r):
+        if cmod.isPrime(r):
             logging.debug("Found prime in {} iteration between {} and {}".
                   format(n, start, end))
             return r
@@ -105,9 +93,9 @@ def flattenDict(attrs):
 def strToCharmInteger(n):
     if "mod" in n:
         a, b = n.split("mod")
-        return integer(int(a.strip())) % integer(int(b.strip()))
+        return cmod.integer(int(a.strip())) % cmod.integer(int(b.strip()))
     else:
-        return integer(int(n))
+        return cmod.integer(int(n))
 
 
 def genPrime():
@@ -115,10 +103,10 @@ def genPrime():
     Generate 2 large primes `p_prime` and `q_prime` and use them
     to generate another 2 primes `p` and `q` of 1024 bits
     """
-    prime = randomPrime(LARGE_PRIME)
+    prime = cmod.randomPrime(LARGE_PRIME)
     i = 0
-    while not isPrime(2 * prime + 1):
-        prime = randomPrime(LARGE_PRIME)
+    while not cmod.isPrime(2 * prime + 1):
+        prime = cmod.randomPrime(LARGE_PRIME)
         i += 1
     print("In {} iterations, found prime {}".format(i, prime))
     return prime
@@ -141,7 +129,7 @@ def base58decodedInt(i):
 
 SerFuncs = {
     SerFmt.py3Int: int,
-    SerFmt.default: integer,
+    SerFmt.default: cmod.integer,
     SerFmt.base58: base58encode,
 }
 
@@ -150,7 +138,7 @@ def serialize(data, serFmt):
     serfunc = SerFuncs[serFmt]
     if KEYS in data:
         for k, v in data[KEYS].items():
-            if isinstance(v, integer):
+            if isinstance(v, cmod.integer):
                 # int casting works with Python 3 only.
                 # for Python 2, charm's serialization api must be used.
                 data[KEYS][k] = serfunc(v)

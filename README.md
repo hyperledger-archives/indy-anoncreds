@@ -3,7 +3,7 @@
 Implementation of Anonymous Credential using python.
 
 ## Setup the project and dependencies
-Execute `bash setup.sh`
+Execute `bash setup-charm.sh`
 
 ## Questions related to AnonCreds and their responses from Dmitry
 

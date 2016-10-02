@@ -3,7 +3,7 @@ participant "Issuer" as I
 actor Prover as P
 participant "Verifier" as V
 participant "Sovrin" as S
-participant "DHT" as D
+participant "reliable\npublic\nstorage" as D
 
 == Common Parameters ==
 
@@ -18,28 +18,31 @@ end note
 
 == Claim Definition setup ==
 
-I -> S: Primary Claim definition **P=(m1, m2, m3...ml**
+I -> S: **CLAIM_DEF**
 
 == Issuer Setup ==
 
-I -> I: Private Key **SK**
+I -> I: Generates Primary Private Key **SK**
 
-I -> S: Public Key **PK** referencing P
+I -> I: Generates Revocation Private Key **SK_R**
 
-I -> I: Revocation Private Key **SK_R**
+I -> S: Submit Primary and Revocation Public Keys (**ISSUER_KEY** transaction)
 
-I -> S: Revocation Public Key **PK_R**
+I -> I: Generate an accumulator secret key: **sk_accum**
 
-I -> I: Accumulator: **sk_accum**
+I -> I: Generate accumulator **Tails**
 
-I -> S: Accumulator: **pk_accum**, **accum**, **nonRevocedSet**
+I -> S: Submit Revocation Registry Definition: (**REVOC_REG** transaction)
 
-I -> D: Accumulator: **Tails**
+I -> D: Publish **Tails**
+
 
 == Prover setup ==
 P -> P: m1
 
 == Issuance ==
+
+I -> I: Checks if the current accumulator \n **SK**
 
 P -> I: **U**\nbased on random and PK_I
 

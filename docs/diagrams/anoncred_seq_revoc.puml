@@ -1,0 +1,112 @@
+@startuml
+participant "Issuer" as I
+actor Prover as P
+participant "Verifier" as V
+participant "Sovrin" as S
+participant "Reliable\nPublic Storage" as D
+
+note over I, D #white: dotted arrows: a value may be cached, so a call to the ledger/public storage may not be needed
+
+== Claim Definition setup ==
+
+note over I: Define Claim definition with attributes **m1, m2, ..., ml**
+
+I -[#green]> S: Submit **CLAIM_DEF** transaction
+
+== Issuer Setup for each Claim Definition==
+
+note over I: **1.** Generate Primary Keys: **PK** and **SK**\n**2.** Generate Non-revocation Keys: **PKr** and **SKr**
+
+I -> I: Store Private Keys **SK**, **SKr**
+
+I -[#green]> S: Submit Primary and Revocation Public Keys: **ISSUER_KEY** txn
+
+
+note over I:**3.**  Create accumulator with keys: **accum**, **PKaccum**, **SKaccum**, **Tails**
+
+I -> I: Store Private Key **SKaccum**
+
+I -[#green]> S: Submit Accumulator Definition: **REVOC_REG** txn
+
+I -[#cyan]> D: Publish **Tails**
+
+
+== Prover setup ==
+
+note over P: Generate Master Secret **m1**
+
+P -> P: Store **m1**
+
+== Issuance for a Claim Definition==
+
+S -[#blue]-> I: Get **accum** value: **REVOC_REG_UPDATE** txn
+
+S -[#blue]-> I: Get **PKaccum** value: **REVOC_REG** txn
+
+S -[#blue]-> I: Get **PK** and **PKr**: **ISSUER_KEY** txn
+
+note over I
+    **I1.** Set attribute values **m3,...ml** and encode to 256 bits
+    **I2.** Select accumulator with ID=iA (issue a new one if needed)
+    **I3.** generate revocation context **m2**
+end note
+
+I -> I: Store **m2,...,ml**
+
+I -[#black]> P: **I4.** request U and Ur for given ClaimDef and m2
+
+S -[#blue]-> P: Get **PK** and **PKr**: **ISSUER_KEY** txn
+
+note over P: **P1.** generate U and Ur with prover-generated values
+
+P -[#black]> I: U and Ur
+
+note over I
+    **I5.** Create Primary Claim Credentials **c1**
+    **I6.** Create Non-Revocation Credentials **c2**
+    **I7.** Update Revocation Registry (**accum**)
+end note
+
+I -[#black]> P: Send **c1** and **c2**
+
+I -[#green]> S: Submit accumulator update: **REVOC_REG_UPDATE** txn
+
+note over P: **P2.** Init **c1** and **c2** with prover-generated values
+
+P -> P: Store **c1** and **c2**
+
+== Presentation for each Claim Definition ==
+
+note over V: **V1.** Generate nonce **n1**
+
+V -[#black]> P: **V2.** Request a proof for teh ClaimDef:\n **revealedAttributes, predicates, accumSeqNo/TS, n1**
+
+S -[#blue]-> P: Get **PK** and **PKr**: **ISSUER_KEY** txn
+
+S -[#blue]-> P: Get **PKaccum** value: **REVOC_REG** txn
+
+D -[#cyan]-> P: Get **Tails**
+
+note over P: **P1.** Check accumSeqNo/TS of the last accum\n and update the latest accum if needed
+
+S -[#blue]> P: Update **accum**: **REVOC_REG_UPDATE**
+
+note over P
+    **P2.** Update **c2** (witness) for the latest **accum**
+    **P3.** Create Primary Proof for **c1** and each predicate: **PrC**
+    **P4.** Create NonRevocationProof for **c2**: **PrP**
+end note
+
+P -[#black]> V: Send Full Proof: **Pr=(PrC, PrP)**
+
+S -[#blue]-> V: Update **accum**: **REVOC_REG_UPDATE**
+
+S -[#blue]-> V: Get **PK** and **PKr**: **ISSUER_KEY** txn
+
+S -[#blue]-> V: Get **PKaccum** value: **REVOC_REG** txn
+
+note over V: **V3.** Verify **Pr**
+
+
+
+@enduml

@@ -98,6 +98,10 @@ def strToCharmInteger(n):
         return cmod.integer(int(n))
 
 
+def isCharmInteger(n):
+    return isinstance(n, cmod.integer)
+
+
 def genPrime():
     """
     Generate 2 large primes `p_prime` and `q_prime` and use them

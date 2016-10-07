@@ -7,7 +7,11 @@ participant "Reliable\nPublic Storage" as D
 
 note over I, D #white
     Txns description: https://docs.google.com/document/d/1N-OnXYESb-30Y5ypQJNqY3jAmtFDK_QDhNzzCc4Kgq8/edit#
-    dotted arrows: a value may be cached, so a call to the ledger/public storage may not be needed
+    dashed arrows: a value may be cached, so a call to the ledger/public storage may not be needed
+    <font color=green>green:</font> submit/get to/from Sovrin
+    <font color=blue>blue:</font> submit/get to/from Reliable Public Storage
+    black: communication between Issuer/Prover/Verifier
+    <font color=red>red:</font> store locally
 endnote
 
 == Claim Definition setup ==
@@ -31,7 +35,7 @@ I -> I: Store Private Key **SKaccum**
 
 I -[#green]> S: Submit Accumulator Definition: **REVOC_REG** txn
 
-I -[#cyan]> D: Publish **Tails**
+I -[#blue]> D: Publish **Tails**
 
 
 == Prover setup ==
@@ -42,11 +46,11 @@ P -> P: Store **m1**
 
 == Issuance for a Claim Definition==
 
-S -[#blue]-> I: Get **accum** value: **REVOC_REG_UPDATE** txn
+S -[#green]-> I: Get **accum** value: **REVOC_REG_UPDATE** txn
 
-S -[#blue]-> I: Get **PKaccum** value: **REVOC_REG** txn
+S -[#green]-> I: Get **PKaccum** value: **REVOC_REG** txn
 
-S -[#blue]-> I: Get **PK** and **PKr**: **ISSUER_KEY** txn
+S -[#green]-> I: Get **PK** and **PKr**: **ISSUER_KEY** txn
 
 note over I
     **I1.** Set attribute values **m3,...ml** and encode to 256 bits
@@ -58,7 +62,7 @@ I -> I: Store **m2,...,ml**
 
 I -[#black]> P: **I4.** request U and Ur for given ClaimDef and m2
 
-S -[#blue]-> P: Get **PK** and **PKr**: **ISSUER_KEY** txn
+S -[#green]-> P: Get **PK** and **PKr**: **ISSUER_KEY** txn
 
 note over P: **P1.** generate U and Ur with prover-generated values
 
@@ -74,7 +78,7 @@ I -[#black]> P: Send **c1**, **c2**, **accum**
 
 I -[#green]> S: Submit accumulator update: **REVOC_REG_UPDATE** txn
 
-S -[#blue]-> P: Get **PKaccum** value: **REVOC_REG** txn
+S -[#green]-> P: Get **PKaccum** value: **REVOC_REG** txn
 
 note over P
     **P2.** Init **c1** and **c2** with prover-generated values
@@ -91,15 +95,15 @@ note over V: **V1.** Generate nonce **n1**
 
 V -[#black]> P: **V2.** Request a proof for the ClaimDef:\n **revealedAttributes, predicates, accumSeqNo/TS, n1**
 
-S -[#blue]-> P: Get **PK** and **PKr**: **ISSUER_KEY** txn
+S -[#green]-> P: Get **PK** and **PKr**: **ISSUER_KEY** txn
 
-S -[#blue]-> P: Get **PKaccum** value: **REVOC_REG** txn
+S -[#green]-> P: Get **PKaccum** value: **REVOC_REG** txn
 
-D -[#cyan]-> P: Get **Tails**
+D -[#blue]-> P: Get **Tails**
 
 note over P: **P1.** Check accumSeqNo/TS of the last **accum**\n and update the latest accum if needed
 
-S -[#blue]> P: Update **accum** and get all issued/revoced since the last update: **GET_TXNS** query request
+S -[#green]> P: Update **accum** and get all issued/revoced since the last update: **GET_TXNS** query request
 
 note over P
     **P2.** Update **c2** (witness) for the latest **accum**
@@ -109,11 +113,11 @@ end note
 
 P -[#black]> V: Send Full Proof: **Pr=(PrC, PrP)**
 
-S -[#blue]-> V: Update **accum**: **REVOC_REG_UPDATE**
+S -[#green]-> V: Update **accum**: **REVOC_REG_UPDATE**
 
-S -[#blue]-> V: Get **PK** and **PKr**: **ISSUER_KEY** txn
+S -[#green]-> V: Get **PK** and **PKr**: **ISSUER_KEY** txn
 
-S -[#blue]-> V: Get **PKaccum** value: **REVOC_REG** txn
+S -[#green]-> V: Get **PKaccum** value: **REVOC_REG** txn
 
 note over V: **V3.** Verify **Pr**
 

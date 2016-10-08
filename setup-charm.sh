@@ -5,8 +5,11 @@ sudo apt-get install flex
 sudo apt-get install bison
 sudo apt-get install libssl-dev
 sudo apt-get install libgmp-dev
+sudo apt-get install python3-dev
 
 # PBC
+# Cleanup any old data
+rm -fr ~/dev/pbc
 mkdir -p ~/dev/pbc
 pushd ~/dev/pbc
 wget https://crypto.stanford.edu/pbc/files/pbc-0.5.14.tar.gz
@@ -19,6 +22,8 @@ popd
 popd
 
 # Charm
+# Cleanup any old data
+rm -fr ~/dev/pbc
 mkdir -p ~/dev/charm
 pushd ~/dev/charm
 wget https://github.com/JHUISI/charm/archive/dev.zip

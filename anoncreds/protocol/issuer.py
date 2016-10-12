@@ -15,9 +15,10 @@ from config.config import cmod
 
 
 class Issuer:
-    def __init__(self, id, attributeRepo: AttrRepo=None,
-                 credDefStore: CredDefStore=None,
-                 issuerSecretKeyStore=None):
+    def __init__(self, id,
+                 attributeRepo: AttrRepo,
+                 credDefStore: CredDefStore,
+                 issuerSecretKeyStore):
         self.id = id
         self.issuerSecretKeyStore = issuerSecretKeyStore
         self.attributeRepo = attributeRepo

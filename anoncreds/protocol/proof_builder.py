@@ -55,6 +55,9 @@ class ProofBuilder:
             self._U[key] = (S ** self._vprime[key]) * (
             R[ZERO_INDEX] ** self._ms) % N
 
+    def __repr__(self):
+        return str(self.id)
+
     @property
     def masterSecret(self):
         return self._ms

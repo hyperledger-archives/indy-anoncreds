@@ -13,6 +13,7 @@ from anoncreds.protocol.issuer_secret_key import IssuerSecretKey
 from anoncreds.protocol.utils import get_prime_in_range, strToCharmInteger
 from config.config import cmod
 
+
 class Issuer:
     def __init__(self, id, attributeRepo: AttrRepo=None,
                  credDefStore: CredDefStore=None,

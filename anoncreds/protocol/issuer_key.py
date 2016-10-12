@@ -21,6 +21,9 @@ class IssuerKey:
         self.S = S
         self.Z = Z
 
+    def __repr__(self):
+        return str(self.uid)
+
     @classmethod
     def fromKeys(cls, keys, desz=base58decode):
         N = strToCharmInteger(desz(keys["N"]))

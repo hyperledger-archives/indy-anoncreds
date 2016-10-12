@@ -56,6 +56,9 @@ class Verifier:
         self.credDefStore = credDefStore
         self.issuerKeyStore = issuerKeyStore
 
+    def __repr__(self):
+        return str(self.id)
+
     def generateNonce(self, interactionId):
         nv = cmod.integer(cmod.randomBits(LARGE_NONCE))
         self.interactionDetail[str(nv)] = interactionId

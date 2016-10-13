@@ -2,6 +2,7 @@ from anoncreds.protocol.cred_def_store import CredDefStore
 from anoncreds.protocol.issuer_key import IssuerKey
 from anoncreds.protocol.issuer_key_store import IssuerKeyStore
 from anoncreds.protocol.proof_builder import ProofBuilder
+from anoncreds.protocol.utils import generateMasterSecret
 from anoncreds.protocol.verifier import Verifier
 
 
@@ -11,6 +12,8 @@ class Prover:
         self.proofBuilders = {}     # Dict[ProofBuilder, ProofBuilder]
         self.cds = cds
         self.iks = iks
+        self.masterSecret = generateMasterSecret()
+        self.vprimes = {}
 
     def _getCredDef(self, uid):
         credDef = self.cds.fetch(uid)

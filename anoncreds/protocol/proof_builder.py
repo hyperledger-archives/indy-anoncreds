@@ -19,7 +19,7 @@ from anoncreds.protocol import types
 
 
 class ProofBuilder:
-    def __init__(self, credDefPks: Dict[str, IssuerKey], masterSecret=None):
+    def __init__(self, credDefPks: Dict[str, IssuerKey], masterSecret, vprime):
         """
         Create a proof instance
 
@@ -32,9 +32,7 @@ class ProofBuilder:
         self.encodedAttrs = None
         self.revealedAttrs = None
 
-        # Generate the master secret
-        self._ms = masterSecret or cmod.integer(
-            cmod.randomBits(LARGE_MASTER_SECRET))
+        self._ms = masterSecret
 
         # Set the credential definition pub keys
         self.credDefPks = credDefPks
@@ -42,9 +40,9 @@ class ProofBuilder:
         for key, x in self.credDefPks.items():
             self.credDefPks[key] = x.inFieldN()
 
-        self._vprime = {}
-        for key, val in self.credDefPks.items():
-            self._vprime[key] = cmod.randomBits(LARGE_VPRIME)
+        self._vprime = vprime
+        # for key, val in self.credDefPks.items():
+        #     self._vprime[key] = cmod.randomBits(LARGE_VPRIME)
 
         # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
         self._U = {}

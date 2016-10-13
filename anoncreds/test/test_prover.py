@@ -1,0 +1,3 @@
+def testProverHasMasterSecret():
+    # TODO
+    pass

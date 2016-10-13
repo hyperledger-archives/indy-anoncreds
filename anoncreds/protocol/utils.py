@@ -7,7 +7,8 @@ import base58
 
 from config.config import cmod
 
-from anoncreds.protocol.globals import LARGE_PRIME, KEYS, PK_R
+from anoncreds.protocol.globals import LARGE_PRIME, KEYS, PK_R, \
+    LARGE_MASTER_SECRET
 from anoncreds.protocol.types import SerFmt
 
 
@@ -149,3 +150,9 @@ def serialize(data, serFmt):
             if k == PK_R :
                 data[KEYS][k] = {key: serfunc(val) for key, val in v.items()}
     return data
+
+
+def generateMasterSecret():
+    # Generate the master secret
+    return cmod.integer(
+        cmod.randomBits(LARGE_MASTER_SECRET))

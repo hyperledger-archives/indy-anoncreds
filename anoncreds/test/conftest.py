@@ -140,13 +140,6 @@ def xyzAttrList():
     return XYZCorp.attribs(status='ACTIVE')
 
 
-# @pytest.fixture(scope="module")
-# def credDefPk(gvtCredDef):
-#     """Return gvtCredDef's public key"""
-#
-#     return {GVT.name: gvtCredDef.PK}
-
-
 @pytest.fixture(scope="module")
 def gvtProofBuilderWithProver1(gvtCredDef, gvtIssuerPk):
     attribs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')

@@ -19,7 +19,8 @@ from anoncreds.protocol import types
 
 
 class ProofBuilder:
-    def __init__(self, issuerPks: Dict[str, IssuerKey], masterSecret, vprime):
+    def __init__(self, issuerPks: Dict[str, IssuerKey], masterSecret: int,
+                 vprime: Dict[str, int]):
         """
         Create a proof instance
 
@@ -150,15 +151,15 @@ class ProofBuilder:
         prfArgs = {}
         prfArgs[C_VALUE] = strToCharmInteger(proofElements[C_VALUE])
 
-        prfArgs[APRIME] = {{issuer: strToCharmInteger(aprime)}
+        prfArgs[APRIME] = {issuer: strToCharmInteger(aprime)
                             for issuer, aprime in proofElements[APRIME].items()}
 
-        prfArgs[EVECT] = {{issuer: strToCharmInteger(evect)}
+        prfArgs[EVECT] = {issuer: strToCharmInteger(evect)
                            for issuer, evect in proofElements[EVECT].items()}
 
-        prfArgs[MVECT] = {{v: strToCharmInteger(mvect)
-                            for v, mvect in proofElements[MVECT].items()}}
-        prfArgs[VVECT] = {{issuer: strToCharmInteger(vvect)}
+        prfArgs[MVECT] = {v: strToCharmInteger(mvect)
+                            for v, mvect in proofElements[MVECT].items()}
+        prfArgs[VVECT] = {issuer: strToCharmInteger(vvect)
                            for issuer, vvect in  proofElements[VVECT].items()}
 
         return Proof(**prfArgs)

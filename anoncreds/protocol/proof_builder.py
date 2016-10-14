@@ -147,15 +147,20 @@ class ProofBuilder:
 
     @staticmethod
     def prepareProofFromDict(proofElements) -> Proof:
-        issuer = proofElements[ISSUER]
-        prf = proofElements[PROOF]
         prfArgs = {}
-        prfArgs[APRIME] = {issuer: strToCharmInteger(prf[APRIME][issuer])}
-        prfArgs[C_VALUE] = strToCharmInteger(prf[C_VALUE])
-        prfArgs[EVECT] = {issuer: strToCharmInteger(prf[EVECT][issuer])}
-        prfArgs[MVECT] = {k: strToCharmInteger(v) for k, v in
-                          prf[MVECT].items()}
-        prfArgs[VVECT] = {issuer: strToCharmInteger(prf[VVECT][issuer])}
+        prfArgs[C_VALUE] = strToCharmInteger(proofElements[C_VALUE])
+
+        prfArgs[APRIME] = {{issuer: strToCharmInteger(aprime)}
+                            for issuer, aprime in proofElements[APRIME].items()}
+
+        prfArgs[EVECT] = {{issuer: strToCharmInteger(evect)}
+                           for issuer, evect in proofElements[EVECT].items()}
+
+        prfArgs[MVECT] = {{v: strToCharmInteger(mvect)
+                            for v, mvect in proofElements[MVECT].items()}}
+        prfArgs[VVECT] = {{issuer: strToCharmInteger(vvect)}
+                           for issuer, vvect in  proofElements[VVECT].items()}
+
         return Proof(**prfArgs)
 
     @staticmethod

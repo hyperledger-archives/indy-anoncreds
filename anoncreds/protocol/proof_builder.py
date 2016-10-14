@@ -102,7 +102,7 @@ class ProofBuilder:
         :return: The proof
         """
 
-        def initProofComponent(credDefPks, creds, encodedAttrs, revealedAttrs,
+        def initProofComponent(issuerPks, creds, encodedAttrs, revealedAttrs,
                                nonce):
             proofComponent = ProofComponent()
             proofComponent.flatAttrs, proofComponent.unrevealedAttrs = \
@@ -112,7 +112,7 @@ class ProofBuilder:
             proofComponent.T = findSecretValues(
                 encodedAttrs,
                 proofComponent.unrevealedAttrs, creds,
-                credDefPks)
+                issuerPks)
 
             # Calculate the `c` value as the hash result of Aprime, T and nonce.
             # This value will be used to verify the proof against the credential
@@ -159,7 +159,7 @@ class ProofBuilder:
         return Proof(**prfArgs)
 
     @staticmethod
-    def prepareProofAsDict(issuer, issuerPks, masterSecret,
+    def prepareProofAsDict(issuerPks, masterSecret,
                            creds: Dict[str, Credential],
                            encodedAttrs: Dict[str, Dict[str, T]],
                            revealedAttrs: Sequence[str],
@@ -167,11 +167,11 @@ class ProofBuilder:
         prf = ProofBuilder.prepareProof(issuerPks, masterSecret, creds,
                                         encodedAttrs, revealedAttrs, nonce)
         proof = {}
-        proof[APRIME] = {issuer: str(prf.Aprime[issuer])}
+        proof[APRIME] = {iid: str(prf.Aprime[iid]) for iid in issuerPks.keys()}
         proof[C_VALUE] = str(prf.c)
-        proof[EVECT] = {issuer: str(prf.evect[issuer])}
+        proof[EVECT] = {iid: str(prf.evect[iid]) for iid in issuerPks.keys()}
         proof[MVECT] = {k: str(v) for k, v in prf.mvect.items()}
-        proof[VVECT] = {issuer: str(prf.vvect[issuer])}
+        proof[VVECT] = {iid: str(prf.vvect[iid]) for iid in issuerPks.keys()}
         return proof
 
     def preparePredicateProof(self, creds: Dict[str, Credential],

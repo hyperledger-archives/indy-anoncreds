@@ -5,12 +5,12 @@ from anoncreds.test.conftest import GVT
 
 
 def testMainPredicate(gvtCredDef,
-                      gvtCredDefPks,
+                      gvtIssuerPk,
                       gvtAndXyzIssuerSecretKeys,
                       proofBuilderWithGvtAttribs,
                       verifier1):
     assert verifyPredicateProof({GVT.name: gvtCredDef},
-                                gvtCredDefPks,
+                                gvtIssuerPk,
                                 gvtAndXyzIssuerSecretKeys,
                                 proofBuilderWithGvtAttribs,
                                 ['name'],

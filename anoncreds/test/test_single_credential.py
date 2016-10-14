@@ -5,13 +5,13 @@ from anoncreds.test.conftest import GVT
 
 
 def testSingleProver(gvtCredDef,
-                     gvtCredDefPks,
+                     gvtIssuerPk,
                      gvtAndXyzIssuerSecretKeys,
                      gvtAttrNames,
                      proofBuilderWithGvtAttribs,
                      verifier1):
     assert verifyProof({GVT.name: gvtCredDef},
-                       gvtCredDefPks,
+                       gvtIssuerPk,
                        gvtAndXyzIssuerSecretKeys,
                        gvtAttrNames,
                        proofBuilderWithGvtAttribs,
@@ -20,14 +20,14 @@ def testSingleProver(gvtCredDef,
 
 
 def testMultipleProvers(gvtCredDef,
-                        gvtCredDefPks,
+                        gvtIssuerPk,
                         gvtAttrNames,
                         gvtAndXyzIssuerSecretKeys,
                         gvtProofBuilderWithProver1,
                         gvtProofBuilderWithProver2,
                         verifier1):
     assert verifyProof({GVT.name: gvtCredDef},
-                       gvtCredDefPks,
+                       gvtIssuerPk,
                        gvtAndXyzIssuerSecretKeys,
                        gvtAttrNames,
                        gvtProofBuilderWithProver1,
@@ -35,7 +35,7 @@ def testMultipleProvers(gvtCredDef,
                        verifier1)
 
     assert verifyProof({GVT.name: gvtCredDef},
-                       gvtCredDefPks,
+                       gvtIssuerPk,
                        gvtAndXyzIssuerSecretKeys,
                        gvtAttrNames,
                        gvtProofBuilderWithProver2,
@@ -44,7 +44,7 @@ def testMultipleProvers(gvtCredDef,
 
 
 def testNonceShouldBeSame(gvtCredDef,
-                          gvtCredDefPks,
+                          gvtIssuerPk,
                           gvtAndXyzIssuerSecretKeys,
                           gvtProofBuilderWithProver1,
                           verifier1,
@@ -54,7 +54,7 @@ def testNonceShouldBeSame(gvtCredDef,
     nonce2 = verifierMulti2.generateNonce(interactionId=5)
 
     assert not prepareProofAndVerify({GVT.name: gvtCredDef},
-                                     gvtCredDefPks,
+                                     gvtIssuerPk,
                                      gvtAndXyzIssuerSecretKeys,
                                      proofBuilder,
                                      attrs,
@@ -65,7 +65,7 @@ def testNonceShouldBeSame(gvtCredDef,
 
 def testGenerateCredentialMustBePassedParameters(proofBuilderWithGvtAttribs,
                                                  gvtCredDef,
-                                                 gvtCredDefPks,
+                                                 gvtIssuerPk,
                                                  gvtAndXyzIssuerSecretKeys):
     gvtProofBuilder, attrs = proofBuilderWithGvtAttribs
     # Manually override prover.U
@@ -73,7 +73,7 @@ def testGenerateCredentialMustBePassedParameters(proofBuilderWithGvtAttribs,
     # This should fail as we are not passing prover.U
     with pytest.raises(ValueError):
         getPresentationToken({GVT.name: gvtCredDef},
-                             gvtCredDefPks,
+                             gvtIssuerPk,
                              gvtAndXyzIssuerSecretKeys,
                              gvtProofBuilder,
                              attrs.encoded())

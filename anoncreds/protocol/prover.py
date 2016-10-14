@@ -1,9 +1,11 @@
 from anoncreds.protocol.cred_def_store import CredDefStore
+from anoncreds.protocol.globals import LARGE_VPRIME
 from anoncreds.protocol.issuer_key import IssuerKey
 from anoncreds.protocol.issuer_key_store import IssuerKeyStore
 from anoncreds.protocol.proof_builder import ProofBuilder
 from anoncreds.protocol.utils import generateMasterSecret
 from anoncreds.protocol.verifier import Verifier
+from config.config import cmod
 
 
 class Prover:
@@ -13,54 +15,26 @@ class Prover:
         self.cds = cds
         self.iks = iks
         self.masterSecret = generateMasterSecret()
-        self.vprimes = {}
+        self._vprimes = {}
+
+    def getVPrimes(self, *keys):
+        result = {}
+        for key in keys:
+            if key not in self._vprimes:
+                self._vprimes[key] = cmod.randomBits(LARGE_VPRIME)
+            result[key] = self._vprimes[key]
+        return result
 
     def _getCredDef(self, uid):
-        credDef = self.cds.fetch(uid)
+        credDef = self.cds.fetchCredDef(uid)
         if not credDef:
-            credDef = self.fetchCredentialDefinition(uid)
-            self.credDefs[uid] = credDef
+            raise RuntimeError("Cred def not found for id {}".format(uid))
         return credDef
 
-    def _getCred(self, issuer, cduid, credName, credVersion, U):
-        key = issuer, cduid, credName, credVersion, U
-        return self.fetchCredential(*key)
-
-    def _initProofBuilder(self, cduid, ikuid, issuerId):
-
-        credDef = self.cds.fetch(cduid)
-        # DEPR
-        # credDef = _getCredDef(issuer, attrNames)
-        pk = self.iks.fetch(ikuid)
+    def newProofBuilder(self, ikuid, issuerId):
+        pk = self.iks.fetchIssuerKey(ikuid)
         pk = {issuerId: pk}
-        proofBuilder = ProofBuilder(pk)
+        vprime = self.getVPrimes(issuerId)
+        proofBuilder = ProofBuilder(pk, self.masterSecret, vprime)
         self.proofBuilders[proofBuilder.id] = proofBuilder
         return proofBuilder
-
-    def createProofBuilder(self, cduid, ikuid, issuer, attrNames, interactionId,
-                           verifier, revealedAttrs):
-        credDef = self._getCredDef(cduid)
-        proofBuilder = self._initProofBuilder(cduid, ikuid, issuer.id)
-        nonce = self.fetchNonce(interactionId, verifier)
-        credential = self._getCred(issuer=issuer,
-                                   cduid=cduid,
-                                   credName=credDef.name,
-                                   credVersion=credDef.version,
-                                   U=proofBuilder.U[issuer.id])
-        presentationToken = {
-            issuer.id: (
-            credential[0], credential[1],
-            proofBuilder.vprime[issuer.id] + credential[2])
-        }
-        proofBuilder.setParams(presentationToken, revealedAttrs, nonce)
-        return proofBuilder
-
-    def fetchNonce(self, interactionId, verifier: Verifier):
-        return verifier.generateNonce(interactionId)
-
-    def fetchCredential(self, issuer, cduid, credName, credVersion, U):
-        return issuer.createCred(self.id,
-                                 cduid=cduid,
-                                 name=credName,
-                                 version=credVersion,
-                                 U=U)

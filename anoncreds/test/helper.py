@@ -1,5 +1,7 @@
+import uuid
+
 from anoncreds.protocol.issuer import Issuer
-from anoncreds.protocol.prover import ProofBuilder
+from anoncreds.protocol.prover import ProofBuilder, Prover
 from anoncreds.protocol.types import Credential
 
 
@@ -10,6 +12,8 @@ from anoncreds.protocol.types import Credential
 # However, Privacy-ABCs allow their holder to transform them into a new token, called
 # presentation token, in such a way that the privacy of the user is protected
 from anoncreds.protocol.verifier import Verifier
+from anoncreds.test.cred_def_test_store import MemoryCredDefStore
+from anoncreds.test.issuer_key_test_store import MemoryIssuerKeyStore
 
 
 def getPresentationToken(credDefs,
@@ -31,8 +35,18 @@ def getPresentationToken(credDefs,
     return presentationToken
 
 
-def getProofBuilderAndAttribs(attribs, credDefPks):
-    proofBuilder = ProofBuilder(credDefPks)
+def getProofBuilderAndAttribs(attribs, credDefs, issuerPks):
+    uid = str(uuid.uuid4())
+    mcds = MemoryCredDefStore()
+    for cd in credDefs.values():
+        mcds.publishCredDef(cd)
+    miks = MemoryIssuerKeyStore()
+    for ipk in issuerPks.values():
+        miks.publishIssuerKey(ipk)
+    prover = Prover(id=uid, cds=mcds, iks=miks)
+    vprime = prover.getVPrimes(*tuple(issuerPks.keys()))
+    proofBuilder = ProofBuilder(issuerPks, masterSecret=prover.masterSecret,
+                                vprime=vprime)
     return proofBuilder, attribs
 
 
@@ -76,7 +90,7 @@ def prepareProofAndVerify(credDefs,
         credDefs, credDefPks, issuerSecretKeys,
         proofBuilder, attrs.encoded())
 
-    proof = ProofBuilder.prepareProof(credDefPks=proofBuilder.credDefPks,
+    proof = ProofBuilder.prepareProof(issuerPks=proofBuilder.issuerPks,
                                       masterSecret=proofBuilder.masterSecret,
                                       creds=presentationToken,
                                       encodedAttrs=attrs.encoded(),

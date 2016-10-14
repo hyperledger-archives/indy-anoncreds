@@ -1,5 +1,8 @@
+import uuid
+
 import pytest
 
+from anoncreds.protocol.prover import Prover
 from config.config import cmod
 
 from anoncreds.protocol.attribute_repo import InMemoryAttrRepo
@@ -21,6 +24,7 @@ XYZCorp = AttribDef('xyz',
                     [AttribType('status', encode=True)])
 NASEMP = GVT + XYZCorp
 
+
 @pytest.fixture(scope="module")
 def gvtAttrRepo():
     attrRepo = InMemoryAttrRepo()
@@ -28,9 +32,9 @@ def gvtAttrRepo():
     return attrRepo
 
 
-@pytest.fixture(scope="module")
-def gvt(gvtAttrRepo):
-    return Issuer(GVT.name, gvtAttrRepo)
+# @pytest.fixture(scope="module")
+# def gvt(gvtAttrRepo):
+#     return Issuer(GVT.name, gvtAttrRepo)
 
 
 @pytest.fixture(scope="module")
@@ -74,7 +78,7 @@ def xyzIssuerSecretKey(xyzCredDef, xyzSecretKey):
 
 
 @pytest.fixture(scope="module")
-def gvtCredDefPks(gvtIssuerSecretKey):
+def gvtIssuerPk(gvtIssuerSecretKey):
     return {GVT.name: gvtIssuerSecretKey.PK}
 
 
@@ -90,9 +94,9 @@ def gvtAndXyzCredDefs(gvtCredDef, xyzCredDef):
 
 
 @pytest.fixture(scope="module")
-def gvtAndXyzCredDefPks(gvtCredDefPks, xyzCredDefPks):
+def gvtAndXyzCredDefPks(gvtIssuerPk, xyzCredDefPks):
     _ = {}
-    _.update(gvtCredDefPks)
+    _.update(gvtIssuerPk)
     _.update(xyzCredDefPks)
     return _
 
@@ -144,33 +148,35 @@ def xyzAttrList():
 
 
 @pytest.fixture(scope="module")
-def gvtProofBuilderWithProver1(gvtCredDefPks):
+def gvtProofBuilderWithProver1(gvtCredDef, gvtIssuerPk):
     attribs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
-    return getProofBuilderAndAttribs(attribs, gvtCredDefPks)
+    return getProofBuilderAndAttribs(attribs, {GVT.name: gvtCredDef}, gvtIssuerPk)
 
 
 @pytest.fixture(scope="module")
-def gvtProofBuilderWithProver2(gvtCredDefPks):
+def gvtProofBuilderWithProver2(gvtCredDef, gvtIssuerPk):
     attribs = GVT.attribs(name='Jason Law', age=42, sex='male')
-    return getProofBuilderAndAttribs(attribs, gvtCredDefPks)
+    return getProofBuilderAndAttribs(attribs, {GVT.name: gvtCredDef}, gvtIssuerPk)
 
 
 @pytest.fixture(scope="module")
-def proofBuilderWithGvtAttribs(gvtCredDefPks):
+def proofBuilderWithGvtAttribs(gvtCredDef, gvtIssuerPk):
     attribs = GVT.attribs(name='Aditya Pratap Singh', age=25, sex='male')
-    return getProofBuilderAndAttribs(attribs, gvtCredDefPks)
+    return getProofBuilderAndAttribs(attribs, {GVT.name: gvtCredDef}, gvtIssuerPk)
 
 
 @pytest.fixture(scope="module")
-def proofBuilderWithXyzAttribs(xyzCredDefPks):
+def proofBuilderWithXyzAttribs(xyzCredDef, xyzCredDefPks):
     attribs = XYZCorp.attribs(status='ACTIVE')
-    return getProofBuilderAndAttribs(attribs, xyzCredDefPks)
+    return getProofBuilderAndAttribs(attribs, {XYZCorp.name: xyzCredDef}, xyzCredDefPks)
 
 
 @pytest.fixture(scope="module")
-def proofBuilderWithGvtAndXyzAttribs(gvtAndXyzCredDefPks, gvtAttrList, xyzAttrList):
+def proofBuilderWithGvtAndXyzAttribs(gvtAndXyzCredDefs, gvtAndXyzCredDefPks,
+                                     gvtAttrList, xyzAttrList):
     attributeList = gvtAttrList + xyzAttrList
-    return getProofBuilderAndAttribs(attributeList, gvtAndXyzCredDefPks)
+    return getProofBuilderAndAttribs(attributeList, gvtAndXyzCredDefs,
+                                     gvtAndXyzCredDefPks)
 
 
 @pytest.fixture(scope="module")

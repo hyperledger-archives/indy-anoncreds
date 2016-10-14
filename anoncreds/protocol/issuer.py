@@ -25,8 +25,6 @@ class Issuer:
         self.credDefStore = credDefStore
 
     def createCred(self, proverId, cduid, name, version, U):
-        # This method works for one credDef only.
-        credDef = self.credDefStore.fetch(cduid)
         attributes = self.attributeRepo.getAttributes(proverId)
         encAttrs = attributes.encoded()
         isk = self.issuerSecretKeyStore.get(cduid)  # type: IssuerSecretKey

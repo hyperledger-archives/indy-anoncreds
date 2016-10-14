@@ -10,10 +10,10 @@ class MemoryCredDefStore(CredDefStore):
     def __init__(self):
         self.byUid = {}  # type: Dict[Any, CredentialDefinition]
 
-    def publish(self, cd: CredentialDefinition):
+    def publishCredDef(self, cd: CredentialDefinition):
         self.byUid[cd.uid] = cd
 
-    def fetch(self, uid) -> CredentialDefinition:
+    def fetchCredDef(self, uid) -> CredentialDefinition:
         try:
             return self.byUid[uid]
         except KeyError as ex:

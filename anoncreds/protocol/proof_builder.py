@@ -19,11 +19,11 @@ from anoncreds.protocol import types
 
 
 class ProofBuilder:
-    def __init__(self, credDefPks: Dict[str, IssuerKey], masterSecret=None):
+    def __init__(self, issuerPks: Dict[str, IssuerKey], masterSecret, vprime):
         """
         Create a proof instance
 
-        :param credDefPks: The public key of the Issuer(s)
+        :param issuerPks: The public key of the Issuer(s)
         """
 
         self.id = str(uuid.uuid4())
@@ -32,23 +32,19 @@ class ProofBuilder:
         self.encodedAttrs = None
         self.revealedAttrs = None
 
-        # Generate the master secret
-        self._ms = masterSecret or cmod.integer(
-            cmod.randomBits(LARGE_MASTER_SECRET))
+        self._ms = masterSecret
 
         # Set the credential definition pub keys
-        self.credDefPks = credDefPks
+        self.issuerPks = issuerPks
 
-        for key, x in self.credDefPks.items():
-            self.credDefPks[key] = x.inFieldN()
+        for key, x in self.issuerPks.items():
+            self.issuerPks[key] = x.inFieldN()
 
-        self._vprime = {}
-        for key, val in self.credDefPks.items():
-            self._vprime[key] = cmod.randomBits(LARGE_VPRIME)
+        self._vprime = vprime
 
         # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
         self._U = {}
-        for key, val in self.credDefPks.items():
+        for key, val in self.issuerPks.items():
             N = val.N
             R = val.R
             S = val.S
@@ -81,8 +77,17 @@ class ProofBuilder:
         self.setEncodedAttrs(encodedAttrs)
         self.setRevealedAttrs(revealedAttrs)
 
+    def getPresentationToken(self, issuerId, credential):
+        if issuerId not in self._vprime:
+            raise RuntimeError("Issuer id {} not present in vprime".format(issuerId))
+        return {
+            issuerId: (
+                credential[0], credential[1],
+                self._vprime[issuerId] + credential[2])
+        }
+
     @staticmethod
-    def prepareProof(credDefPks, masterSecret, creds: Dict[str, Credential],
+    def prepareProof(issuerPks, masterSecret, creds: Dict[str, Credential],
                      encodedAttrs: Dict[str, Dict[str, T]],
                      revealedAttrs: Sequence[str],
                      nonce) -> types.Proof:
@@ -97,7 +102,7 @@ class ProofBuilder:
         :return: The proof
         """
 
-        def initProofComponent(credDefPks, creds, encodedAttrs, revealedAttrs,
+        def initProofComponent(issuerPks, creds, encodedAttrs, revealedAttrs,
                                nonce):
             proofComponent = ProofComponent()
             proofComponent.flatAttrs, proofComponent.unrevealedAttrs = \
@@ -107,7 +112,7 @@ class ProofBuilder:
             proofComponent.T = findSecretValues(
                 encodedAttrs,
                 proofComponent.unrevealedAttrs, creds,
-                credDefPks)
+                issuerPks)
 
             # Calculate the `c` value as the hash result of Aprime, T and nonce.
             # This value will be used to verify the proof against the credential
@@ -116,7 +121,7 @@ class ProofBuilder:
                                      proofComponent.T, {NONCE: nonce})))
             return proofComponent
 
-        proofComponent = initProofComponent(credDefPks, creds, encodedAttrs,
+        proofComponent = initProofComponent(issuerPks, creds, encodedAttrs,
                                             revealedAttrs, nonce)
 
         for credIssuer, _ in creds.items():
@@ -154,19 +159,19 @@ class ProofBuilder:
         return Proof(**prfArgs)
 
     @staticmethod
-    def prepareProofAsDict(issuer, credDefPks, masterSecret,
+    def prepareProofAsDict(issuerPks, masterSecret,
                            creds: Dict[str, Credential],
                            encodedAttrs: Dict[str, Dict[str, T]],
                            revealedAttrs: Sequence[str],
                            nonce) -> dict:
-        prf = ProofBuilder.prepareProof(credDefPks, masterSecret, creds,
+        prf = ProofBuilder.prepareProof(issuerPks, masterSecret, creds,
                                         encodedAttrs, revealedAttrs, nonce)
         proof = {}
-        proof[APRIME] = {issuer: str(prf.Aprime[issuer])}
+        proof[APRIME] = {iid: str(prf.Aprime[iid]) for iid in issuerPks.keys()}
         proof[C_VALUE] = str(prf.c)
-        proof[EVECT] = {issuer: str(prf.evect[issuer])}
+        proof[EVECT] = {iid: str(prf.evect[iid]) for iid in issuerPks.keys()}
         proof[MVECT] = {k: str(v) for k, v in prf.mvect.items()}
-        proof[VVECT] = {issuer: str(prf.vvect[issuer])}
+        proof[VVECT] = {iid: str(prf.vvect[iid]) for iid in issuerPks.keys()}
         return proof
 
     def preparePredicateProof(self, creds: Dict[str, Credential],
@@ -185,7 +190,7 @@ class ProofBuilder:
                 attrs,
                 proofComponent.unrevealedAttrs,
                 creds,
-                self.credDefPks)
+                self.issuerPks)
             return proofComponent
 
         def appendToProofCompWithCredData(proofComponent, creds):
@@ -198,7 +203,7 @@ class ProofBuilder:
 
         def appendToProofCompWithPredicateData(proofComponent, predicate):
             for key, val in predicate.items():
-                x = self.credDefPks[key]
+                x = self.issuerPks[key]
                 # Iterate over the predicates for a given credential(issuer)
                 for k, value in val.items():
 
@@ -249,9 +254,8 @@ class ProofBuilder:
 
             proofComponent.c = cmod.integer(get_hash(nonce,
                                                      *reduce(lambda x, y: x + y,
-                                                             [
-                                                                 proofComponent.TauList,
-                                                                 proofComponent.CList])))
+                                                             [proofComponent.TauList,
+                                                            proofComponent.CList])))
 
         def getSubProof(creds, predProofComponent):
             for key, val in creds.items():
@@ -339,7 +343,7 @@ class ProofBuilder:
 
 def findSecretValues(encodedAttrs: Dict[str, T], unrevealedAttrs: Dict,
                      creds: Dict[str, Credential],
-                     credDefPks: Dict[str, IssuerKey]):
+                     issuerPks: Dict[str, IssuerKey]):
     def getMTilde(unrevealedAttrs):
         mtilde = {}
         for key, value in unrevealedAttrs.items():
@@ -360,7 +364,7 @@ def findSecretValues(encodedAttrs: Dict[str, T], unrevealedAttrs: Dict,
 
     for issuer, credential in creds.items():
         Ra = cmod.integer(cmod.randomBits(LARGE_VPRIME))
-        credDefPk = credDefPks[issuer]
+        credDefPk = issuerPks[issuer]
         A, e, v = credential
 
         Aprime[issuer] = A * (credDefPk.S ** Ra) % credDefPk.N

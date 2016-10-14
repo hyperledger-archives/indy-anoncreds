@@ -10,10 +10,10 @@ class MemoryIssuerKeyStore(IssuerKeyStore):
     def __init__(self):
         self.byUid = {}  # type: Dict[Any, IssuerKey]
 
-    def publish(self, ik: IssuerKey):
+    def publishIssuerKey(self, ik: IssuerKey):
         self.byUid[ik.uid] = ik
 
-    def fetch(self, uid) -> IssuerKey:
+    def fetchIssuerKey(self, uid) -> IssuerKey:
         try:
             return self.byUid[uid]
         except KeyError as ex:

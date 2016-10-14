@@ -10,9 +10,9 @@ class IssuerKeyStore:
     """
 
     @abstractmethod
-    def publish(self, cd: IssuerKey):
+    def publishIssuerKey(self, cd: IssuerKey):
         pass
 
     @abstractmethod
-    def fetch(self, uid) -> IssuerKey:
+    def fetchIssuerKey(self, uid) -> IssuerKey:
         pass

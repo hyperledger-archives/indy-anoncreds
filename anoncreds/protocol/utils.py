@@ -8,7 +8,7 @@ import base58
 from config.config import cmod
 
 from anoncreds.protocol.globals import LARGE_PRIME, KEYS, PK_R, \
-    LARGE_MASTER_SECRET
+    LARGE_MASTER_SECRET, LARGE_VPRIME
 from anoncreds.protocol.types import SerFmt
 
 
@@ -156,3 +156,7 @@ def generateMasterSecret():
     # Generate the master secret
     return cmod.integer(
         cmod.randomBits(LARGE_MASTER_SECRET))
+
+
+def generateVPrime():
+    return cmod.randomBits(LARGE_VPRIME)

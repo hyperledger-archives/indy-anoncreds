@@ -1,10 +1,8 @@
 from anoncreds.protocol.cred_def_store import CredDefStore
 from anoncreds.protocol.globals import LARGE_VPRIME
-from anoncreds.protocol.issuer_key import IssuerKey
 from anoncreds.protocol.issuer_key_store import IssuerKeyStore
 from anoncreds.protocol.proof_builder import ProofBuilder
-from anoncreds.protocol.utils import generateMasterSecret
-from anoncreds.protocol.verifier import Verifier
+from anoncreds.protocol.utils import generateMasterSecret, generateVPrime
 from config.config import cmod
 
 
@@ -21,7 +19,7 @@ class Prover:
         result = {}
         for key in keys:
             if key not in self._vprimes:
-                self._vprimes[key] = cmod.randomBits(LARGE_VPRIME)
+                self._vprimes[key] = generateVPrime()
             result[key] = self._vprimes[key]
         return result
 
@@ -31,10 +29,10 @@ class Prover:
             raise RuntimeError("Cred def not found for id {}".format(uid))
         return credDef
 
-    def newProofBuilder(self, ikuid, issuerId):
-        pk = self.iks.fetchIssuerKey(ikuid)
-        pk = {issuerId: pk}
-        vprime = self.getVPrimes(issuerId)
+    def newProofBuilder(self, issuerKeyIds):
+        pk = {issuerId: self.iks.fetchIssuerKey(ikuid)
+              for issuerId, ikuid in issuerKeyIds.items()}
+        vprime = self.getVPrimes(*tuple(issuerKeyIds.keys()))
         proofBuilder = ProofBuilder(pk, self.masterSecret, vprime)
         self.proofBuilders[proofBuilder.id] = proofBuilder
         return proofBuilder

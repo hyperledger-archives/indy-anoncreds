@@ -55,7 +55,7 @@ def testInteraction(gvtSecretKey):
     prover = Prover(proverId, mcds, miks)
     verifier = Verifier(verifierId, mcds, miks)
     nonce = verifier.generateNonce(interactionId)
-    proofBuilder = prover.newProofBuilder(issuerKeyId, issuerId)
+    proofBuilder = prover.newProofBuilder({issuerId: issuerKeyId})
     credential = issuer.createCred(proverId,
                                    cduid=credDefId,
                                    name=credName,

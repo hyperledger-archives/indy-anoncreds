@@ -10,7 +10,7 @@ from anoncreds.protocol.cred_def_store import CredDefStore
 from anoncreds.protocol.globals import LARGE_VPRIME_PRIME, LARGE_E_START, LARGE_E_END_RANGE
 from anoncreds.protocol.issuer_key import IssuerKey
 from anoncreds.protocol.issuer_secret_key import IssuerSecretKey
-from anoncreds.protocol.utils import get_prime_in_range, strToCharmInteger
+from anoncreds.protocol.utils import get_prime_in_range, strToCryptoInteger
 from config.config import cmod
 
 
@@ -45,7 +45,7 @@ class Issuer:
         :param attrs: The attributes for which the credential needs to be generated
         :return: The presentation token as a combination of (A, e, vprimeprime)
         """
-        u = strToCharmInteger(uValue) if isinstance(uValue, str) else uValue
+        u = strToCryptoInteger(uValue) if isinstance(uValue, str) else uValue
 
         if not u:
             raise ValueError("u must be provided to issue a credential")

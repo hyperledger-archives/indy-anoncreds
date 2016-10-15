@@ -91,8 +91,7 @@ def flattenDict(attrs):
             for x, y in z.items()}
 
 
-# TODO: Should be renamed to strToCryptoInteger
-def strToCharmInteger(n):
+def strToCryptoInteger(n):
     if "mod" in n:
         a, b = n.split("mod")
         return cmod.integer(int(a.strip())) % cmod.integer(int(b.strip()))
@@ -100,8 +99,7 @@ def strToCharmInteger(n):
         return cmod.integer(int(n))
 
 
-# TODO: Should be renamed to strToCryptoInteger
-def isCharmInteger(n):
+def isCryptoInteger(n):
     return isinstance(n, cmod.integer)
 
 

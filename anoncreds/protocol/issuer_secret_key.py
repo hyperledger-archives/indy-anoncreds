@@ -2,7 +2,7 @@ from anoncreds.protocol.cred_def_secret_key import CredDefSecretKey
 from anoncreds.protocol.credential_definition import CredentialDefinition
 from anoncreds.protocol.issuer_key import IssuerKey
 from anoncreds.protocol.utils import randomQR
-from anoncreds.protocol.utils import strToCharmInteger
+from anoncreds.protocol.utils import strToCryptoInteger
 
 
 class IssuerSecretKey:
@@ -44,4 +44,4 @@ class IssuerSecretKey:
 
     @classmethod
     def getCryptoInteger(cls, val):
-        return strToCharmInteger(val)
+        return strToCryptoInteger(val)

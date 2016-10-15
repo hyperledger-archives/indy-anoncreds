@@ -14,7 +14,7 @@ from anoncreds.protocol.types import Credential, PredicateProof, \
     SubProofPredicate, T, Proof, SecretValue, TildValue, PrimeValue, \
     ProofComponent, PredicateProofComponent
 from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
-    getUnrevealedAttrs, strToCharmInteger
+    getUnrevealedAttrs, strToCryptoInteger
 from anoncreds.protocol import types
 
 
@@ -152,14 +152,14 @@ class ProofBuilder:
     @staticmethod
     def prepareProofFromDict(proofElements) -> Proof:
         prfArgs = {
-            C_VALUE: strToCharmInteger(proofElements[C_VALUE]),
-            APRIME: {issuer: strToCharmInteger(aprime)
+            C_VALUE: strToCryptoInteger(proofElements[C_VALUE]),
+            APRIME: {issuer: strToCryptoInteger(aprime)
                      for issuer, aprime in proofElements[APRIME].items()},
-            EVECT: {issuer: strToCharmInteger(evect)
+            EVECT: {issuer: strToCryptoInteger(evect)
                     for issuer, evect in proofElements[EVECT].items()},
-            MVECT: {v: strToCharmInteger(mvect)
+            MVECT: {v: strToCryptoInteger(mvect)
                     for v, mvect in proofElements[MVECT].items()},
-            VVECT: {issuer: strToCharmInteger(vvect)
+            VVECT: {issuer: strToCryptoInteger(vvect)
                     for issuer, vvect in proofElements[VVECT].items()}
         }
         return Proof(**prfArgs)

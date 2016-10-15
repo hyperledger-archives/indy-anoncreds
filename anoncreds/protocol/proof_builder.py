@@ -8,7 +8,7 @@ from config.config import cmod
 from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, \
     LARGE_E_START, LARGE_ETILDE, LARGE_VTILDE, \
     LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, APRIME, DELTA, \
-    TVAL, NONCE, ZERO_INDEX, C_VALUE, EVECT, MVECT, VVECT, ISSUER, PROOF
+    TVAL, NONCE, ZERO_INDEX, C_VALUE, EVECT, MVECT, VVECT
 from anoncreds.protocol.issuer_key import IssuerKey
 from anoncreds.protocol.types import Credential, PredicateProof, \
     SubProofPredicate, T, Proof, SecretValue, TildValue, PrimeValue, \
@@ -50,7 +50,7 @@ class ProofBuilder:
             R = val.R
             S = val.S
             self._U[key] = (S ** self._vprime[key]) * (
-            R[ZERO_INDEX] ** self._ms) % N
+                R[ZERO_INDEX] ** self._ms) % N
 
     def __repr__(self):
         return str(self.id)
@@ -80,7 +80,8 @@ class ProofBuilder:
 
     def getPresentationToken(self, issuerId, credential):
         if issuerId not in self._vprime:
-            raise RuntimeError("Issuer id {} not present in vprime".format(issuerId))
+            raise RuntimeError(
+                "Issuer id {} not present in vprime".format(issuerId))
         return {
             issuerId: (
                 credential[0], credential[1],
@@ -108,7 +109,7 @@ class ProofBuilder:
             proofComponent = ProofComponent()
             proofComponent.flatAttrs, proofComponent.unrevealedAttrs = \
                 getUnrevealedAttrs(
-                encodedAttrs, revealedAttrs)
+                    encodedAttrs, revealedAttrs)
             proofComponent.tildeValues, proofComponent.primeValues, \
             proofComponent.T = findSecretValues(
                 encodedAttrs,
@@ -127,11 +128,13 @@ class ProofBuilder:
 
         for credIssuer, _ in creds.items():
             proofComponent.evect[credIssuer] = \
-            proofComponent.tildeValues.etilde[credIssuer] + (
-            proofComponent.c * proofComponent.primeValues.eprime[credIssuer])
+                proofComponent.tildeValues.etilde[credIssuer] + (
+                    proofComponent.c * proofComponent.primeValues.eprime[
+                        credIssuer])
             proofComponent.vvect[credIssuer] = \
-            proofComponent.tildeValues.vtilde[credIssuer] + (
-            proofComponent.c * proofComponent.primeValues.vprime[credIssuer])
+                proofComponent.tildeValues.vtilde[credIssuer] + (
+                    proofComponent.c * proofComponent.primeValues.vprime[
+                        credIssuer])
 
         for k, _ in proofComponent.unrevealedAttrs.items():
             proofComponent.mvect[str(k)] = proofComponent.tildeValues.mtilde[
@@ -140,7 +143,7 @@ class ProofBuilder:
                                                               str(k)])
         proofComponent.mvect[ZERO_INDEX] = proofComponent.tildeValues.mtilde[
                                                ZERO_INDEX] + (
-                                           proofComponent.c * masterSecret)
+                                               proofComponent.c * masterSecret)
 
         return Proof(proofComponent.c, proofComponent.evect,
                      proofComponent.mvect, proofComponent.vvect,
@@ -148,20 +151,17 @@ class ProofBuilder:
 
     @staticmethod
     def prepareProofFromDict(proofElements) -> Proof:
-        prfArgs = {}
-        prfArgs[C_VALUE] = strToCharmInteger(proofElements[C_VALUE])
-
-        prfArgs[APRIME] = {issuer: strToCharmInteger(aprime)
-                            for issuer, aprime in proofElements[APRIME].items()}
-
-        prfArgs[EVECT] = {issuer: strToCharmInteger(evect)
-                           for issuer, evect in proofElements[EVECT].items()}
-
-        prfArgs[MVECT] = {v: strToCharmInteger(mvect)
-                            for v, mvect in proofElements[MVECT].items()}
-        prfArgs[VVECT] = {issuer: strToCharmInteger(vvect)
-                           for issuer, vvect in  proofElements[VVECT].items()}
-
+        prfArgs = {
+            C_VALUE: strToCharmInteger(proofElements[C_VALUE]),
+            APRIME: {issuer: strToCharmInteger(aprime)
+                     for issuer, aprime in proofElements[APRIME].items()},
+            EVECT: {issuer: strToCharmInteger(evect)
+                    for issuer, evect in proofElements[EVECT].items()},
+            MVECT: {v: strToCharmInteger(mvect)
+                    for v, mvect in proofElements[MVECT].items()},
+            VVECT: {issuer: strToCharmInteger(vvect)
+                    for issuer, vvect in proofElements[VVECT].items()}
+        }
         return Proof(**prfArgs)
 
     @staticmethod
@@ -172,12 +172,13 @@ class ProofBuilder:
                            nonce) -> dict:
         prf = ProofBuilder.prepareProof(issuerPks, masterSecret, creds,
                                         encodedAttrs, revealedAttrs, nonce)
-        proof = {}
-        proof[APRIME] = {iid: str(prf.Aprime[iid]) for iid in issuerPks.keys()}
-        proof[C_VALUE] = str(prf.c)
-        proof[EVECT] = {iid: str(prf.evect[iid]) for iid in issuerPks.keys()}
-        proof[MVECT] = {k: str(v) for k, v in prf.mvect.items()}
-        proof[VVECT] = {iid: str(prf.vvect[iid]) for iid in issuerPks.keys()}
+        proof = {
+            C_VALUE: str(prf.c),
+            APRIME: {iid: str(prf.Aprime[iid]) for iid in issuerPks.keys()},
+            EVECT: {iid: str(prf.evect[iid]) for iid in issuerPks.keys()},
+            MVECT: {k: str(v) for k, v in prf.mvect.items()},
+            VVECT: {iid: str(prf.vvect[iid]) for iid in issuerPks.keys()}
+        }
         return proof
 
     def preparePredicateProof(self, creds: Dict[str, Credential],
@@ -190,7 +191,7 @@ class ProofBuilder:
             proofComponent = PredicateProofComponent()
             proofComponent.flatAttrs, proofComponent.unrevealedAttrs = \
                 getUnrevealedAttrs(
-                attrs, revealedAttrs)
+                    attrs, revealedAttrs)
             proofComponent.tildeValues, proofComponent.primeValues, \
             proofComponent.T = findSecretValues(
                 attrs,
@@ -228,13 +229,13 @@ class ProofBuilder:
                     Tval = {}
                     for i in range(0, ITERATIONS):
                         Tval[str(i)] = (x.Z ** proofComponent.u[i]) * (
-                        x.S ** proofComponent.r[str(i)]) % x.N
+                            x.S ** proofComponent.r[str(i)]) % x.N
                         proofComponent.utilde[str(i)] = cmod.integer(
                             cmod.randomBits(LARGE_UTILDE))
                         proofComponent.rtilde[str(i)] = cmod.integer(
                             cmod.randomBits(LARGE_RTILDE))
                     Tval[DELTA] = (x.Z ** delta) * (
-                    x.S ** proofComponent.r[DELTA]) % x.N
+                        x.S ** proofComponent.r[DELTA]) % x.N
                     proofComponent.rtilde[DELTA] = cmod.integer(
                         cmod.randomBits(LARGE_RTILDE))
 
@@ -260,29 +261,31 @@ class ProofBuilder:
 
             proofComponent.c = cmod.integer(get_hash(nonce,
                                                      *reduce(lambda x, y: x + y,
-                                                             [proofComponent.TauList,
-                                                            proofComponent.CList])))
+                                                             [
+                                                                 proofComponent.TauList,
+                                                                 proofComponent.CList])))
 
         def getSubProof(creds, predProofComponent):
             for key, val in creds.items():
                 predProofComponent.evect[key] = \
-                predProofComponent.tildeValues.etilde[key] + (
-                    predProofComponent.c *
-                    predProofComponent.primeValues.eprime[key])
+                    predProofComponent.tildeValues.etilde[key] + (
+                        predProofComponent.c *
+                        predProofComponent.primeValues.eprime[key])
                 predProofComponent.vvect[key] = \
-                predProofComponent.tildeValues.vtilde[key] + (
-                    predProofComponent.c *
-                    predProofComponent.primeValues.vprime[key])
+                    predProofComponent.tildeValues.vtilde[key] + (
+                        predProofComponent.c *
+                        predProofComponent.primeValues.vprime[key])
 
             predProofComponent.mvect = {}
             for k, value in predProofComponent.unrevealedAttrs.items():
                 predProofComponent.mvect[str(k)] = \
-                predProofComponent.tildeValues.mtilde[str(k)] + (
-                    predProofComponent.c * predProofComponent.flatAttrs[str(k)])
+                    predProofComponent.tildeValues.mtilde[str(k)] + (
+                        predProofComponent.c * predProofComponent.flatAttrs[
+                            str(k)])
 
             predProofComponent.mvect[ZERO_INDEX] = \
-            predProofComponent.tildeValues.mtilde[ZERO_INDEX] + (
-                predProofComponent.c * self._ms)
+                predProofComponent.tildeValues.mtilde[ZERO_INDEX] + (
+                    predProofComponent.c * self._ms)
 
             return Proof(predProofComponent.c, predProofComponent.evect,
                          predProofComponent.mvect,
@@ -295,26 +298,26 @@ class ProofBuilder:
                     urproduct = 0
                     for i in range(0, ITERATIONS):
                         predProofComponent.uvect[str(i)] = \
-                        predProofComponent.utilde[
-                            str(i)] + predProofComponent.c * \
-                                      predProofComponent.u[i]
+                            predProofComponent.utilde[
+                                str(i)] + predProofComponent.c * \
+                                          predProofComponent.u[i]
                         predProofComponent.rvect[str(i)] = \
-                        predProofComponent.rtilde[
-                            str(i)] + predProofComponent.c * \
-                                      predProofComponent.r[
-                                          str(i)]
+                            predProofComponent.rtilde[
+                                str(i)] + predProofComponent.c * \
+                                          predProofComponent.r[
+                                              str(i)]
                         urproduct += predProofComponent.u[i] * \
                                      predProofComponent.r[str(i)]
 
                     predProofComponent.rvect[DELTA] = predProofComponent.rtilde[
                                                           DELTA] + \
                                                       predProofComponent.c * \
-                                                                   predProofComponent.r[
-                                                                       DELTA]
+                                                      predProofComponent.r[
+                                                          DELTA]
 
                     predProofComponent.alphavect = \
                         predProofComponent.alphatilde + predProofComponent.c * (
-                        predProofComponent.r[DELTA] - urproduct)
+                            predProofComponent.r[DELTA] - urproduct)
 
             return SubProofPredicate(predProofComponent.alphavect,
                                      predProofComponent.rvect,
@@ -383,7 +386,7 @@ def findSecretValues(encodedAttrs: Dict[str, T], unrevealedAttrs: Dict,
         Rur = getRur(credDefPk, encodedAttrs[issuer], mtilde, unrevealedAttrs)
 
         T[issuer] = ((Aprime[issuer] ** etilde[issuer]) * Rur * (
-        credDefPk.S ** vtilde[issuer])) % credDefPk.N
+            credDefPk.S ** vtilde[issuer])) % credDefPk.N
 
     tildValue = TildValue(mtilde, etilde, vtilde)
     primeValue = PrimeValue(Aprime, vprime, eprime)

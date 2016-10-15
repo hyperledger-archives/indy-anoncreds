@@ -1,9 +1,7 @@
 from anoncreds.protocol.cred_def_store import CredDefStore
-from anoncreds.protocol.globals import LARGE_VPRIME
 from anoncreds.protocol.issuer_key_store import IssuerKeyStore
 from anoncreds.protocol.proof_builder import ProofBuilder
 from anoncreds.protocol.utils import generateMasterSecret, generateVPrime
-from config.config import cmod
 
 
 class Prover:

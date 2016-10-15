@@ -86,14 +86,15 @@ def prepareProofAndVerify(credDefs,
                           proofNonce=None,
                           verifyNonce=None):
 
+    encodedAttrs = attrs.encoded()
     presentationToken = getPresentationToken(
         credDefs, credDefPks, issuerSecretKeys,
-        proofBuilder, attrs.encoded())
+        proofBuilder, encodedAttrs)
 
     proof = ProofBuilder.prepareProof(issuerPks=proofBuilder.issuerPks,
                                       masterSecret=proofBuilder.masterSecret,
                                       creds=presentationToken,
-                                      encodedAttrs=attrs.encoded(),
+                                      encodedAttrs=encodedAttrs,
                                       revealedAttrs=revealedAttrs,
                                       nonce=proofNonce)
 
@@ -101,7 +102,7 @@ def prepareProofAndVerify(credDefs,
     return Verifier.verifyProof(proof=proof,
                                nonce=vNonce,
                                credDefPks=credDefPks,
-                               attrs=attrs.encoded(),
+                               attrs=encodedAttrs,
                                revealedAttrs=revealedAttrs)
 
 

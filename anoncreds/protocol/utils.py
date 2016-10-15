@@ -147,7 +147,7 @@ def serialize(data, serFmt):
                 # int casting works with Python 3 only.
                 # for Python 2, charm's serialization api must be used.
                 data[KEYS][k] = serfunc(v)
-            if k == PK_R :
+            if k == PK_R:
                 data[KEYS][k] = {key: serfunc(val) for key, val in v.items()}
     return data
 

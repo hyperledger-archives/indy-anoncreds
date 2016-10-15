@@ -86,7 +86,7 @@ $m_1$.
 Steps to set up the issuer
 \begin{enumerate}
 \item Generate random 1024-bit primes $p',q'$ such that  $p \leftarrow 2p'+1$ and $q \leftarrow 2q'+1$ are primes too. Finally compute $n \leftarrow pq$.
-    \item Generate a random quadratic residue\footnote{using the function \textsl{randomQR} from the Charm library.} $S$ modulo $n$;
+    \item Generate a random quadratic residue\footnote{using the function \textsl{random} from the Charm library.} $S$ modulo $n$;
     \item Select random $x_Z, x_{R_1},\ldots , x_{R_l}\in [2; p'q'-1]$ and
 compute $Z \leftarrow S^{x_Z}\pmod{n} , R_i \leftarrow S^{x_{R_i}}\pmod{n}$ for $1\leq i \leq l$.
 \end{enumerate}

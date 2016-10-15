@@ -16,10 +16,10 @@ class IssuerKey:
     """
     def __init__(self, uid, N, R, S, Z):
         self.uid = uid
-        self.N = N
-        self.R = R
-        self.S = S
-        self.Z = Z
+        self.N = cmod.integer(N)
+        self.R = {k: cmod.integer(v) % N for k, v in R.items()}
+        self.S = cmod.integer(S) % N
+        self.Z = cmod.integer(Z) % N
 
     def __repr__(self):
         return str(self.uid)

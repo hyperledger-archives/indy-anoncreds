@@ -68,11 +68,4 @@ class IssuerKey:
         return serialize(data, serFmt)
 
     def __eq__(self, other):
-        c = 0
-        for k, v in self.R.items():
-            r = other.R[k] == v
-            if not r:
-                return False
-            c += 1
-        assert c == len(other)
-        return all(self.N == other.N, self.S == other.S, self.Z == other.Z)
+        return self.__dict__ == other.__dict__

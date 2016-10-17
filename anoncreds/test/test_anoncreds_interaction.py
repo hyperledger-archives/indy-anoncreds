@@ -36,11 +36,12 @@ def testInteraction(gvtSecretKey):
     attrRepo.addAttributes(proverId, attrs)
 
     misks = MemoryIssuerSecretKeyStore()
-    issuer = Issuer(issuerId, attrRepo, credDefStore=mcds, issuerSecretKeyStore=misks)
+    issuer = Issuer(issuerId, attrRepo, credDefStore=mcds,
+                    issuerSecretKeyStore=misks)
     credDefId = 1
 
     cd = CredentialDefinition(credDefId, attrNames, credName, credVersion)
-    mcds.publish(cd)
+    mcds.publishCredDef(cd)
 
     # Issuer Key set up
     issuerKeyId = 1
@@ -48,25 +49,29 @@ def testInteraction(gvtSecretKey):
     misks.put(issuerSecretKey)
     issuerKey = issuerSecretKey.PK
 
-    miks.publish(issuerKey)
+    miks.publishIssuerKey(issuerKey)
 
     # issuer.addNewCredDef(cd)
     prover = Prover(proverId, mcds, miks)
     verifier = Verifier(verifierId, mcds, miks)
+    nonce = verifier.generateNonce(interactionId)
+    proofBuilder = prover.newProofBuilder({issuerId: issuerKeyId})
+    credential = issuer.createCred(proverId,
+                                   cduid=credDefId,
+                                   name=credName,
+                                   version=credVersion,
+                                   U=proofBuilder.U[issuerId])
 
-    proofBuilder = prover.createProofBuilder(cduid=credDefId,
-                                             ikuid=issuerKeyId,
-                                             issuer=issuer,
-                                             attrNames=attrNames,
-                                             interactionId=interactionId,
-                                             verifier=verifier,
-                                             revealedAttrs=revealedAttrs)
+    presentationToken = proofBuilder.getPresentationToken(issuer.id, credential)
+    proofBuilder.setParams(presentationToken, revealedAttrs, nonce)
 
-    proof = proofBuilder.prepareProof(proofBuilder.credDefPks, proofBuilder.masterSecret,
+    proof = proofBuilder.prepareProof(proofBuilder.issuerPks,
+                                      proofBuilder.masterSecret,
                                       proofBuilder.credential,
                                       encodedAttrs,
-                                      proofBuilder.revealedAttrs, proofBuilder.nonce)
-    assert verifier.verify(issuer=issuer,
+                                      proofBuilder.revealedAttrs,
+                                      proofBuilder.nonce)
+    assert verifier.verify(issuerId=issuer.id,
                            name=credName,
                            version=credVersion,
                            proof=proof,

@@ -56,25 +56,23 @@ class Verifier:
         self.credDefStore = credDefStore
         self.issuerKeyStore = issuerKeyStore
 
+    def __repr__(self):
+        return str(self.id)
+
     def generateNonce(self, interactionId):
         nv = cmod.integer(cmod.randomBits(LARGE_NONCE))
         self.interactionDetail[str(nv)] = interactionId
         return nv
 
-    def verify(self, issuer, name, version, proof, nonce, attrs, revealedAttrs,
+    def verify(self, issuerId, name, version, proof, nonce, attrs, revealedAttrs,
                credDefId, issuerKeyId):
-        credDef = self.credDefStore.fetch(credDefId)
-        # DEPR
-        # credDef = self.fetchCredDef(issuer, name, version)
-        pk = self.issuerKeyStore.fetch(issuerKeyId)
-        result = Verifier.verifyProof({issuer.id: pk}, proof, nonce, attrs,
+        pk = self.issuerKeyStore.fetchIssuerKey(issuerKeyId)
+        result = Verifier.verifyProof({issuerId: pk}, proof, nonce, attrs,
                                       revealedAttrs)
         return result
 
-    def fetchCredDef(self, issuer, name, version):
-        return issuer.getCredDef(name=name, version=version)
-
-    def verifyPredicateProof(self, proof: PredicateProof, credDefPks, nonce,
+    @staticmethod
+    def verifyPredicateProof(proof: PredicateProof, credDefPks, nonce,
                              attrs: Dict[str, Dict[str, T]],
                              revealedAttrs: Sequence[str],
                              predicate: Dict[str, Sequence[str]]):

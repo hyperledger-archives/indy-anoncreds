@@ -7,7 +7,8 @@ import base58
 
 from config.config import cmod
 
-from anoncreds.protocol.globals import LARGE_PRIME, KEYS, PK_R
+from anoncreds.protocol.globals import LARGE_PRIME, KEYS, PK_R, \
+    LARGE_MASTER_SECRET, LARGE_VPRIME
 from anoncreds.protocol.types import SerFmt
 
 
@@ -90,7 +91,7 @@ def flattenDict(attrs):
             for x, y in z.items()}
 
 
-def strToCharmInteger(n):
+def strToCryptoInteger(n):
     if "mod" in n:
         a, b = n.split("mod")
         return cmod.integer(int(a.strip())) % cmod.integer(int(b.strip()))
@@ -98,7 +99,7 @@ def strToCharmInteger(n):
         return cmod.integer(int(n))
 
 
-def isCharmInteger(n):
+def isCryptoInteger(n):
     return isinstance(n, cmod.integer)
 
 
@@ -146,6 +147,16 @@ def serialize(data, serFmt):
                 # int casting works with Python 3 only.
                 # for Python 2, charm's serialization api must be used.
                 data[KEYS][k] = serfunc(v)
-            if k == PK_R :
+            if k == PK_R:
                 data[KEYS][k] = {key: serfunc(val) for key, val in v.items()}
     return data
+
+
+def generateMasterSecret():
+    # Generate the master secret
+    return cmod.integer(
+        cmod.randomBits(LARGE_MASTER_SECRET))
+
+
+def generateVPrime():
+    return cmod.randomBits(LARGE_VPRIME)

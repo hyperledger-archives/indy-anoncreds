@@ -1,5 +1,7 @@
 from anoncreds.test.helper import verifyProof
 
+tieDownRandomElements = False
+
 
 def testMultiCredSingleProof(gvtAndXyzCredDefs,
                              gvtAndXyzCredDefPks,

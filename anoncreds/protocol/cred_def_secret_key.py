@@ -2,6 +2,7 @@ from anoncreds.protocol.utils import genPrime
 from config.config import cmod
 
 
+# TODO Should be renamed to something like IssuerCoreSecretKey
 class CredDefSecretKey:
     def __init__(self, p: cmod.integer=None, q: cmod.integer=None):
         self._p = p if p else genPrime() * 2 + 1

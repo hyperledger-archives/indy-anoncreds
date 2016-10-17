@@ -2,7 +2,7 @@ from copy import copy
 
 from config.config import cmod
 
-from anoncreds.protocol.utils import strToCharmInteger, base58decode
+from anoncreds.protocol.utils import strToCryptoInteger, base58decode
 from anoncreds.protocol.globals import MASTER_SEC_RAND, \
     PK_N, PK_S, PK_Z, PK_R
 from anoncreds.protocol.types import SerFmt
@@ -16,19 +16,22 @@ class IssuerKey:
     """
     def __init__(self, uid, N, R, S, Z):
         self.uid = uid
-        self.N = N
-        self.R = R
-        self.S = S
-        self.Z = Z
+        self.N = cmod.integer(N)
+        self.R = {k: cmod.integer(v) % N for k, v in R.items()}
+        self.S = cmod.integer(S) % N
+        self.Z = cmod.integer(Z) % N
+
+    def __repr__(self):
+        return str(self.uid)
 
     @classmethod
     def fromKeys(cls, keys, desz=base58decode):
-        N = strToCharmInteger(desz(keys["N"]))
-        S = strToCharmInteger(desz(keys["S"]))
-        Z = strToCharmInteger(desz(keys["Z"]))
+        N = strToCryptoInteger(desz(keys["N"]))
+        S = strToCryptoInteger(desz(keys["S"]))
+        Z = strToCryptoInteger(desz(keys["Z"]))
         R = {}
         for k, v in keys["R"].items():
-            R[k] = strToCharmInteger(desz(v))
+            R[k] = strToCryptoInteger(desz(v))
         return cls(N, R, S, Z)
 
     @staticmethod

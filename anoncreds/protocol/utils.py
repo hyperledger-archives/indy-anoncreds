@@ -160,3 +160,30 @@ def generateMasterSecret():
 
 def generateVPrime():
     return cmod.randomBits(LARGE_VPRIME)
+
+
+def shorten(s, size=None):
+    size = size or 10
+    if isinstance(s, str):
+        if len(s) <= size:
+            return s
+        else:
+            head = int((size - 2) * 5 / 8)
+            tail = int(size) - 2 - head
+            return s[:head] + '..' + s[-tail:]
+    else:  # assume it's an iterable
+        return [shorten(x, size) for x in iter(s)]
+
+
+def shortenMod(s, size=None):
+    return ' mod '.join(shorten(str(s).split(' mod '), size))
+
+
+def shortenDictVals(d, size=None):
+    r = {}
+    for k, v in d.items():
+        if isinstance(v, dict):
+            r[k] = shortenDictVals(v, size)
+        else:
+            r[k] = shortenMod(v, size)
+    return r

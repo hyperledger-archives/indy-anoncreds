@@ -1,12 +1,11 @@
 from copy import copy
 
-from config.config import cmod
-
-from anoncreds.protocol.utils import strToCryptoInteger, base58decode
 from anoncreds.protocol.globals import MASTER_SEC_RAND, \
     PK_N, PK_S, PK_Z, PK_R
 from anoncreds.protocol.types import SerFmt
-from anoncreds.protocol.utils import serialize
+from anoncreds.protocol.utils import serialize, shortenDictVals
+from anoncreds.protocol.utils import strToCryptoInteger, base58decode
+from config.config import cmod
 
 
 class IssuerKey:
@@ -21,8 +20,11 @@ class IssuerKey:
         self.S = cmod.integer(S) % N
         self.Z = cmod.integer(Z) % N
 
-    def __repr__(self):
+    def __str__(self):
         return str(self.uid)
+
+    def __repr__(self):
+        return str(shortenDictVals(self.__dict__))
 
     @classmethod
     def fromKeys(cls, keys, desz=base58decode):
@@ -68,4 +70,4 @@ class IssuerKey:
         return serialize(data, serFmt)
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        return isinstance(other, type(self)) and self.__dict__ == other.__dict__

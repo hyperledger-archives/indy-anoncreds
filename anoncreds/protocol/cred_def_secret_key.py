@@ -4,9 +4,9 @@ from config.config import cmod
 
 # TODO Should be renamed to something like IssuerCoreSecretKey
 class CredDefSecretKey:
-    def __init__(self, p: cmod.integer=None, q: cmod.integer=None):
-        self._p = p if p else genPrime() * 2 + 1
-        self._q = q if q else genPrime() * 2 + 1
+    def __init__(self, p=None, q=None):
+        self._p = cmod.integer(p) if p else genPrime() * 2 + 1
+        self._q = cmod.integer(q) if q else genPrime() * 2 + 1
         self._n = self.p * self.q
 
     @classmethod

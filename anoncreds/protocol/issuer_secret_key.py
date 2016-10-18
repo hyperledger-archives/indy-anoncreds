@@ -40,7 +40,3 @@ class IssuerSecretKey:
     @property
     def PK(self) -> IssuerKey:
         return self.pubkey
-
-    @classmethod
-    def getCryptoInteger(cls, val):
-        return strToCryptoInteger(val)

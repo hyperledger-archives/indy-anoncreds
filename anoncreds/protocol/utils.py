@@ -43,8 +43,7 @@ def get_prime_in_range(start, end):
     while n < maxIter:
         r = randint(start, end)
         if cmod.isPrime(r):
-            logging.debug("Found prime in {} iteration between {} and {}".
-                  format(n, start, end))
+            logging.debug("Found prime in {} iterations".format(n))
             return r
         n += 1
     raise Exception("Cannot find prime in {} iterations".format(maxIter))
@@ -113,7 +112,6 @@ def genPrime():
     while not cmod.isPrime(2 * prime + 1):
         prime = cmod.randomPrime(LARGE_PRIME)
         i += 1
-    print("In {} iterations, found prime {}".format(i, prime))
     return prime
 
 

@@ -28,15 +28,16 @@ class IssuerKey:
 
     @classmethod
     def fromKeys(cls, keys, desz=base58decode):
-        N = strToCryptoInteger(desz(keys["N"]))
-        S = strToCryptoInteger(desz(keys["S"]))
-        Z = strToCryptoInteger(desz(keys["Z"]))
+        N = strToCryptoInteger(desz(keys["N"]) if desz else keys["N"])
+        S = strToCryptoInteger(desz(keys["S"]) if desz else keys["S"])
+        Z = strToCryptoInteger(desz(keys["Z"]) if desz else keys["Z"])
         R = {}
         for k, v in keys["R"].items():
-            R[k] = strToCryptoInteger(desz(v))
+            R[k] = strToCryptoInteger(desz(v) if desz else v)
         return cls(N, R, S, Z)
 
     @staticmethod
+    # Why the name `deser`?
     def deser(v, n):
         if isinstance(v, cmod.integer):
             return v % n
@@ -71,3 +72,12 @@ class IssuerKey:
 
     def __eq__(self, other):
         return isinstance(other, type(self)) and self.__dict__ == other.__dict__
+
+    @property
+    def toKeys(self):
+        return {
+            "N": str(self.N),
+            "R": {k: str(v) for k, v in self.R.items()},
+            "S": str(self.S),
+            "Z": str(self.Z)
+        }

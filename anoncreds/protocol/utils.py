@@ -43,8 +43,7 @@ def get_prime_in_range(start, end):
     while n < maxIter:
         r = randint(start, end)
         if cmod.isPrime(r):
-            logging.debug("Found prime in {} iteration between {} and {}".
-                  format(n, start, end))
+            logging.debug("Found prime in {} iterations".format(n))
             return r
         n += 1
     raise Exception("Cannot find prime in {} iterations".format(maxIter))
@@ -113,7 +112,6 @@ def genPrime():
     while not cmod.isPrime(2 * prime + 1):
         prime = cmod.randomPrime(LARGE_PRIME)
         i += 1
-    print("In {} iterations, found prime {}".format(i, prime))
     return prime
 
 
@@ -160,3 +158,30 @@ def generateMasterSecret():
 
 def generateVPrime():
     return cmod.randomBits(LARGE_VPRIME)
+
+
+def shorten(s, size=None):
+    size = size or 10
+    if isinstance(s, str):
+        if len(s) <= size:
+            return s
+        else:
+            head = int((size - 2) * 5 / 8)
+            tail = int(size) - 2 - head
+            return s[:head] + '..' + s[-tail:]
+    else:  # assume it's an iterable
+        return [shorten(x, size) for x in iter(s)]
+
+
+def shortenMod(s, size=None):
+    return ' mod '.join(shorten(str(s).split(' mod '), size))
+
+
+def shortenDictVals(d, size=None):
+    r = {}
+    for k, v in d.items():
+        if isinstance(v, dict):
+            r[k] = shortenDictVals(v, size)
+        else:
+            r[k] = shortenMod(v, size)
+    return r

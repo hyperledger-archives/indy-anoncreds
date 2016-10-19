@@ -1,12 +1,11 @@
 from copy import copy
 
-from config.config import cmod
-
-from anoncreds.protocol.utils import strToCryptoInteger, base58decode
 from anoncreds.protocol.globals import MASTER_SEC_RAND, \
     PK_N, PK_S, PK_Z, PK_R
 from anoncreds.protocol.types import SerFmt
-from anoncreds.protocol.utils import serialize
+from anoncreds.protocol.utils import serialize, shortenDictVals
+from anoncreds.protocol.utils import strToCryptoInteger, base58decode
+from config.config import cmod
 
 
 class IssuerKey:
@@ -21,20 +20,24 @@ class IssuerKey:
         self.S = cmod.integer(S) % N
         self.Z = cmod.integer(Z) % N
 
-    def __repr__(self):
+    def __str__(self):
         return str(self.uid)
+
+    def __repr__(self):
+        return str(shortenDictVals(self.__dict__))
 
     @classmethod
     def fromKeys(cls, keys, desz=base58decode):
-        N = strToCryptoInteger(desz(keys["N"]))
-        S = strToCryptoInteger(desz(keys["S"]))
-        Z = strToCryptoInteger(desz(keys["Z"]))
+        N = strToCryptoInteger(desz(keys["N"]) if desz else keys["N"])
+        S = strToCryptoInteger(desz(keys["S"]) if desz else keys["S"])
+        Z = strToCryptoInteger(desz(keys["Z"]) if desz else keys["Z"])
         R = {}
         for k, v in keys["R"].items():
-            R[k] = strToCryptoInteger(desz(v))
+            R[k] = strToCryptoInteger(desz(v) if desz else v)
         return cls(N, R, S, Z)
 
     @staticmethod
+    # Why the name `deser`?
     def deser(v, n):
         if isinstance(v, cmod.integer):
             return v % n
@@ -68,4 +71,13 @@ class IssuerKey:
         return serialize(data, serFmt)
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        return isinstance(other, type(self)) and self.__dict__ == other.__dict__
+
+    @property
+    def toKeys(self):
+        return {
+            "N": str(self.N),
+            "R": {k: str(v) for k, v in self.R.items()},
+            "S": str(self.S),
+            "Z": str(self.Z)
+        }

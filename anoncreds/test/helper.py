@@ -23,7 +23,6 @@ def getPresentationToken(credDefs,
                          encodedAttrs):
     presentationToken = {}
     for key, val in proofBuilder.U.items():
-        credDef = credDefs[key]
         pk = pks[key]
         sk = issuerSecretKeys[key].sk
         A, e, vprimeprime = Issuer.generateCredential(proofBuilder.U[key],
@@ -100,10 +99,10 @@ def prepareProofAndVerify(credDefs,
 
     vNonce = proofNonce if not verifyNonce else verifyNonce
     return Verifier.verifyProof(proof=proof,
-                               nonce=vNonce,
-                               credDefPks=credDefPks,
-                               attrs=encodedAttrs,
-                               revealedAttrs=revealedAttrs)
+                                nonce=vNonce,
+                                credDefPks=credDefPks,
+                                encodedAttrs=encodedAttrs,
+                                revealedAttrs=revealedAttrs)
 
 
 def verifyProof(credDefs, credDefPks, issuerSecretKeys,

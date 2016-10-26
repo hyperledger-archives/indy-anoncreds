@@ -24,9 +24,10 @@ def get_hash(*args):
     :return:
     """
 
+    numbers = [cmod.Conversion.IP2OS(arg) for arg in args]
     h_challenge = sha256()
-    for arg in args:
-        h_challenge.update(cmod.Conversion.IP2OS(arg))
+    for n in sorted(numbers, key=str):
+        h_challenge.update(n)
     return h_challenge.digest()
 
 
@@ -49,13 +50,13 @@ def get_prime_in_range(start, end):
     raise Exception("Cannot find prime in {} iterations".format(maxIter))
 
 
-def splitRevealedAttrs(attrs, revealedAttrs):
+def splitRevealedAttrs(encodedAttrs, revealedAttrs):
     # Revealed attributes
     Ar = {}
     # Unrevealed attributes
     Aur = {}
 
-    for k, value in attrs.items():
+    for k, value in encodedAttrs.items():
         if k in revealedAttrs:
             Ar[k] = value
         else:

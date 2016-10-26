@@ -1,4 +1,5 @@
 import uuid
+
 from functools import reduce
 from math import sqrt, floor
 from typing import Dict, Sequence
@@ -118,6 +119,7 @@ class ProofBuilder:
 
             # Calculate the `c` value as the hash result of Aprime, T and nonce.
             # This value will be used to verify the proof against the credential
+
             proofComponent.c = cmod.integer(get_hash(
                 *get_values_of_dicts(proofComponent.primeValues.Aprime,
                                      proofComponent.T, {NONCE: nonce})))
@@ -259,11 +261,8 @@ class ProofBuilder:
                     Q *= x.S ** proofComponent.alphatilde % x.N
                     proofComponent.TauList.append(Q)
 
-            proofComponent.c = cmod.integer(get_hash(nonce,
-                                                     *reduce(lambda x, y: x + y,
-                                                             [
-                                                                 proofComponent.TauList,
-                                                                 proofComponent.CList])))
+            tauAndC = reduce(lambda x, y: x + y, [ proofComponent.TauList, proofComponent.CList])
+            proofComponent.c = cmod.integer(get_hash(nonce, *tauAndC))
 
         def getSubProof(creds, predProofComponent):
             for key, val in creds.items():

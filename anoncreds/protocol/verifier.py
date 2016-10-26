@@ -15,16 +15,20 @@ from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
 
 
 def getProofParams(proof, pkIssuer: Dict[str, IssuerKey],
-                   attrs, revealedAttrs):
-    flatAttrs = {x: y for z in attrs.values() for x, y in z.items()}
-    Ar, unrevealedAttrs = splitRevealedAttrs(flatAttrs, revealedAttrs)
+                   encodedAttrs, revealedAttrs):
+    flatEncodedAttrs = {x: y
+                        for z in encodedAttrs.values()
+                            for x, y in z.items()}
+    revealedAttrs, unrevealedAttrs = splitRevealedAttrs(
+        flatEncodedAttrs, revealedAttrs)
+
     Tvect = {}
     # Extract the values from the proof
     c, evect, mvect, vvect, Aprime = proof
 
     for key, val in pkIssuer.items():
         p = pkIssuer[key].inFieldN()
-        includedAttrs = attrs[key]
+        includedAttrs = encodedAttrs[key]
 
         Rur = 1 % p.N
         for k, v in unrevealedAttrs.items():
@@ -33,9 +37,9 @@ def getProofParams(proof, pkIssuer: Dict[str, IssuerKey],
         Rur *= p.R[ZERO_INDEX] ** mvect[ZERO_INDEX]
 
         Rr = 1 % p.N
-        for k, v in Ar.items():
+        for k, v in revealedAttrs.items():
             if k in includedAttrs:
-                Rr *= p.R[str(k)] ** attrs[key][str(k)]
+                Rr *= p.R[str(k)] ** encodedAttrs[key][str(k)]
 
         denom = (Rr * (Aprime[key] ** (2 ** LARGE_E_START)))
         Tvect1 = (p.Z / denom) ** (-1 * c)
@@ -124,26 +128,36 @@ class Verifier:
                 Qvect = Qvect1 * Tuproduct * (p.S ** alphavect) % p.N
                 Tau.append(Qvect)
 
-        cvect = cmod.integer(
-            get_hash(nonce, *reduce(lambda x, y: x + y, [Tau, CList])))
+        tauAndC = reduce(lambda x, y: x + y, [Tau, CList])
+        cvect = cmod.integer(get_hash(nonce, *tauAndC))
 
         return c == cvect
 
     @classmethod
-    def verifyProof(cls, credDefPks, proof, nonce, attrs, revealedAttrs):
+    def verifyProof(cls, credDefPks, proof, nonce, encodedAttrs, revealedAttrs):
         """
         Verify the proof
-        :param attrs: The encoded attributes dictionary
+        :param encodedAttrs: The encoded attributes dictionary
         :param revealedAttrs: The revealed attributes list
         :param nonce: The nonce used to have a commit
         :return: A boolean with the verification status for the proof
         """
 
-        Aprime, c, Tvect = getProofParams(proof, credDefPks, attrs,
+        import logging
+        Aprime, c, Tvect = getProofParams(proof, credDefPks, encodedAttrs,
                                           revealedAttrs)
+        logging.debug("Proof Verification 1: proof, "
+                      "credDefPks, encodedAttrs, revealedAttrs: {} {} {} {}".
+                      format(proof, credDefPks, encodedAttrs, revealedAttrs))
         # Calculate the `cvect` value based on proof.
         # This value is mathematically proven to be equal to `c`
         # if proof is created correctly from credentials. Refer 2.8 in document
+        logging.debug("Proof Verification 2: Aprime, Tvect, nonce: {} {} {}".
+                      format(Aprime, Tvect, nonce))
+
         cvect = cmod.integer(get_hash(*get_values_of_dicts(Aprime, Tvect,
                                                            {NONCE: nonce})))
+        logging.debug("Proof Verification 3: c, cvect: {} {}".
+                      format(c, cvect))
+
         return c == cvect

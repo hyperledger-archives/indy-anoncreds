@@ -104,6 +104,7 @@ class ProofBuilder:
         :param nonce: The nonce used to have a commit
         :return: The proof
         """
+        import logging
 
         def initProofComponent(issuerPks, creds, encodedAttrs, revealedAttrs,
                                nonce):
@@ -111,6 +112,11 @@ class ProofBuilder:
             proofComponent.flatAttrs, proofComponent.unrevealedAttrs = \
                 getUnrevealedAttrs(
                     encodedAttrs, revealedAttrs)
+
+            logging.debug("Proof Building 1: encodedAttrs, unrevealedAttrs, "
+                          "issuerPks: {} {} {}".format(
+                encodedAttrs, proofComponent.unrevealedAttrs, issuerPks))
+
             proofComponent.tildeValues, proofComponent.primeValues, \
             proofComponent.T = findSecretValues(
                 encodedAttrs,
@@ -119,6 +125,10 @@ class ProofBuilder:
 
             # Calculate the `c` value as the hash result of Aprime, T and nonce.
             # This value will be used to verify the proof against the credential
+
+            logging.debug(
+                "Proof Building 2: Aprime, T, nonce: {} {} {}".format(
+                    proofComponent.primeValues.Aprime, proofComponent.T, nonce))
 
             proofComponent.c = cmod.integer(get_hash(
                 *get_values_of_dicts(proofComponent.primeValues.Aprime,

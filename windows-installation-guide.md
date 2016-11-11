@@ -6,12 +6,14 @@ Please find a detailed a detailed steps below.
     1. Install MSYS2 [MSYS2_installer](https://msys2.github.io/)
     2. Open MSYS2 shell (_C:\msys64\msys2.exe_)
     3. Update packages (from MSYS2 shell):
+    
          ```
          pacman -Sy pacman
          pacman -Syu
          pacman -Su
          ```
     4. Install a toolchain (from MSYS2 shell):
+    
          ```
          pacman -S mingw-w64-x86_64-gcc
          pacman -S make
@@ -27,6 +29,7 @@ Please find a detailed a detailed steps below.
     2. Open Mingw64 shell (_C:\msys64\mingw64.exe_)
     3. Go to extracted PBC location
     4. Build PBC:
+    
         ```
          ./configure --prefix=/mingw64 --disable-static --enable-shared
          make
@@ -39,14 +42,16 @@ Please find a detailed a detailed steps below.
    In what follows we assume that it was installed to _C:\Users\user\AppData\Local\Application Data\Programs\Python\Python35_. 
 
 6. Patch Python to be able to build and use 64 bit binaries
-    1. Download and extract gendef.exe [gendef](https://sourceforge.net/projects/mingw/files/MinGW/Extension/gendef/gendef-1.0.1346/gendef-1.0.1346-1-mingw32-bin.tar.lzma/download)
+    1. Download and extract gendef.exe from [gendef](https://sourceforge.net/projects/mingw/files/MinGW/Extension/gendef/gendef-1.0.1346/gendef-1.0.1346-1-mingw32-bin.tar.lzma/download)
     2. Copy dendef.exe into mingw64/bin (_C:\msys64\mingw64/bin_)
     3. Copy _python35.dll_ to _libs_ folder:
+    
         ```
         cd C:\Users\user\AppData\Local\Application Data\Programs\Python\Python35
         cp python35.dll libs
         ```
     4. Patch _libpython35.a_
+    
         ```
         cd C:\Users\user\AppData\Local\Application Data\Programs\Python\Python35\libs
         rename python35.lib old_python35.lib
@@ -56,6 +61,7 @@ Please find a detailed a detailed steps below.
     5. Patch _pyconfig.h_:
         1. Open _C:\Users\user\AppData\Local\Application Data\Programs\Python\Python35\include\pyconfig.h_
         2. In that file search for the text `#ifdef _WIN64`, and cut out the following three lines:
+        
             ```
             #ifdef _WIN64
             #define MS_WIN64
@@ -70,6 +76,7 @@ Please find a detailed a detailed steps below.
     1. Get and extract charm-crypto source [charm-crypto-0.43](https://pypi.python.org/packages/2b/6b/2c2abcb66f62155a60f5ecfe6936f651ecb9a115a2203c1b1d60d0e8d15e/Charm-Crypto-0.43.tar.gz#md5=eaba7346c6ac50079a4b7f75f5ce644d)
     2. Go to extracted charm-crypto folder
     3. Add `#include <stdint.h>` at the top of the following files:
+    
         ```
         Charm-Crypto-0.43\charm\core\math\integer\integermodule.h
         Charm-Crypto-0.43\charm\core\math\elliptic_curve\ecmodule.h
@@ -77,6 +84,7 @@ Please find a detailed a detailed steps below.
         ```
     4. Open Mingw64 shell (_C:\msys64\mingw64.exe_)
     5. Build charm-crypto (please note that we specify the path to python35.exe there)
+    
         ```
          ./configure.sh --prefix=/mingw64 --python=/c/user/sovrin/AppData/Local/Programs/Python/Python35/python.exe 
          make

@@ -1,6 +1,22 @@
-# Installing charm-crypto on Windows x64 using Mingw64
+# Installing charm-crypto on Windows x64
 
-Please find a detailed a detailed steps below.
+## Pre-built package
+
+The easiest way to install charm-crypto is to use the pre-built (with Mingw64) package for Windows x64.
+1. Install Python 3.5 for Windows x86-64: [Python3.5_win_x86_64](https://www.python.org/ftp/python/3.5.2/python-3.5.2-amd64.exe).
+
+2. Extract `charm-crypto-win-x64.7z` and go to `charm-crypto` folder
+
+3. Copy all `.dll` files to `C:\Windows\System32`.
+
+4. Run the following to install Charm-crypto:
+    ```
+    easy_install Charm_Crypto-0.43-py3.5-win-amd64.egg
+    ```
+
+## Manual build and installation of charm-crypto using Mingw64
+
+If the pre-built packages (see above) doesn't work or not appropriate for some reasons, then please find detailed steps on how to build charm-crypto on Win_x64 using Mingw64:
 
 1. Install and prepare mingw64
     1. Install MSYS2 [MSYS2_installer](https://msys2.github.io/)

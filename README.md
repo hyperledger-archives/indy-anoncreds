@@ -25,5 +25,5 @@ Then:
 
 ## Installation on Windows
 
-Currently charm-crypto needs to be built manually. Please refer to the following guide on how to build charm-crypot on Windows x64 using Mingw64: 
-[Windows Installation Mingw64](windows-installation-guide.md)
+Please refer to the following guide on how to install charm-crypto on Windows x64: 
+[Windows Installation](windows-installation-guide.md)

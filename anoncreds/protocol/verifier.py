@@ -6,12 +6,12 @@ from charm.core.math.integer import integer, randomBits
 from anoncreds.protocol.globals import LARGE_NONCE
 from anoncreds.protocol.primary.primary_proof_verifier import PrimaryProofVerifier
 from anoncreds.protocol.revocation.accumulators.non_revocation_proof_verifier import NonRevocationProofVerifier
-from anoncreds.protocol.types import PublicData, FullProof
+from anoncreds.protocol.types import PublicData, FullProof, CredentialDefinition
 from anoncreds.protocol.utils import get_hash
 
 
 class Verifier:
-    def __init__(self, id, publicData: Dict[str, PublicData]):
+    def __init__(self, id, publicData: Dict[CredentialDefinition, PublicData]):
         self.id = id
         self._nonRevocVerifier = NonRevocationProofVerifier(publicData)
         self._primaryVerifier = PrimaryProofVerifier(publicData)
@@ -22,11 +22,11 @@ class Verifier:
 
     def verify(self, proof: FullProof, allRevealedAttrs, nonce):
         TauList = []
-        for issuerId, proofItem in proof.proofs.items():
+        for credDef, proofItem in proof.proofs.items():
             if proofItem.nonRevocProof:
-                TauList += self._nonRevocVerifier.verifyNonRevocation(issuerId, proof.cHash, proofItem.nonRevocProof)
+                TauList += self._nonRevocVerifier.verifyNonRevocation(credDef, proof.cHash, proofItem.nonRevocProof)
             if proofItem.primaryProof:
-                TauList += self._primaryVerifier.verify(issuerId, proof.cHash, proofItem.primaryProof, allRevealedAttrs)
+                TauList += self._primaryVerifier.verify(credDef, proof.cHash, proofItem.primaryProof, allRevealedAttrs)
 
         CHver = self._get_hash(proof.CList, TauList, nonce)
 

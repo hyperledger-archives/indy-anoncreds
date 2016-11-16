@@ -1,4 +1,3 @@
-from collections import namedtuple
 from enum import Enum
 from hashlib import sha256
 from typing import TypeVar, Sequence, Dict, Set
@@ -6,9 +5,6 @@ from typing import TypeVar, Sequence, Dict, Set
 from charm.core.math.integer import integer
 from charm.core.math.pairing import ZR
 from charm.toolbox.conversion import Conversion
-
-from anoncreds.protocol.globals import APRIME, ETILDE, MTILDE, VTILDE, EPRIME, VPRIME, \
-    CRED_A, CRED_E, CRED_V
 
 
 class AttribType:
@@ -111,15 +107,22 @@ class PublicParams:
         self.h = h
 
 
+class CredentialDefinition:
+    def __init__(self, name, version, attrNames, type):
+        self.name = name
+        self.type = type
+        self.version = version
+        self.attrNames = attrNames
+
+
 class PublicKey:
-    def __init__(self, N, Rms, Rctxt, R, S, Z, attrNames):
+    def __init__(self, N, Rms, Rctxt, R, S, Z):
         self.N = N
         self.Rms = Rms
         self.Rctxt = Rctxt
         self.R = R
         self.S = S
         self.Z = Z
-        self.attrNames = attrNames
 
     @staticmethod
     def deser(v, n):
@@ -230,10 +233,11 @@ class Accumulator:
 
 
 class SecretData:
-    def __init__(self, pk: PublicKey, sk: SecretKey,
+    def __init__(self, credDef: CredentialDefinition, pk: PublicKey, sk: SecretKey,
                  pkR: RevocationPublicKey, skR: RevocationSecretKey,
                  accum: Accumulator, g: GType,
                  pkAccum: AccumulatorPublicKey, skAccum: AccumulatorSecretKey):
+        self.credDef = credDef
         self.pk = pk
         self.sk = sk
         self.pkR = pkR
@@ -245,9 +249,10 @@ class SecretData:
 
 
 class PublicData:
-    def __init__(self, pk: PublicKey, pkR: RevocationPublicKey,
+    def __init__(self, credDef: CredentialDefinition, pk: PublicKey, pkR: RevocationPublicKey,
                  accum: Accumulator, g: GType,
                  pkAccum: AccumulatorPublicKey):
+        self.credDef = credDef
         self.pk = pk
         self.pkR = pkR
         self.accum = accum
@@ -493,104 +498,11 @@ class FullProof:
         self.proofs = proofs
         self.CList = CList
 
-    def getIssuerIds(self):
+    def getCredDefs(self):
         return self.proofs.keys()
-
-
-class CredDefPublicKey:
-    def __init__(self, N, R0, R, S, Z):
-        self.N = N
-        self.R0 = R0
-        self.R = R
-        self.S = S
-        self.Z = Z
-
-    @staticmethod
-    def deser(v, n):
-        if isinstance(v, integer):
-            return v % n
-        elif isinstance(v, int):
-            return integer(v) % n
-        else:
-            raise RuntimeError("unknown type: {}".format(type(v)))
-
-    def inFieldN(self):
-        """
-        Returns new Public Key with same values, in field N
-        :return:
-        """
-
-        r = {k: self.deser(v, self.N) for k, v in self.R.items()}
-        return CredDefPublicKey(self.N,
-                                self.deser(self.R0, self.N),
-                                r,
-                                self.deser(self.S, self.N),
-                                self.deser(self.Z, self.N))
-
-    def __repr__(self):
-        return str(self.__dict__)
-
-
-class CredDefSecretKey:
-    def __init__(self, p, q):
-        self.p = p
-        self.q = q
 
 
 class SerFmt(Enum):
     default = 1
     py3Int = 2
     base58 = 3
-
-
-class ProofComponent:
-    def __init__(self):
-        self.evect = {}
-        self.mvect = {}
-        self.vvect = {}
-        self.flatAttrs = None
-        self.unrevealedAttrs = None
-        self.tildeValues = None
-        self.primeValues = None
-        self.T = None
-        self.c = None
-
-
-class PredicateProofComponent(ProofComponent):
-    def __init__(self):
-        super().__init__()
-        self.TauList = []
-        self.CList = []
-        self.C = {}
-        self.u = {}
-        self.r = {}
-
-        self.alphavect = {}
-        self.rvect = {}
-        self.uvect = {}
-
-        self.rtilde = {}
-        self.utilde = {}
-        self.alphatilde = 0
-
-
-# Named tuples
-
-
-Credential = namedtuple("Credential", [CRED_A, CRED_E, CRED_V])
-
-TildValue = namedtuple("TildValue", [MTILDE, ETILDE, VTILDE])
-
-PrimeValue = namedtuple("PrimeValue", [APRIME, VPRIME, EPRIME])
-
-SecretValue = namedtuple("SecretValue", ["tildValues", "primeValues", "T"])
-
-CredDefSecretKey = namedtuple("CredDefSecretKey", ["p", "q"])
-
-# Proof = namedtuple('Proof', [C_VALUE, EVECT, MVECT, VVECT, APRIME])
-
-SubProofPredicate = namedtuple('SubProofPredicate', ["alphavect", "rvect",
-                                                     "uvect"])
-
-PredicateProof = namedtuple('PredicateProof', ["subProofC", "subProofPredicate",
-                                               "C", "CList"])

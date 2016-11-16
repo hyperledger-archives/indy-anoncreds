@@ -10,8 +10,8 @@ class PrimaryClaimIssuer:
         self._secretData = secretData
 
     @classmethod
-    def genKeys(cls, attrNames, p_prime=None, q_prime=None) -> (PublicKey, SecretKey):
-        if not attrNames and isinstance(attrNames, list):
+    def genKeys(cls, credDef, p_prime=None, q_prime=None) -> (PublicKey, SecretKey):
+        if not credDef.attrNames and isinstance(credDef.attrNames, list):
             raise ValueError("List of attribute names is required to "
                              "setup credential definition")
 
@@ -30,7 +30,7 @@ class PrimaryClaimIssuer:
         Xz = PrimaryClaimIssuer._genX(p_prime, q_prime)
         Xr = {}
 
-        for name in attrNames:
+        for name in credDef.attrNames:
             Xr[str(name)] = PrimaryClaimIssuer._genX(p_prime, q_prime)
 
         # Generate `Z` as the exponentiation of the quadratic random 'S' .
@@ -39,7 +39,7 @@ class PrimaryClaimIssuer:
 
         # Generate random numbers corresponding to every attributes
         R = {}
-        for name in attrNames:
+        for name in credDef.attrNames:
             R[str(name)] = (S ** Xr[str(name)]) % n
 
         # Rms is a random number needed corresponding to master secret m1
@@ -48,7 +48,7 @@ class PrimaryClaimIssuer:
         # Rctxt is a random number needed corresponding to context attribute m2
         Rctxt = (S ** PrimaryClaimIssuer._genX(p_prime, q_prime)) % n
 
-        return (PublicKey(n, Rms, Rctxt, R, S, Z, attrNames), SecretKey(p, q))
+        return (PublicKey(n, Rms, Rctxt, R, S, Z), SecretKey(p, q))
 
     @classmethod
     def _genX(cls, p_prime, q_prime):

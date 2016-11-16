@@ -1,24 +1,26 @@
+from typing import Dict
+
 from charm.core.math.integer import integer
 
 from anoncreds.protocol.globals import LARGE_E_START, ITERATIONS, DELTA
 from anoncreds.protocol.primary.primary_proof_common import calcTeq, calcTge
 from anoncreds.protocol.types import PublicData, PrimaryEqualProof, \
-    PrimaryPredicateGEProof, PrimaryProof
+    PrimaryPredicateGEProof, PrimaryProof, CredentialDefinition
 
 
 class PrimaryProofVerifier:
-    def __init__(self, publicData: PublicData):
+    def __init__(self, publicData: Dict[CredentialDefinition, PublicData]):
         self._data = publicData
 
-    def verify(self, issuerId, cHash, primaryProof: PrimaryProof, allRevealedAttrs):
+    def verify(self, credDef, cHash, primaryProof: PrimaryProof, allRevealedAttrs):
         cH = integer(cHash)
-        THat = self._verifyEquality(issuerId, cH, primaryProof.eqProof, allRevealedAttrs)
+        THat = self._verifyEquality(credDef, cH, primaryProof.eqProof, allRevealedAttrs)
         for geProof in primaryProof.geProofs:
-            THat += self._verifyGEPredicate(issuerId, cH, geProof)
+            THat += self._verifyGEPredicate(credDef, cH, geProof)
 
         return THat
 
-    def _verifyEquality(self, issuerId, cH, proof: PrimaryEqualProof, allRevealedAttrs):
+    def _verifyEquality(self, credDef, cH, proof: PrimaryEqualProof, allRevealedAttrs):
         """
         Verify the proof
         :param attrs: The encoded attributes dictionary
@@ -27,8 +29,9 @@ class PrimaryProofVerifier:
         :return: A boolean with the verification status for the proof
         """
         THat = []
-        pk = self._data[issuerId].pk
-        unrevealedAttrNames = set(pk.attrNames) - set(proof.revealedAttrNames)
+        pk = self._data[credDef].pk
+        attrNames = self._data[credDef].credDef.attrNames
+        unrevealedAttrNames = set(attrNames) - set(proof.revealedAttrNames)
 
         T1 = calcTeq(pk, proof.Aprime, proof.e, proof.v,
                      proof.m, proof.m1, proof.m2,
@@ -44,8 +47,8 @@ class PrimaryProofVerifier:
         THat.append(T)
         return THat
 
-    def _verifyGEPredicate(self, issuerId, cH, proof: PrimaryPredicateGEProof):
-        pk = self._data[issuerId].pk
+    def _verifyGEPredicate(self, credDef, cH, proof: PrimaryPredicateGEProof):
+        pk = self._data[credDef].pk
         k, v = proof.predicate.attrName, proof.predicate.value
 
         TauList = calcTge(pk, proof.u, proof.r, proof.mj, proof.alpha, proof.T)

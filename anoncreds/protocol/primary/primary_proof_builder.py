@@ -1,21 +1,18 @@
-from functools import reduce
 from typing import Dict, Sequence
 
 from charm.core.math.integer import randomBits, integer
 
 from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, LARGE_E_START, LARGE_ETILDE, \
-    LARGE_VTILDE, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, APRIME, DELTA, TVAL, \
-    ZERO_INDEX
+    LARGE_VTILDE, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, DELTA
 from anoncreds.protocol.primary.primary_proof_common import calcTge, calcTeq
-from anoncreds.protocol.types import Credential, PredicateProof, SubProofPredicate, T, Proof, PredicateProofComponent, \
-    PrimaryClaim, PublicData, Predicate, PrimaryInitProof, \
-    PrimaryEqualInitProof, PrimaryPrecicateGEInitProof, PrimaryProof, PrimaryEqualProof, PrimaryPredicateGEProof
-from anoncreds.protocol.utils import get_hash, get_values_of_dicts, \
-    getUnrevealedAttrs, updateDict, fourSquares
+from anoncreds.protocol.types import PrimaryClaim, PublicData, Predicate, PrimaryInitProof, \
+    PrimaryEqualInitProof, PrimaryPrecicateGEInitProof, PrimaryProof, PrimaryEqualProof, PrimaryPredicateGEProof, \
+    CredentialDefinition
+from anoncreds.protocol.utils import getUnrevealedAttrs, fourSquares
 
 
 class PrimaryClaimInitializer:
-    def __init__(self, publicData: Dict[str, PublicData], masterSecret):
+    def __init__(self, publicData: Dict[CredentialDefinition, PublicData], masterSecret):
         """
         Create a proof instance
 
@@ -31,23 +28,23 @@ class PrimaryClaimInitializer:
         self._vprime = {}
         self._U = {}
         # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
-        for issuerID, val in self._data.items():
-            self._vprime[issuerID] = randomBits(LARGE_VPRIME)
+        for credDef, val in self._data.items():
+            self._vprime[credDef] = randomBits(LARGE_VPRIME)
             N = val.pk.N
             Rms = val.pk.Rms
             S = val.pk.S
-            self._U[issuerID] = (S ** self._vprime[issuerID]) * (Rms ** self._ms) % N
+            self._U[credDef] = (S ** self._vprime[credDef]) * (Rms ** self._ms) % N
 
-    def getU(self, issuerId):
-        return self._U[issuerId]
+    def getU(self, credDef):
+        return self._U[credDef]
 
-    def preparePrimaryClaim(self, issuerId, claim: PrimaryClaim):
-        claim.v += self._vprime[issuerId]
+    def preparePrimaryClaim(self, credDef, claim: PrimaryClaim):
+        claim.v += self._vprime[credDef]
         return claim
 
 
 class PrimaryProofBuilder:
-    def __init__(self, publicData: Dict[str, PublicData], m1):
+    def __init__(self, publicData: Dict[CredentialDefinition, PublicData], m1):
         """
         Create a proof instance
 
@@ -56,38 +53,38 @@ class PrimaryProofBuilder:
         self._m1 = m1
         self._data = publicData
 
-    def initProof(self, issuerId, c1: PrimaryClaim, revealedAttrs: Sequence[str], predicates: Sequence[Predicate],
+    def initProof(self, credDef, c1: PrimaryClaim, revealedAttrs: Sequence[str], predicates: Sequence[Predicate],
                   m1Tilde, m2Tilde) -> PrimaryInitProof:
         if not c1:
             return None
 
-        eqProof = self._initEqProof(issuerId, c1, revealedAttrs, m1Tilde, m2Tilde)
+        eqProof = self._initEqProof(credDef, c1, revealedAttrs, m1Tilde, m2Tilde)
         geProofs = []
         for predicate in predicates:
-            geProof = self._initGeProof(issuerId, eqProof, c1, predicate)
+            geProof = self._initGeProof(credDef, eqProof, c1, predicate)
             geProofs.append(geProof)
         return PrimaryInitProof(eqProof, geProofs)
 
-    def finalizeProof(self, issuerId, cH, initProof: PrimaryInitProof) -> PrimaryProof:
+    def finalizeProof(self, credDef, cH, initProof: PrimaryInitProof) -> PrimaryProof:
         if not initProof:
             return None
 
         cH = integer(cH)
-        eqProof = self._finalizeEqProof(issuerId, cH, initProof.eqProof)
+        eqProof = self._finalizeEqProof(credDef, cH, initProof.eqProof)
         geProofs = []
         for initGeProof in initProof.geProofs:
-            geProof = self._finalizeGeProof(issuerId, cH, initGeProof, eqProof)
+            geProof = self._finalizeGeProof(credDef, cH, initGeProof, eqProof)
             geProofs.append(geProof)
         return PrimaryProof(eqProof, geProofs)
 
-    def _initEqProof(self, issuerId, c1: PrimaryClaim, revealedAttrs: Sequence[str], m1Tilde, m2Tilde) \
+    def _initEqProof(self, credDef, c1: PrimaryClaim, revealedAttrs: Sequence[str], m1Tilde, m2Tilde) \
             -> PrimaryEqualInitProof:
         m2Tilde = m2Tilde if m2Tilde else integer(randomBits(LARGE_MVECT))
         unrevealedAttrs = getUnrevealedAttrs(c1.attrs, revealedAttrs)
         mtilde = self._getMTilde(unrevealedAttrs)
 
         Ra = integer(randomBits(LARGE_VPRIME))
-        pk = self._data[issuerId].pk
+        pk = self._data[credDef].pk
 
         A, e, v = c1.A, c1.e, c1.v
         Aprime = A * (pk.S ** Ra) % pk.N
@@ -110,10 +107,10 @@ class PrimaryProofBuilder:
         return PrimaryEqualInitProof(c1, Aprime, T, etilde, eprime, vtilde, vprime, mtilde, m1Tilde, m2Tilde,
                                      unrevealedAttrs.keys(), revealedAttrs)
 
-    def _initGeProof(self, issuerId, eqProof: PrimaryEqualInitProof, c1: PrimaryClaim, predicate: Predicate) \
+    def _initGeProof(self, credDef, eqProof: PrimaryEqualInitProof, c1: PrimaryClaim, predicate: Predicate) \
             -> PrimaryPrecicateGEInitProof:
         # gen U for Delta
-        pk = self._data[issuerId].pk
+        pk = self._data[credDef].pk
         k, value = predicate.attrName, predicate.value
         delta = c1.attrs[k] - value
         if delta < 0:
@@ -145,7 +142,7 @@ class PrimaryProofBuilder:
         TauList = calcTge(pk, utilde, rtilde, eqProof.mTilde[k], alphatilde, T)
         return PrimaryPrecicateGEInitProof(CList, TauList, u, utilde, r, rtilde, alphatilde, predicate, T)
 
-    def _finalizeEqProof(self, issuerId, cH, initProof: PrimaryEqualInitProof) -> PrimaryEqualProof:
+    def _finalizeEqProof(self, credDef, cH, initProof: PrimaryEqualInitProof) -> PrimaryEqualProof:
         e = initProof.eTilde + (cH * initProof.ePrime)
         v = initProof.vTilde + (cH * initProof.vPrime)
 
@@ -157,7 +154,7 @@ class PrimaryProofBuilder:
 
         return PrimaryEqualProof(e, v, m, m1, m2, initProof.Aprime, initProof.revealedAttrs)
 
-    def _finalizeGeProof(self, issuerId, cH, initProof: PrimaryPrecicateGEInitProof, eqProof: PrimaryEqualProof) \
+    def _finalizeGeProof(self, credDef, cH, initProof: PrimaryPrecicateGEInitProof, eqProof: PrimaryEqualProof) \
             -> PrimaryPredicateGEProof:
         u = {}
         r = {}
@@ -178,130 +175,3 @@ class PrimaryProofBuilder:
         for key, value in unrevealedAttrs.items():
             mtilde[key] = integer(randomBits(LARGE_MVECT))
         return mtilde
-
-    def prepareProofPredicateGreaterEq(self,
-                                       creds: Dict[str, Credential],
-                                       attrs: Dict[str, Dict[str, T]],
-                                       revealedAttrs: Sequence[str],
-                                       nonce,
-                                       predicate: Dict[str, Dict]) -> PredicateProof:
-
-        def initProofComponent(attrs, creds, revealedAttrs):
-            proofComponent = PredicateProofComponent()
-            proofComponent.flatAttrs, proofComponent.unrevealedAttrs = getUnrevealedAttrs(attrs, revealedAttrs)
-            proofComponent.tildeValues, proofComponent.primeValues, proofComponent.T = self._findSecretValues(
-                attrs,
-                proofComponent.unrevealedAttrs,
-                creds)
-            return proofComponent
-
-        def appendToProofCompWithCredData(proofComponent, creds):
-            for key, _ in creds.items():
-                proofComponent.TauList.append(proofComponent.T[key])
-                proofComponent.CList.append(proofComponent.primeValues.Aprime[key])
-                updateDict(proofComponent.C, key, APRIME, proofComponent.primeValues.Aprime[key])
-
-        def appendToProofCompWithPredicateData(proofComponent, predicate):
-            for key, val in predicate.items():
-                x = self.credDefPks[key]
-                # Iterate over the predicates for a given credential(issuer)
-                for k, value in val.items():
-
-                    delta = proofComponent.flatAttrs[k] - value
-                    if delta < 0:
-                        raise ValueError("Predicate is not satisfied")
-
-                    proofComponent.u = fourSquares(delta)
-
-                    for i in range(0, ITERATIONS):
-                        proofComponent.r[str(i)] = integer(randomBits(LARGE_VPRIME))
-                    proofComponent.r[DELTA] = integer(randomBits(LARGE_VPRIME))
-
-                    Tval = {}
-                    for i in range(0, ITERATIONS):
-                        Tval[str(i)] = (x.Z ** proofComponent.u[i]) * (x.S ** proofComponent.r[str(i)]) % x.N
-                        proofComponent.utilde[str(i)] = integer(randomBits(LARGE_UTILDE))
-                        proofComponent.rtilde[str(i)] = integer(randomBits(LARGE_RTILDE))
-                    Tval[DELTA] = (x.Z ** delta) * (x.S ** proofComponent.r[DELTA]) % x.N
-                    proofComponent.rtilde[DELTA] = integer(randomBits(LARGE_RTILDE))
-
-                    proofComponent.CList.extend(get_values_of_dicts(Tval))
-                    updateDict(proofComponent.C, key, TVAL, Tval)
-
-                    for i in range(0, ITERATIONS):
-                        proofComponent.TauList.append(
-                            (x.Z ** proofComponent.utilde[str(i)]) * (
-                                x.S ** proofComponent.rtilde[str(i)]) % x.N)
-                    proofComponent.TauList.append(
-                        (x.Z ** proofComponent.tildeValues.mtilde[k]) * (
-                            x.S ** proofComponent.rtilde[DELTA]) % x.N)
-
-                    proofComponent.alphatilde = integer(randomBits(LARGE_ALPHATILDE))
-
-                    Q = 1 % x.N
-                    for i in range(0, ITERATIONS):
-                        Q *= Tval[str(i)] ** proofComponent.utilde[str(i)]
-                    Q *= x.S ** proofComponent.alphatilde % x.N
-                    proofComponent.TauList.append(Q)
-
-            proofComponent.c = integer(get_hash(nonce, *reduce(lambda x, y: x + y, [proofComponent.TauList,
-                                                                                    proofComponent.CList])))
-
-        def getSubProof(creds, predProofComponent):
-            for key, val in creds.items():
-                predProofComponent.evect[key] = predProofComponent.tildeValues.etilde[key] + (
-                    predProofComponent.c * predProofComponent.primeValues.eprime[key])
-                predProofComponent.vvect[key] = predProofComponent.tildeValues.vtilde[key] + (
-                    predProofComponent.c * predProofComponent.primeValues.vprime[key])
-
-            predProofComponent.mvect = {}
-            for k, value in predProofComponent.unrevealedAttrs.items():
-                predProofComponent.mvect[str(k)] = predProofComponent.tildeValues.mtilde[str(k)] + (
-                    predProofComponent.c * predProofComponent.flatAttrs[str(k)])
-
-            predProofComponent.mvect[ZERO_INDEX] = predProofComponent.tildeValues.mtilde[ZERO_INDEX] + (
-                predProofComponent.c * self._ms)
-
-            return Proof(predProofComponent.c, predProofComponent.evect, predProofComponent.mvect,
-                         predProofComponent.vvect, predProofComponent.primeValues.Aprime)
-
-        def getSubProofPredicate(predProofComponent, predicate):
-            for key, val in predicate.items():
-                for _, _ in val.items():
-                    urproduct = 0
-                    for i in range(0, ITERATIONS):
-                        predProofComponent.uvect[str(i)] = predProofComponent.utilde[str(i)] + predProofComponent.c * \
-                                                                                               predProofComponent.u[i]
-                        predProofComponent.rvect[str(i)] = predProofComponent.rtilde[str(i)] + predProofComponent.c * \
-                                                                                               predProofComponent.r[
-                                                                                                   str(i)]
-                        urproduct += predProofComponent.u[i] * predProofComponent.r[str(i)]
-
-                    predProofComponent.rvect[DELTA] = predProofComponent.rtilde[DELTA] + predProofComponent.c * \
-                                                                                         predProofComponent.r[DELTA]
-
-                    predProofComponent.alphavect = predProofComponent.alphatilde + predProofComponent.c * (
-                        predProofComponent.r[DELTA] - urproduct)
-
-            return SubProofPredicate(predProofComponent.alphavect, predProofComponent.rvect,
-                                     predProofComponent.uvect)
-
-        # Add VPrime to V
-        creds = self._getPresentationToken(creds)
-
-        # Initialize predicate proof components
-        proofComponent = initProofComponent(attrs, creds, revealedAttrs)
-
-        # Modify predicate proof components based on received creds
-        appendToProofCompWithCredData(proofComponent, creds)
-
-        # Modify predicate proof component based on predicate data
-        appendToProofCompWithPredicateData(proofComponent, predicate)
-
-        # Build sub proof
-        subProofC = getSubProof(creds, proofComponent)
-
-        # Build sub proof predicate
-        subProofPredicate = getSubProofPredicate(proofComponent, predicate)
-
-        return PredicateProof(subProofC, subProofPredicate, proofComponent.C, proofComponent.CList)

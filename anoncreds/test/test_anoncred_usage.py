@@ -7,10 +7,12 @@ from anoncreds.test.conftest import GVT, XYZCorp
 
 def testSingleIssuerSingleProver(primes1):
     #### 1. Issuer setup
-    issuerId = 3333
+
+    # generate a credential definition
+    credDef = Issuer.genCredDef('GVT', '1.0', GVT.attribNames())
 
     # generate Issuer's public and secret keys
-    pk, sk = Issuer.genKeys(GVT.attribNames(), **primes1)
+    pk, sk = Issuer.genKeys(credDef, **primes1)
 
     # ---> store pk in a public torage
     # ---> store sk in an issuer-private storage
@@ -38,8 +40,8 @@ def testSingleIssuerSingleProver(primes1):
 
     ### Issuer:
     # <--- load pk, sk, pkR, skR, accum1, g1, pkAccum1, skAccum1
-    secretData = SecretData(pk, sk, pkR, skR, accum1, g1, pkAccum1, skAccum1)
-    issuer = Issuer(issuerId, secretData)
+    secretData = SecretData(credDef, pk, sk, pkR, skR, accum1, g1, pkAccum1, skAccum1)
+    issuer = Issuer(secretData)
 
     # Issuer computes context attr
     # <--- load iA
@@ -60,10 +62,10 @@ def testSingleIssuerSingleProver(primes1):
     # ---> store m1 to prover-private storage
 
     # <--- load pk, pkR, acc
-    publicData = PublicData(pk, pkR, accum1, g1, pkAccum1)
+    publicData = PublicData(credDef, pk, pkR, accum1, g1, pkAccum1)
     proverInitializer = ProverInitializer(userId,
-                                          {issuerId: m2},
-                                          {issuerId: publicData},
+                                          {credDef: m2},
+                                          {credDef: publicData},
                                           m1)
 
     #### 3. Issuance of claims
@@ -71,8 +73,8 @@ def testSingleIssuerSingleProver(primes1):
     ### Prover:
 
     # Prover gens v' and U
-    U = proverInitializer.getU(issuerId)
-    Ur = proverInitializer.getUr(issuerId)
+    U = proverInitializer.getU(credDef)
+    Ur = proverInitializer.getUr(credDef)
     # ~~~~> send U, Ur to Issuer
 
     ### Issuer:
@@ -89,11 +91,11 @@ def testSingleIssuerSingleProver(primes1):
     ### Prover:
 
     # update primary claim with private value and store
-    c1 = proverInitializer.initPrimaryClaim(issuerId, primaryClaim)
+    c1 = proverInitializer.initPrimaryClaim(credDef, primaryClaim)
     # ---> store primaryClaim in prover-private storage
 
     # update non-revocation claim with private value and store
-    c2 = proverInitializer.initNonRevocationClaim(issuerId, nonRevocationClaim)
+    c2 = proverInitializer.initNonRevocationClaim(credDef, nonRevocationClaim)
     # ---> store primaryClaim in prover-private storage
 
 
@@ -125,11 +127,11 @@ def testSingleIssuerSingleProver(primes1):
     # find claims needed to validate the attributes
     # probably it can be defined outside anoncred protocol
     # ---> load all claims (c1, c2)
-    allClaims = {issuerId: Claims(c1, c2)}
+    allClaims = {credDef: Claims(c1, c2)}
     proofClaims = Prover.findClaims(allClaims, proofInput)
 
     # <--- load pk, pkR, accum1, g1, pkAccum1 for required issuers
-    prover = Prover(userId, {issuerId: publicData}, m1)
+    prover = Prover(userId, {credDef: publicData}, m1)
 
     # Prover updates witness
     c2s = prover.updateNonRevocationClaims(proofClaims)
@@ -143,7 +145,7 @@ def testSingleIssuerSingleProver(primes1):
 
     # <--- load pk, pkR, accum1, g1, pkAccum1 for issuers participating in proof
     verifId = 5555
-    verifier = Verifier(verifId, {issuerId: publicData})
+    verifier = Verifier(verifId, {credDef: publicData})
 
     # verify proof
     allRevealedAttrs = {'name': encodedAttrs['name']}
@@ -153,9 +155,13 @@ def testSingleIssuerSingleProver(primes1):
 def testMultiplIssuersSingleProver(primes1, primes2):
     #### 1. Issuer setup
 
+    # generate credential definitions
+    credDef1 = Issuer.genCredDef("GVT", "1.0", GVT.attribNames())
+    credDef2 = Issuer.genCredDef("XYZCorp", "1.0", XYZCorp.attribNames())
+
     # generate Issuer's public and secret keys
-    pk1, sk1 = Issuer.genKeys(GVT.attribNames(), **primes1)
-    pk2, sk2 = Issuer.genKeys(XYZCorp.attribNames(), **primes2)
+    pk1, sk1 = Issuer.genKeys(credDef1, **primes1)
+    pk2, sk2 = Issuer.genKeys(credDef2, **primes2)
 
     # ---> store pk in a public torage
     # ---> store sk in an issuer-private storage
@@ -183,15 +189,13 @@ def testMultiplIssuersSingleProver(primes1, primes2):
 
     #### 2. New User added:
     userId = 111
-    issuerId1 = 3333
-    issuerId2 = 4444
 
     ### Issuer:
     # <--- load pk, sk, pkR, skR, accum1, g1, pkAccum1, skAccum1
-    secretData1 = SecretData(pk1, sk1, pkR1, skR1, accum1, g1, pkAccum1, skAccum1)
-    issuer1 = Issuer(issuerId1, secretData1)
-    secretData2 = SecretData(pk2, sk2, pkR2, skR2, accum2, g2, pkAccum2, skAccum2)
-    issuer2 = Issuer(issuerId2, secretData2)
+    secretData1 = SecretData(credDef1, pk1, sk1, pkR1, skR1, accum1, g1, pkAccum1, skAccum1)
+    issuer1 = Issuer(secretData1)
+    secretData2 = SecretData(credDef2, pk2, sk2, pkR2, skR2, accum2, g2, pkAccum2, skAccum2)
+    issuer2 = Issuer(secretData2)
 
     # Issuer computes context attr
     # <--- load iA
@@ -215,11 +219,11 @@ def testMultiplIssuersSingleProver(primes1, primes2):
     # ---> store m1 to prover-private storage
 
     # <--- load pk, pkR, acc
-    publicData1 = PublicData(pk1, pkR1, accum1, g1, pkAccum1)
-    publicData2 = PublicData(pk2, pkR2, accum2, g2, pkAccum2)
+    publicData1 = PublicData(credDef1, pk1, pkR1, accum1, g1, pkAccum1)
+    publicData2 = PublicData(credDef2, pk2, pkR2, accum2, g2, pkAccum2)
     proverInitializer = ProverInitializer(userId,
-                                          {issuerId1: m21, issuerId2: m22},
-                                          {issuerId1: publicData1, issuerId2: publicData2},
+                                          {credDef1: m21, credDef2: m22},
+                                          {credDef1: publicData1, credDef2: publicData2},
                                           m1)
 
     #### 3. Issuance of claims
@@ -227,10 +231,10 @@ def testMultiplIssuersSingleProver(primes1, primes2):
     ### Prover:
 
     # Prover gens v' and U
-    U1 = proverInitializer.getU(issuerId1)
-    Ur1 = proverInitializer.getUr(issuerId1)
-    U2 = proverInitializer.getU(issuerId2)
-    Ur2 = proverInitializer.getUr(issuerId2)
+    U1 = proverInitializer.getU(credDef1)
+    Ur1 = proverInitializer.getUr(credDef1)
+    U2 = proverInitializer.getU(credDef2)
+    Ur2 = proverInitializer.getUr(credDef2)
     # ~~~~> send U, Ur to Issuer
 
     ### Issuer:
@@ -249,13 +253,13 @@ def testMultiplIssuersSingleProver(primes1, primes2):
     ### Prover:
 
     # update primary claim with private value and store
-    c11 = proverInitializer.initPrimaryClaim(issuerId1, primaryClaim1)
-    c12 = proverInitializer.initPrimaryClaim(issuerId2, primaryClaim2)
+    c11 = proverInitializer.initPrimaryClaim(credDef1, primaryClaim1)
+    c12 = proverInitializer.initPrimaryClaim(credDef2, primaryClaim2)
     # ---> store primaryClaim in prover-private storage
 
     # update non-revocation claim with private value and store
-    c21 = proverInitializer.initNonRevocationClaim(issuerId1, nonRevocationClaim1)
-    c22 = proverInitializer.initNonRevocationClaim(issuerId2, nonRevocationClaim2)
+    c21 = proverInitializer.initNonRevocationClaim(credDef1, nonRevocationClaim1)
+    c22 = proverInitializer.initNonRevocationClaim(credDef2, nonRevocationClaim2)
     # ---> store primaryClaim in prover-private storage
 
 
@@ -287,12 +291,12 @@ def testMultiplIssuersSingleProver(primes1, primes2):
     # find claims needed to validate the attributes
     # probably it can be defined outside anoncred protocol
     # ---> load all claims (c1, c2)
-    allClaims = {issuerId1: Claims(c11, c21),
-                 issuerId2: Claims(c12, c22),}
+    allClaims = {credDef1: Claims(c11, c21),
+                 credDef2: Claims(c12, c22),}
     proofClaims = Prover.findClaims(allClaims, proofInput)
 
     # <--- load pk, pkR, accum1, g1, pkAccum1 for required issuers
-    prover = Prover(userId, {issuerId1: publicData1, issuerId2: publicData2}, m1)
+    prover = Prover(userId, {credDef1: publicData1, credDef2: publicData2}, m1)
 
     # Prover updates witness
     c2s = prover.updateNonRevocationClaims(proofClaims)
@@ -306,7 +310,7 @@ def testMultiplIssuersSingleProver(primes1, primes2):
 
     # <--- load pk, pkR, accum1, g1, pkAccum1 for issuers participating in proof
     verifId = 5555
-    verifier = Verifier(verifId, {issuerId1: publicData1, issuerId2: publicData2})
+    verifier = Verifier(verifId, {credDef1: publicData1, credDef2: publicData2})
 
     # verify proof
     allRevealedAttrs = {'status': encodedAttrs2['status']}

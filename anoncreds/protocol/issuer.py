@@ -4,19 +4,23 @@ from anoncreds.protocol.globals import LARGE_MASTER_SECRET
 from anoncreds.protocol.primary.primary_claim_issuer import PrimaryClaimIssuer
 from anoncreds.protocol.revocation.accumulators.non_revocation_claim_issuer import NonRevocationClaimIssuer
 from anoncreds.protocol.types import SecretKey, PublicKey, SecretData, Attribs, PrimaryClaim, NonRevocationClaim, \
-    RevocationPublicKey, RevocationSecretKey, Accumulator, GType, AccumulatorPublicKey, AccumulatorSecretKey
+    RevocationPublicKey, RevocationSecretKey, Accumulator, GType, AccumulatorPublicKey, AccumulatorSecretKey, \
+    CredentialDefinition
 from anoncreds.protocol.utils import get_hash, bytes_to_int
 
 
 class Issuer:
-    def __init__(self, id: int, secretData: SecretData):
-        self.id = id
+    def __init__(self, secretData: SecretData):
         self._nonRevocationIssuer = NonRevocationClaimIssuer(secretData)
         self._primaryIssuer = PrimaryClaimIssuer(secretData)
 
     @classmethod
-    def genKeys(cls, attrNames, p_prime=None, q_prime=None) -> (PublicKey, SecretKey):
-        return PrimaryClaimIssuer.genKeys(attrNames, p_prime, q_prime)
+    def genCredDef(cls, name, version, attrNames, type='CL') -> CredentialDefinition:
+        return CredentialDefinition(name, version, attrNames, type)
+
+    @classmethod
+    def genKeys(cls, credDef, p_prime=None, q_prime=None) -> (PublicKey, SecretKey):
+        return PrimaryClaimIssuer.genKeys(credDef, p_prime, q_prime)
 
     @classmethod
     def genRevocationKeys(cls) -> (RevocationPublicKey, RevocationSecretKey):

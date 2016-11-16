@@ -1,7 +1,6 @@
 import pytest
 
 from anoncreds.protocol.types import ProofClaims, Claims
-from anoncreds.test.conftest import issuerId1
 
 
 def testIssueRevocationCredential(nonRevocClaimProver1Gvt, issueAccumulatorGvt):
@@ -27,18 +26,18 @@ def testRevoce(issuerGvt, issueAccumulatorGvt):
     assert acc.acc == accPk.z / accPk.z
 
 
-def testUpdateWitnessNotChangedIfInSync(newIssueAccumulatorGvt, newProver1, newNonRevocClaimProver1Gvt):
+def testUpdateWitnessNotChangedIfInSync(newIssueAccumulatorGvt, newProver1, newNonRevocClaimProver1Gvt, credDefGvt):
     acc = newIssueAccumulatorGvt[0]
 
     # not changed as in sync
     oldOmega = newNonRevocClaimProver1Gvt.witness.omega
 
-    c2 = newProver1.updateNonRevocationClaim(issuerId1, newNonRevocClaimProver1Gvt)
+    c2 = newProver1.updateNonRevocationClaim(credDefGvt, newNonRevocClaimProver1Gvt)
     assert c2.witness.V == acc.V
     assert oldOmega == c2.witness.omega
 
 
-def testUpdateWitnessChangedIfOutOfSync(newIssueAccumulatorGvt, newProver1, newNonRevocClaimProver1Gvt):
+def testUpdateWitnessChangedIfOutOfSync(newIssueAccumulatorGvt, newProver1, newNonRevocClaimProver1Gvt, credDefGvt):
     acc = newIssueAccumulatorGvt[0]
 
     # not in sync
@@ -47,33 +46,33 @@ def testUpdateWitnessChangedIfOutOfSync(newIssueAccumulatorGvt, newProver1, newN
 
     # witness is updated
     oldOmega = newNonRevocClaimProver1Gvt.witness.omega
-    c2 = newProver1.updateNonRevocationClaim(issuerId1, newNonRevocClaimProver1Gvt)
+    c2 = newProver1.updateNonRevocationClaim(credDefGvt, newNonRevocClaimProver1Gvt)
     assert c2.witness.V == acc.V
     assert oldOmega != c2.witness.omega
 
 
-def testUpdateRevocedWitness(newProver1, newIssuerGvt, newInitNonRevocClaimProver1Gvt):
+def testUpdateRevocedWitness(newProver1, newIssuerGvt, newInitNonRevocClaimProver1Gvt, credDefGvt):
     newIssuerGvt.revoke(1)
     with pytest.raises(ValueError):
-        newProver1.updateNonRevocationClaim(issuerId1, newInitNonRevocClaimProver1Gvt)
+        newProver1.updateNonRevocationClaim(credDefGvt, newInitNonRevocClaimProver1Gvt)
 
 
-def testInitNonRevocClaim(newProver1Initializer, newNonRevocClaimProver1Gvt):
+def testInitNonRevocClaim(newProver1Initializer, newNonRevocClaimProver1Gvt, credDefGvt):
     oldV = newNonRevocClaimProver1Gvt.v
-    c2 = newProver1Initializer.initNonRevocationClaim(issuerId1, newNonRevocClaimProver1Gvt)
-    assert oldV + newProver1Initializer._nonRevocClaimInitializer._vrPrime[issuerId1] == c2.v
+    c2 = newProver1Initializer.initNonRevocationClaim(credDefGvt, newNonRevocClaimProver1Gvt)
+    assert oldV + newProver1Initializer._nonRevocClaimInitializer._vrPrime[credDefGvt] == c2.v
 
 
-def testCAndTauList(newProver1, newInitNonRevocClaimProver1Gvt):
+def testCAndTauList(newProver1, newInitNonRevocClaimProver1Gvt, credDefGvt):
     proofRevBuilder = newProver1._nonRevocProofBuilder
-    assert proofRevBuilder.testProof(issuerId1, newInitNonRevocClaimProver1Gvt)
+    assert proofRevBuilder.testProof(credDefGvt, newInitNonRevocClaimProver1Gvt)
 
 
 def testRevocedWithoutUpdateWitness(newProver1, newIssuerGvt, verifier, nonce,
-                                    newInitNonRevocClaimProver1Gvt):
+                                    newInitNonRevocClaimProver1Gvt, credDefGvt):
     newIssuerGvt.revoke(1)
 
     proof = newProver1.prepareProof(
-        {issuerId1: ProofClaims(Claims(nonRevocClaim=newInitNonRevocClaimProver1Gvt))},
+        {credDefGvt: ProofClaims(Claims(nonRevocClaim=newInitNonRevocClaimProver1Gvt))},
         nonce)
     assert not verifier.verify(proof, [], nonce)

@@ -1,42 +1,41 @@
 import pytest
 
 from anoncreds.protocol.types import ProofInput, PredicateGE, Claims, ProofClaims
-from anoncreds.test.conftest import issuerId1
 
 
-def testNoClaims(prover1, verifier, nonce):
+def testNoClaims(prover1, verifier, nonce, credDefGvt):
     proof = prover1.prepareProof(
-        {issuerId1: ProofClaims(Claims())},
+        {credDefGvt: ProofClaims(Claims())},
         nonce)
     assert verifier.verify(proof, [], nonce)
 
 
-def testNonRevocClaimOnly(prover1, verifier, initNonRevocClaimProver1Gvt, nonce):
+def testNonRevocClaimOnly(prover1, verifier, initNonRevocClaimProver1Gvt, nonce, credDefGvt):
     proof = prover1.prepareProof(
-        {issuerId1: ProofClaims(Claims(nonRevocClaim=initNonRevocClaimProver1Gvt))},
+        {credDefGvt: ProofClaims(Claims(nonRevocClaim=initNonRevocClaimProver1Gvt))},
         nonce)
     assert verifier.verify(proof, [], nonce)
 
 
-def testPrimaryClaimOnlyEmpty(prover1, verifier, initPrimaryClaimProver1Gvt, nonce):
+def testPrimaryClaimOnlyEmpty(prover1, verifier, initPrimaryClaimProver1Gvt, nonce, credDefGvt):
     proof = prover1.prepareProof(
-        {issuerId1: ProofClaims(Claims(primaryClaim=initPrimaryClaimProver1Gvt))},
+        {credDefGvt: ProofClaims(Claims(primaryClaim=initPrimaryClaimProver1Gvt))},
         nonce)
     assert verifier.verify(proof, [], nonce)
 
 
-def testPrimaryClaimNoPredicates(prover1, verifier, initPrimaryClaimProver1Gvt, attrsProver1Gvt, nonce):
+def testPrimaryClaimNoPredicates(prover1, verifier, initPrimaryClaimProver1Gvt, attrsProver1Gvt, nonce, credDefGvt):
     revealedAttrs = {'name': attrsProver1Gvt['name']}
     proofCliams = ProofClaims(Claims(primaryClaim=initPrimaryClaimProver1Gvt),
                               revealedAttrs=['name'])
-    proof = prover1.prepareProof({issuerId1: proofCliams}, nonce)
+    proof = prover1.prepareProof({credDefGvt: proofCliams}, nonce)
     assert verifier.verify(proof, revealedAttrs, nonce)
 
 
-def testPrimaryClaimPredicatesOnly(prover1, verifier, initPrimaryClaimProver1Gvt, nonce):
+def testPrimaryClaimPredicatesOnly(prover1, verifier, initPrimaryClaimProver1Gvt, nonce, credDefGvt):
     proofCliams = ProofClaims(Claims(primaryClaim=initPrimaryClaimProver1Gvt),
                               predicates=[PredicateGE('age', 18)])
-    proof = prover1.prepareProof({issuerId1: proofCliams}, nonce)
+    proof = prover1.prepareProof({credDefGvt: proofCliams}, nonce)
     assert verifier.verify(proof, [], nonce)
 
 
@@ -108,12 +107,12 @@ def testNonceShouldBeSame(prover1, allClaimsProver1, verifier, nonce, genNonce, 
 def testUParamShouldBeSame(issuerGvt, prover1, verifier,
                            attrsProver1Gvt, m2GvtProver1,
                            prover1Initializer, nonRevocClaimProver1Gvt,
-                           prover1UGvt, nonce):
+                           prover1UGvt, nonce, credDefGvt):
     incorrectU = prover1UGvt[0] ** 2
     c1 = issuerGvt.issuePrimaryClaim(attrsProver1Gvt, m2GvtProver1, U=incorrectU)
-    c1 = prover1Initializer.initPrimaryClaim(issuerId1, c1)
+    c1 = prover1Initializer.initPrimaryClaim(credDefGvt, c1)
 
-    allClaims = {issuerId1: Claims(c1, nonRevocClaimProver1Gvt)}
+    allClaims = {credDefGvt: Claims(c1, nonRevocClaimProver1Gvt)}
     proofInput = ProofInput(['name'], [])
     revealedAttrs = {'name': attrsProver1Gvt['name']}
 
@@ -121,8 +120,8 @@ def testUParamShouldBeSame(issuerGvt, prover1, verifier,
     assert not verifier.verify(proof, revealedAttrs, nonce)
 
 
-def testUrParamShouldBeSame(issuerGvt, m2GvtProver1, prover1Initializer, prover1UGvt):
+def testUrParamShouldBeSame(issuerGvt, m2GvtProver1, prover1Initializer, prover1UGvt, credDefGvt):
     incorrectUr = prover1UGvt[1] ** 2
     c2 = issuerGvt.issueNonRevocationClaim(m2GvtProver1, Ur=incorrectUr)
     with pytest.raises(ValueError):
-        prover1Initializer.initNonRevocationClaim(issuerId1, c2)
+        prover1Initializer.initNonRevocationClaim(credDefGvt, c2)

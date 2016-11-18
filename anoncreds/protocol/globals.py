@@ -55,7 +55,6 @@ PROOF = "proof"
 NAME = "name"
 VERSION = "version"
 TYPE = "type"
-IP = "ip"
-PORT = "port"
+ATTR_NAMES = "attr_names"
 
 TYPE_CL = "CL"

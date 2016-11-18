@@ -7,28 +7,20 @@ from sys import byteorder
 from typing import Dict
 
 import base58
-from charm.core.math.integer import random, isPrime, integer
-from charm.toolbox.conversion import Conversion
-from charm.toolbox.pairinggroup import PairingGroup, pc_element, ZR
+
+from config.config import cmod
+
+from anoncreds.protocol.globals import LARGE_PRIME, KEYS, PK_R, \
+    LARGE_MASTER_SECRET, LARGE_VPRIME
+from anoncreds.protocol.types import SerFmt
+import base58
 
 from anoncreds.protocol.globals import KEYS, PK_R
 from anoncreds.protocol.types import T
 
 
 def randomQR(n):
-    return random(n) ** 2
-
-
-# def encodeAttrs(attrs):
-#     """
-#     This function will encode all the attributes to 256 bit integers
-#
-#     :param attrs: The attributes to pass in credentials
-#     :return:
-#     """
-#
-#     return {key: Conversion.bytes2integer(sha256(value.encode()).digest())
-#             for key, value in attrs.items()}
+    return cmod.random(n) ** 2
 
 
 def get_hash(*args, group: PairingGroup = None):
@@ -38,14 +30,16 @@ def get_hash(*args, group: PairingGroup = None):
     :param args:
     :return:
     """
+
+    numbers = [cmod.Conversion.IP2OS(arg) for arg in args]
     group = group if group else PairingGroup('SS1024')
     h_challenge = sha256()
-    for arg in args:
+    for n in sorted(numbers):
         if (type(arg) == pc_element):
             byteArg = group.serialize(arg)
             h_challenge.update(byteArg)
         else:
-            h_challenge.update(Conversion.IP2OS(arg))
+            h_challenge.update(cmod.Conversion.IP2OS(arg))
     return h_challenge.digest()
 
 
@@ -70,7 +64,7 @@ def get_prime_in_range(start, end):
     maxIter = 100000
     while n < maxIter:
         r = randint(start, end)
-        if isPrime(r):
+        if cmod.isPrime(r):
             logging.debug("Found prime in {} iteration between {} and {}".
                           format(n, start, end))
             return r
@@ -78,13 +72,13 @@ def get_prime_in_range(start, end):
     raise Exception("Cannot find prime in {} iterations".format(maxIter))
 
 
-def splitRevealedAttrs(attrs, revealedAttrs):
+def splitRevealedAttrs(encodedAttrs, revealedAttrs):
     # Revealed attributes
     Ar = {}
     # Unrevealed attributes
     Aur = {}
 
-    for k, value in attrs.items():
+    for k, value in encodedAttrs.items():
         if k in revealedAttrs:
             Ar[k] = value
         else:
@@ -118,12 +112,12 @@ def flattenDict(attrs):
             for x, y in z.items()}
 
 
-def strToCharmInteger(n):
+def strToCryptoInteger(n):
     if "mod" in n:
         a, b = n.split("mod")
-        return integer(int(a.strip())) % integer(int(b.strip()))
+        return cmod.integer(int(a.strip())) % cmod.integer(int(b.strip()))
     else:
-        return integer(int(n))
+        return cmod.integer(int(n))
 
 
 def largestSquareLessThan(x: int):
@@ -171,3 +165,92 @@ def base58decode(i):
 def base58decodedInt(i):
     # TODO: DO exception handling
     return int(base58.b58decode(str(i)).decode())
+
+
+def isCryptoInteger(n):
+    return isinstance(n, cmod.integer)
+
+
+def genPrime():
+    """
+    Generate 2 large primes `p_prime` and `q_prime` and use them
+    to generate another 2 primes `p` and `q` of 1024 bits
+    """
+    prime = cmod.randomPrime(LARGE_PRIME)
+    i = 0
+    while not cmod.isPrime(2 * prime + 1):
+        prime = cmod.randomPrime(LARGE_PRIME)
+        i += 1
+    return prime
+
+
+def base58encode(i):
+    return base58.b58encode(str(i).encode())
+
+
+def base58decode(i):
+    return base58.b58decode(str(i)).decode()
+
+
+def base58decodedInt(i):
+    try:
+        return int(base58.b58decode(str(i)).decode())
+    except Exception as ex:
+        raise AttributeError from ex
+
+
+SerFuncs = {
+    SerFmt.py3Int: int,
+    SerFmt.default: cmod.integer,
+    SerFmt.base58: base58encode,
+}
+
+
+def serialize(data, serFmt):
+    serfunc = SerFuncs[serFmt]
+    if KEYS in data:
+        for k, v in data[KEYS].items():
+            if isinstance(v, cmod.integer):
+                # int casting works with Python 3 only.
+                # for Python 2, charm's serialization api must be used.
+                data[KEYS][k] = serfunc(v)
+            if k == PK_R:
+                data[KEYS][k] = {key: serfunc(val) for key, val in v.items()}
+    return data
+
+
+def generateMasterSecret():
+    # Generate the master secret
+    return cmod.integer(
+        cmod.randomBits(LARGE_MASTER_SECRET))
+
+
+def generateVPrime():
+    return cmod.randomBits(LARGE_VPRIME)
+
+
+def shorten(s, size=None):
+    size = size or 10
+    if isinstance(s, str):
+        if len(s) <= size:
+            return s
+        else:
+            head = int((size - 2) * 5 / 8)
+            tail = int(size) - 2 - head
+            return s[:head] + '..' + s[-tail:]
+    else:  # assume it's an iterable
+        return [shorten(x, size) for x in iter(s)]
+
+
+def shortenMod(s, size=None):
+    return ' mod '.join(shorten(str(s).split(' mod '), size))
+
+
+def shortenDictVals(d, size=None):
+    r = {}
+    for k, v in d.items():
+        if isinstance(v, dict):
+            r[k] = shortenDictVals(v, size)
+        else:
+            r[k] = shortenMod(v, size)
+    return r

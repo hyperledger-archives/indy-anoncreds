@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-sudo apt-get install flex
-sudo apt-get install bison
-sudo apt-get install libssl-dev
-sudo apt-get install libgmp-dev
-sudo apt-get install python3-dev
+brew install flex
+brew install bison
+brew install openssl
+brew install gmp
+brew install wget
 
 # PBC
 # Cleanup any old data
@@ -37,4 +37,4 @@ popd
 
 # Ensure that you are using pip3.5 for installation.
 # Use link to refer pip3.5 using pip command: http://techglimpse.com/install-update-python-pip-linux-tutorial/
-pip install -r requirements.txt
+pip3 install -r requirements.txt

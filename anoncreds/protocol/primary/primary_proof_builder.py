@@ -1,18 +1,17 @@
 from typing import Dict, Sequence
 
-from charm.core.math.integer import randomBits, integer
-
 from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, LARGE_E_START, LARGE_ETILDE, \
     LARGE_VTILDE, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, DELTA
 from anoncreds.protocol.primary.primary_proof_common import calcTge, calcTeq
 from anoncreds.protocol.types import PrimaryClaim, PublicData, Predicate, PrimaryInitProof, \
     PrimaryEqualInitProof, PrimaryPrecicateGEInitProof, PrimaryProof, PrimaryEqualProof, PrimaryPredicateGEProof, \
-    CredentialDefinition
+    CredentialDefinition, PublicDataPrimary
 from anoncreds.protocol.utils import getUnrevealedAttrs, fourSquares
+from config.config import cmod
 
 
 class PrimaryClaimInitializer:
-    def __init__(self, publicData: Dict[CredentialDefinition, PublicData], masterSecret):
+    def __init__(self, publicData: Dict[CredentialDefinition, PublicDataPrimary], masterSecret):
         """
         Create a proof instance
 
@@ -29,7 +28,7 @@ class PrimaryClaimInitializer:
         self._U = {}
         # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
         for credDef, val in self._data.items():
-            self._vprime[credDef] = randomBits(LARGE_VPRIME)
+            self._vprime[credDef] = cmod.randomBits(LARGE_VPRIME)
             N = val.pk.N
             Rms = val.pk.Rms
             S = val.pk.S
@@ -39,12 +38,13 @@ class PrimaryClaimInitializer:
         return self._U[credDef]
 
     def preparePrimaryClaim(self, credDef, claim: PrimaryClaim):
-        claim.v += self._vprime[credDef]
+        newV = claim.v + self._vprime[credDef]
+        claim = claim._replace(v=newV)
         return claim
 
 
 class PrimaryProofBuilder:
-    def __init__(self, publicData: Dict[CredentialDefinition, PublicData], m1):
+    def __init__(self, publicData: Dict[CredentialDefinition, PublicDataPrimary], m1):
         """
         Create a proof instance
 
@@ -69,7 +69,7 @@ class PrimaryProofBuilder:
         if not initProof:
             return None
 
-        cH = integer(cH)
+        cH = cmod.integer(cH)
         eqProof = self._finalizeEqProof(credDef, cH, initProof.eqProof)
         geProofs = []
         for initGeProof in initProof.geProofs:
@@ -79,11 +79,11 @@ class PrimaryProofBuilder:
 
     def _initEqProof(self, credDef, c1: PrimaryClaim, revealedAttrs: Sequence[str], m1Tilde, m2Tilde) \
             -> PrimaryEqualInitProof:
-        m2Tilde = m2Tilde if m2Tilde else integer(randomBits(LARGE_MVECT))
+        m2Tilde = m2Tilde if m2Tilde else cmod.integer(cmod.randomBits(LARGE_MVECT))
         unrevealedAttrs = getUnrevealedAttrs(c1.attrs, revealedAttrs)
         mtilde = self._getMTilde(unrevealedAttrs)
 
-        Ra = integer(randomBits(LARGE_VPRIME))
+        Ra = cmod.integer(cmod.randomBits(LARGE_VPRIME))
         pk = self._data[credDef].pk
 
         A, e, v = c1.A, c1.e, c1.v
@@ -91,8 +91,8 @@ class PrimaryProofBuilder:
         vprime = (v - e * Ra)
         eprime = e - (2 ** LARGE_E_START)
 
-        etilde = integer(randomBits(LARGE_ETILDE))
-        vtilde = integer(randomBits(LARGE_VTILDE))
+        etilde = cmod.integer(cmod.randomBits(LARGE_ETILDE))
+        vtilde = cmod.integer(cmod.randomBits(LARGE_VTILDE))
 
         Rur = 1 % pk.N
         for k, value in unrevealedAttrs.items():
@@ -123,10 +123,10 @@ class PrimaryProofBuilder:
         T = {}
         CList = []
         for i in range(0, ITERATIONS):
-            r[str(i)] = integer(randomBits(LARGE_VPRIME))
+            r[str(i)] = cmod.integer(cmod.randomBits(LARGE_VPRIME))
             T[str(i)] = (pk.Z ** u[str(i)]) * (pk.S ** r[str(i)]) % pk.N
             CList.append(T[str(i)])
-        r[DELTA] = integer(randomBits(LARGE_VPRIME))
+        r[DELTA] = cmod.integer(cmod.randomBits(LARGE_VPRIME))
         T[DELTA] = (pk.Z ** delta) * (pk.S ** r[DELTA]) % pk.N
         CList.append(T[DELTA])
 
@@ -134,10 +134,10 @@ class PrimaryProofBuilder:
         utilde = {}
         rtilde = {}
         for i in range(0, ITERATIONS):
-            utilde[str(i)] = integer(randomBits(LARGE_UTILDE))
-            rtilde[str(i)] = integer(randomBits(LARGE_RTILDE))
-        rtilde[DELTA] = integer(randomBits(LARGE_RTILDE))
-        alphatilde = integer(randomBits(LARGE_ALPHATILDE))
+            utilde[str(i)] = cmod.integer(cmod.randomBits(LARGE_UTILDE))
+            rtilde[str(i)] = cmod.integer(cmod.randomBits(LARGE_RTILDE))
+        rtilde[DELTA] = cmod.integer(cmod.randomBits(LARGE_RTILDE))
+        alphatilde = cmod.integer(cmod.randomBits(LARGE_ALPHATILDE))
 
         TauList = calcTge(pk, utilde, rtilde, eqProof.mTilde[k], alphatilde, T)
         return PrimaryPrecicateGEInitProof(CList, TauList, u, utilde, r, rtilde, alphatilde, predicate, T)
@@ -173,5 +173,5 @@ class PrimaryProofBuilder:
     def _getMTilde(self, unrevealedAttrs):
         mtilde = {}
         for key, value in unrevealedAttrs.items():
-            mtilde[key] = integer(randomBits(LARGE_MVECT))
+            mtilde[key] = cmod.integer(cmod.randomBits(LARGE_MVECT))
         return mtilde

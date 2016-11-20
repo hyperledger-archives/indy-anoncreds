@@ -4,26 +4,20 @@ from hashlib import sha256
 from math import sqrt, floor
 from random import randint, sample
 from sys import byteorder
-from typing import Dict
 
-import base58
-
-from config.config import cmod
-
-from anoncreds.protocol.globals import LARGE_PRIME, KEYS, PK_R, \
-    LARGE_MASTER_SECRET, LARGE_VPRIME
-from anoncreds.protocol.types import SerFmt
 import base58
 
 from anoncreds.protocol.globals import KEYS, PK_R
-from anoncreds.protocol.types import T
+from anoncreds.protocol.globals import LARGE_PRIME, LARGE_MASTER_SECRET, LARGE_VPRIME, PAIRING_GROUP
+from anoncreds.protocol.types import SerFmt
+from config.config import cmod
 
 
 def randomQR(n):
     return cmod.random(n) ** 2
 
 
-def get_hash(*args, group: PairingGroup = None):
+def get_hash(*args, group: cmod.PairingGroup = None):
     """
     Enumerate over the input tuple and generate a hash using the tuple values
 
@@ -31,15 +25,13 @@ def get_hash(*args, group: PairingGroup = None):
     :return:
     """
 
-    numbers = [cmod.Conversion.IP2OS(arg) for arg in args]
-    group = group if group else PairingGroup('SS1024')
+    group = group if group else cmod.PairingGroup(PAIRING_GROUP)
     h_challenge = sha256()
-    for n in sorted(numbers):
-        if (type(arg) == pc_element):
-            byteArg = group.serialize(arg)
-            h_challenge.update(byteArg)
-        else:
-            h_challenge.update(cmod.Conversion.IP2OS(arg))
+
+    serialedArgs = [group.serialize(arg) if (type(arg) == cmod.pc_element) else cmod.Conversion.IP2OS(arg) for arg in args]
+
+    for arg in sorted(serialedArgs):
+        h_challenge.update(arg)
     return h_challenge.digest()
 
 
@@ -49,7 +41,7 @@ def bytes_to_int(bytesHash):
 
 def bytes_to_ZR(bytesHash, group):
     cHNum = bytes_to_int(bytesHash)
-    return group.init(ZR, cHNum)
+    return group.init(cmod.ZR, cHNum)
 
 
 def get_values_of_dicts(*args):
@@ -65,8 +57,7 @@ def get_prime_in_range(start, end):
     while n < maxIter:
         r = randint(start, end)
         if cmod.isPrime(r):
-            logging.debug("Found prime in {} iteration between {} and {}".
-                          format(n, start, end))
+            logging.debug("Found prime in {} iterations".format(n))
             return r
         n += 1
     raise Exception("Cannot find prime in {} iterations".format(maxIter))
@@ -112,14 +103,6 @@ def flattenDict(attrs):
             for x, y in z.items()}
 
 
-def strToCryptoInteger(n):
-    if "mod" in n:
-        a, b = n.split("mod")
-        return cmod.integer(int(a.strip())) % cmod.integer(int(b.strip()))
-    else:
-        return cmod.integer(int(n))
-
-
 def largestSquareLessThan(x: int):
     sqrtx = int(floor(sqrt(x)))
     return sqrtx
@@ -136,35 +119,12 @@ def fourSquares(delta: int):
         raise Exception("Cannot get the four squares for delta {0}".format(delta))
 
 
-def updateDict(obj: Dict[str, Dict[str, T]], parentKey: str,
-               key: str, val: any):
-    parentVal = obj.get(parentKey, {})
-    parentVal[key] = val
-    obj[parentKey] = parentVal
-
-
-def serialize(data, serfunc):
-    for k, v in data[KEYS].items():
-        if isinstance(v, integer):
-            # int casting works with Python 3 only.
-            # for Python 2, charm's serialization api must be used.
-            data[KEYS][k] = serfunc(v)
-        if k == PK_R:
-            data[KEYS][k] = {key: serfunc(val) for key, val in v.items()}
-    return data
-
-
-def base58encode(i):
-    return base58.b58encode(str(i).encode())
-
-
-def base58decode(i):
-    return base58.b58decode(str(i)).decode()
-
-
-def base58decodedInt(i):
-    # TODO: DO exception handling
-    return int(base58.b58decode(str(i)).decode())
+def strToCryptoInteger(n):
+    if "mod" in n:
+        a, b = n.split("mod")
+        return cmod.integer(int(a.strip())) % cmod.integer(int(b.strip()))
+    else:
+        return cmod.integer(int(n))
 
 
 def isCryptoInteger(n):

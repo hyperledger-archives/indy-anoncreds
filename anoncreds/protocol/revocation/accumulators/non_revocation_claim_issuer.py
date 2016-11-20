@@ -1,31 +1,31 @@
-from charm.toolbox.pairinggroup import PairingGroup, ZR, G1, pair
-
+from anoncreds.protocol.globals import PAIRING_GROUP
 from anoncreds.protocol.types import SecretData, NonRevocationClaim, RevocationPublicKey, RevocationSecretKey, \
-    Accumulator, GType, AccumulatorPublicKey, AccumulatorSecretKey, Witness
+    Accumulator, GType, AccumulatorPublicKey, AccumulatorSecretKey, Witness, SecretDataRevocation
+from config.config import cmod
 
 
 class NonRevocationClaimIssuer:
-    def __init__(self, secretData: SecretData):
+    def __init__(self, secretData: SecretDataRevocation):
         self._data = secretData
-        self._group = PairingGroup(secretData.pkR.groupType)
+        self._group = cmod.PairingGroup(secretData.pub.pkR.groupType)
 
     @classmethod
     def genRevocationKeys(cls) -> (RevocationPublicKey, RevocationSecretKey):
-        groupType = 'SS1024'  # super singular curve, 1024 bits
-        group = PairingGroup(groupType)
+        groupType = PAIRING_GROUP  # super singular curve, 1024 bits
+        group = cmod.PairingGroup(groupType)
 
-        h = group.random(G1)  # random element of the group G
-        h0 = group.random(G1)
-        h1 = group.random(G1)
-        h2 = group.random(G1)
-        g = group.random(G1)
-        htilde = group.random(G1)
-        u = group.random(G1)
+        h = group.random(cmod.G1)  # random element of the group G
+        h0 = group.random(cmod.G1)
+        h1 = group.random(cmod.G1)
+        h2 = group.random(cmod.G1)
+        g = group.random(cmod.G1)
+        htilde = group.random(cmod.G1)
+        u = group.random(cmod.G1)
 
         qr = group.order()  # order q_R of the group
 
-        x = group.random(ZR)  # random(qr)
-        sk = group.random(ZR)  # random(qr)
+        x = group.random(cmod.ZR)  # random(qr)
+        sk = group.random(cmod.ZR)  # random(qr)
 
         pk = g ** sk
         y = h ** x
@@ -36,15 +36,15 @@ class NonRevocationClaimIssuer:
     @classmethod
     def issueAccumulator(cls, iA, pk: RevocationPublicKey, L) \
             -> (Accumulator, GType, AccumulatorPublicKey, AccumulatorSecretKey):
-        group = PairingGroup(pk.groupType)
-        gamma = group.random(ZR)
+        group = cmod.PairingGroup(pk.groupType)
+        gamma = group.random(cmod.ZR)
 
         g = {}
         gCount = 2 * L
         for i in range(gCount):
             if i != L + 1:
                 g[i] = pk.g ** (gamma ** i)
-        z = pair(pk.g, pk.g) ** (gamma ** (L + 1))
+        z = cmod.pair(pk.g, pk.g) ** (gamma ** (L + 1))
 
         acc = 1
         V = set()
@@ -54,11 +54,11 @@ class NonRevocationClaimIssuer:
         accum = Accumulator(iA, acc, V, L)
         return (accum, g, accPK, accSK)
 
-    def issueNonRevocationClaim(self, m2, Ur, i=None) -> NonRevocationClaim:
-        accum = self._data.accum
-        pkR = self._data.pkR
+    def issueNonRevocationClaim(self, m2, Ur, i) -> NonRevocationClaim:
+        accum = self._data.pub.accum
+        pkR = self._data.pub.pkR
         skR = self._data.skR
-        g = self._data.g
+        g = self._data.pub.g
         skAccum = self._data.skAccum
 
         if accum.isFull():
@@ -67,10 +67,10 @@ class NonRevocationClaimIssuer:
         # TODO: currently all revo creds are issued sequentially
         i = i if i else accum.currentI
         accum.currentI += 1
-        vrPrimeprime = self._group.random(ZR)
-        c = self._group.random(ZR)
+        vrPrimeprime = self._group.random(cmod.ZR)
+        c = self._group.random(cmod.ZR)
 
-        m2 = self._group.init(ZR, int(m2))
+        m2 = self._group.init(cmod.ZR, int(m2))
         sigma = (pkR.h0 * (pkR.h1 ** m2) * Ur * g[i] * (pkR.h2 ** vrPrimeprime)) ** (1 / (skR.x + c))
         omega = g[0] / g[0]
         for j in accum.V:
@@ -87,8 +87,8 @@ class NonRevocationClaimIssuer:
         return NonRevocationClaim(accum.iA, sigma, c, vrPrimeprime, witness, g[i], i, m2)
 
     def revoke(self, i):
-        accum = self._data.accum
-        g = self._data.g
+        accum = self._data.pub.accum
+        g = self._data.pub.g
 
         accum.V.discard(i)
         accum.acc /= g[accum.L + 1 - i]

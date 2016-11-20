@@ -1,17 +1,16 @@
 from typing import Sequence, Dict
 
-from charm.toolbox.pairinggroup import PairingGroup
-
 from anoncreds.protocol.revocation.accumulators.non_revocation_common import createTauListExpectedValues, \
     createTauListValues
 from anoncreds.protocol.types import T, PublicData, \
-    NonRevocProof, CredentialDefinition
+    NonRevocProof, CredentialDefinition, PublicDataRevocation
 from anoncreds.protocol.utils import bytes_to_ZR
+from config.config import cmod
 
 
 class NonRevocationProofVerifier:
-    def __init__(self, publicData: Dict[CredentialDefinition, PublicData]):
-        self._groups = {x: PairingGroup(y.pkR.groupType) for x, y in publicData.items()}
+    def __init__(self, publicData: Dict[CredentialDefinition, PublicDataRevocation]):
+        self._groups = {x: cmod.PairingGroup(y.pkR.groupType) for x, y in publicData.items()}
         self._data = publicData
 
     @property

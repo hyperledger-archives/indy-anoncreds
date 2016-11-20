@@ -1,19 +1,18 @@
 from typing import Dict
 
-from charm.core.math.integer import integer
-
 from anoncreds.protocol.globals import LARGE_E_START, ITERATIONS, DELTA
 from anoncreds.protocol.primary.primary_proof_common import calcTeq, calcTge
 from anoncreds.protocol.types import PublicData, PrimaryEqualProof, \
-    PrimaryPredicateGEProof, PrimaryProof, CredentialDefinition
+    PrimaryPredicateGEProof, PrimaryProof, CredentialDefinition, PublicDataPrimary
+from config.config import cmod
 
 
 class PrimaryProofVerifier:
-    def __init__(self, publicData: Dict[CredentialDefinition, PublicData]):
+    def __init__(self, publicData: Dict[CredentialDefinition, PublicDataPrimary]):
         self._data = publicData
 
     def verify(self, credDef, cHash, primaryProof: PrimaryProof, allRevealedAttrs):
-        cH = integer(cHash)
+        cH = cmod.integer(cHash)
         THat = self._verifyEquality(credDef, cH, primaryProof.eqProof, allRevealedAttrs)
         for geProof in primaryProof.geProofs:
             THat += self._verifyGEPredicate(credDef, cH, geProof)

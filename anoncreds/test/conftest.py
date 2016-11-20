@@ -1,21 +1,22 @@
 import pytest
-from charm.core.math.integer import integer
 
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover, ProverInitializer
-from anoncreds.protocol.types import AttribDef, AttribType, SecretData, PublicData, Claims
+from anoncreds.protocol.types import AttribDef, AttribType, SecretData, PublicData, Claims, PublicDataPrimary, \
+    PublicDataRevocation, SecretDataPrimary, SecretDataRevocation
 from anoncreds.protocol.verifier import Verifier
+from config.config import cmod
 
 primes = {
     "prime1":
-        (integer(
+        (cmod.integer(
             157329491389375793912190594961134932804032426403110797476730107804356484516061051345332763141806005838436304922612495876180233509449197495032194146432047460167589034147716097417880503952139805241591622353828629383332869425029086898452227895418829799945650973848983901459733426212735979668835984691928193677469),
-         integer(
+         cmod.integer(
              151323892648373196579515752826519683836764873607632072057591837216698622729557534035138587276594156320800768525825023728398410073692081011811496168877166664537052088207068061172594879398773872352920912390983199416927388688319207946493810449203702100559271439586753256728900713990097168484829574000438573295723))
     , "prime2":
-        (integer(
+        (cmod.integer(
             150619677884468353208058156632953891431975271416620955614548039937246769610622017033385394658879484186852231469238992217246264205570458379437126692055331206248530723117202131739966737760399755490935589223401123762051823602343810554978803032803606907761937587101969193241921351011430750970746500680609001799529),
-         integer(
+         cmod.integer(
              171590857568436644992359347719703764048501078398666061921719064395827496970696879481740311141148273607392657321103691543916274965279072000206208571551864201305434022165176563363954921183576230072812635744629337290242954699427160362586102068962285076213200828451838142959637006048439307273563604553818326766703))
 }
 
@@ -95,17 +96,33 @@ def issueAccumulatorXyz(revocKeysXyz):
 
 
 @pytest.fixture(scope="module")
-def secretDataGvtIssuer(credDefGvt, keysGvt, revocKeysGvt, issueAccumulatorGvt):
-    return SecretData(credDefGvt, keysGvt[0], keysGvt[1],
-                      revocKeysGvt[0], revocKeysGvt[1],
-                      issueAccumulatorGvt[0], issueAccumulatorGvt[1], issueAccumulatorGvt[2], issueAccumulatorGvt[3])
+def publicDataGvtIssuer(credDefGvt, keysGvt, revocKeysGvt, issueAccumulatorGvt):
+    publicDataPrimary = PublicDataPrimary(credDefGvt, keysGvt[0])
+    publicDataRevoc = PublicDataRevocation(credDefGvt, revocKeysGvt[0], issueAccumulatorGvt[0], issueAccumulatorGvt[2],
+                                           issueAccumulatorGvt[1])
+    return PublicData(publicDataPrimary, publicDataRevoc)
 
 
 @pytest.fixture(scope="module")
-def secretDataXyzIssuer(credDefXyz, keysXyz, revocKeysXyz, issueAccumulatorXyz):
-    return SecretData(credDefXyz, keysXyz[0], keysXyz[1],
-                      revocKeysXyz[0], revocKeysXyz[1],
-                      issueAccumulatorXyz[0], issueAccumulatorXyz[1], issueAccumulatorXyz[2], issueAccumulatorXyz[3])
+def publicDataXyzIssuer(credDefXyz, keysXyz, revocKeysXyz, issueAccumulatorXyz):
+    publicDataPrimary = PublicDataPrimary(credDefXyz, keysXyz[0])
+    publicDataRevoc = PublicDataRevocation(credDefXyz, revocKeysXyz[0], issueAccumulatorXyz[0], issueAccumulatorXyz[2],
+                                           issueAccumulatorXyz[1])
+    return PublicData(publicDataPrimary, publicDataRevoc)
+
+
+@pytest.fixture(scope="module")
+def secretDataGvtIssuer(publicDataGvtIssuer, keysGvt, revocKeysGvt, issueAccumulatorGvt):
+    secretDataPrimary = SecretDataPrimary(publicDataGvtIssuer.pubPrimary, keysGvt[1])
+    secretDataRevoc = SecretDataRevocation(publicDataGvtIssuer.pubRevoc, revocKeysGvt[1], issueAccumulatorGvt[3])
+    return SecretData(secretDataPrimary, secretDataRevoc)
+
+
+@pytest.fixture(scope="module")
+def secretDataXyzIssuer(publicDataXyzIssuer, keysXyz, revocKeysXyz, issueAccumulatorXyz):
+    secretDataPrimary = SecretDataPrimary(publicDataXyzIssuer.pubPrimary, keysXyz[1])
+    secretDataRevoc = SecretDataRevocation(publicDataXyzIssuer.pubRevoc, revocKeysXyz[1], issueAccumulatorXyz[3])
+    return SecretData(secretDataPrimary, secretDataRevoc)
 
 
 @pytest.fixture(scope="module")
@@ -149,32 +166,20 @@ def m1Prover2():
 
 
 @pytest.fixture(scope="module")
-def publicDataGvtIssuer(secretDataGvtIssuer):
-    return PublicData(secretDataGvtIssuer.credDef, secretDataGvtIssuer.pk, secretDataGvtIssuer.pkR,
-                      secretDataGvtIssuer.accum, secretDataGvtIssuer.g, secretDataGvtIssuer.pkAccum)
-
-
-@pytest.fixture(scope="module")
-def publicDataXyzIssuer(secretDataXyzIssuer):
-    return PublicData(secretDataXyzIssuer.credDef, secretDataXyzIssuer.pk, secretDataXyzIssuer.pkR,
-                      secretDataXyzIssuer.accum, secretDataXyzIssuer.g, secretDataXyzIssuer.pkAccum)
-
-
-@pytest.fixture(scope="module")
 def prover1Initializer(m2GvtProver1, m2XyzProver1, m1Prover1, publicDataGvtIssuer, publicDataXyzIssuer):
     return ProverInitializer(proverId1,
-                             {publicDataGvtIssuer.credDef: m2GvtProver1, publicDataXyzIssuer.credDef: m2XyzProver1},
-                             {publicDataGvtIssuer.credDef: publicDataGvtIssuer,
-                              publicDataXyzIssuer.credDef: publicDataXyzIssuer},
+                             {publicDataGvtIssuer.pubPrimary.credDef: m2GvtProver1, publicDataXyzIssuer.pubPrimary.credDef: m2XyzProver1},
+                             {publicDataGvtIssuer.pubPrimary.credDef: publicDataGvtIssuer,
+                              publicDataXyzIssuer.pubPrimary.credDef: publicDataXyzIssuer},
                              m1Prover1)
 
 
 @pytest.fixture(scope="module")
 def prover2Initializer(m2GvtProver2, m2XyzProver2, m1Prover2, publicDataGvtIssuer, publicDataXyzIssuer):
     return ProverInitializer(proverId2,
-                             {publicDataGvtIssuer.credDef: m2GvtProver2, publicDataXyzIssuer.credDef: m2XyzProver2},
-                             {publicDataGvtIssuer.credDef: publicDataGvtIssuer,
-                              publicDataXyzIssuer.credDef: publicDataXyzIssuer},
+                             {publicDataGvtIssuer.pubPrimary.credDef: m2GvtProver2, publicDataXyzIssuer.pubPrimary.credDef: m2XyzProver2},
+                             {publicDataGvtIssuer.pubPrimary.credDef: publicDataGvtIssuer,
+                              publicDataXyzIssuer.pubPrimary.credDef: publicDataXyzIssuer},
                              m1Prover2)
 
 
@@ -199,27 +204,27 @@ def prover2UXyz(prover2Initializer, credDefXyz):
 
 
 @pytest.fixture(scope="module")
-def attrsProver1Gvt(issuerGvt):
+def attrsProver1Gvt():
     attrs = GVT.attribs(name='Alex', age=28, height=175, sex='male')
-    return issuerGvt.encodeAttrs(attrs)
+    return attrs.encoded()
 
 
 @pytest.fixture(scope="module")
-def attrsProver2Gvt(issuerGvt):
+def attrsProver2Gvt():
     attrs = GVT.attribs(name='Jason', age=42, height=180, sex='male')
-    return issuerGvt.encodeAttrs(attrs)
+    return attrs.encoded()
 
 
 @pytest.fixture(scope="module")
-def attrsProver1Xyz(issuerXyz):
+def attrsProver1Xyz():
     attrs = XYZCorp.attribs(status='partial', period=8)
-    return issuerXyz.encodeAttrs(attrs)
+    return attrs.encoded()
 
 
 @pytest.fixture(scope="module")
-def attrsProver2Xyz(issuerXyz):
+def attrsProver2Xyz():
     attrs = XYZCorp.attribs(status='full-time', period=22)
-    return issuerXyz.encodeAttrs(attrs)
+    return attrs.encoded()
 
 
 @pytest.fixture(scope="module")
@@ -319,14 +324,14 @@ def allClaimsProver2(initPrimaryClaimProver2Gvt, initPrimaryClaimProver2Xyz, cre
 @pytest.fixture(scope="module")
 def prover1(publicDataGvtIssuer, publicDataXyzIssuer, m1Prover1):
     return Prover(proverId1,
-                  {publicDataGvtIssuer.credDef: publicDataGvtIssuer, publicDataXyzIssuer.credDef: publicDataXyzIssuer},
+                  {publicDataGvtIssuer.pubPrimary.credDef: publicDataGvtIssuer, publicDataXyzIssuer.pubPrimary.credDef: publicDataXyzIssuer},
                   m1Prover1)
 
 
 @pytest.fixture(scope="module")
 def prover2(publicDataGvtIssuer, publicDataXyzIssuer, m1Prover2):
     return Prover(proverId2,
-                  {publicDataGvtIssuer.credDef: publicDataGvtIssuer, publicDataXyzIssuer.credDef: publicDataXyzIssuer},
+                  {publicDataGvtIssuer.pubPrimary.credDef: publicDataGvtIssuer, publicDataXyzIssuer.pubPrimary.credDef: publicDataXyzIssuer},
                   m1Prover2)
 
 
@@ -343,8 +348,8 @@ def genNonce():
 @pytest.fixture(scope="module")
 def verifier(publicDataGvtIssuer, publicDataXyzIssuer):
     return Verifier(verifierId1,
-                    {publicDataGvtIssuer.credDef: publicDataGvtIssuer,
-                     publicDataXyzIssuer.credDef: publicDataXyzIssuer})
+                    {publicDataGvtIssuer.pubPrimary.credDef: publicDataGvtIssuer,
+                     publicDataXyzIssuer.pubPrimary.credDef: publicDataXyzIssuer})
 
 
 ############ function scope
@@ -354,18 +359,24 @@ def newIssueAccumulatorGvt(revocKeysGvt):
     return Issuer.issueAccumulator(iA1, revocKeysGvt[0], L)
 
 
-@pytest.fixture(scope="function")
-def newSecretDataGvtIssuer(keysGvt, revocKeysGvt, newIssueAccumulatorGvt, credDefGvt):
-    return SecretData(credDefGvt, keysGvt[0], keysGvt[1],
-                      revocKeysGvt[0], revocKeysGvt[1],
-                      newIssueAccumulatorGvt[0], newIssueAccumulatorGvt[1], newIssueAccumulatorGvt[2],
-                      newIssueAccumulatorGvt[3])
+
 
 
 @pytest.fixture(scope="function")
-def newPublicDataGvtIssuer(newSecretDataGvtIssuer, credDefGvt):
-    return PublicData(credDefGvt, newSecretDataGvtIssuer.pk, newSecretDataGvtIssuer.pkR,
-                      newSecretDataGvtIssuer.accum, newSecretDataGvtIssuer.g, newSecretDataGvtIssuer.pkAccum)
+def newPublicDataGvtIssuer(credDefGvt, keysGvt, revocKeysGvt, newIssueAccumulatorGvt):
+    publicDataPrimary = PublicDataPrimary(credDefGvt, keysGvt[0])
+    publicDataRevoc = PublicDataRevocation(credDefGvt, revocKeysGvt[0], newIssueAccumulatorGvt[0], newIssueAccumulatorGvt[2],
+                                           newIssueAccumulatorGvt[1])
+    return PublicData(publicDataPrimary, publicDataRevoc)
+
+
+
+@pytest.fixture(scope="function")
+def newSecretDataGvtIssuer(newPublicDataGvtIssuer, keysGvt, revocKeysGvt, newIssueAccumulatorGvt):
+    secretDataPrimary = SecretDataPrimary(newPublicDataGvtIssuer.pubPrimary, keysGvt[1])
+    secretDataRevoc = SecretDataRevocation(newPublicDataGvtIssuer.pubRevoc, revocKeysGvt[1], newIssueAccumulatorGvt[3])
+    return SecretData(secretDataPrimary, secretDataRevoc)
+
 
 
 @pytest.fixture(scope="function")
@@ -404,5 +415,5 @@ def newInitNonRevocClaimProver1Gvt(newProver1Initializer, newNonRevocClaimProver
 @pytest.fixture(scope="function")
 def newProver1(newPublicDataGvtIssuer, m1Prover1):
     return Prover(proverId1,
-                  {newPublicDataGvtIssuer.credDef: newPublicDataGvtIssuer},
+                  {newPublicDataGvtIssuer.pubPrimary.credDef: newPublicDataGvtIssuer},
                   m1Prover1)

@@ -1,5 +1,3 @@
-from charm.core.math.integer import integer
-
 from anoncreds.protocol.globals import LARGE_MASTER_SECRET
 from anoncreds.protocol.primary.primary_claim_issuer import PrimaryClaimIssuer
 from anoncreds.protocol.revocation.accumulators.non_revocation_claim_issuer import NonRevocationClaimIssuer
@@ -7,12 +5,15 @@ from anoncreds.protocol.types import SecretKey, PublicKey, SecretData, Attribs, 
     RevocationPublicKey, RevocationSecretKey, Accumulator, GType, AccumulatorPublicKey, AccumulatorSecretKey, \
     CredentialDefinition
 from anoncreds.protocol.utils import get_hash, bytes_to_int
+from config.config import cmod
 
 
 class Issuer:
     def __init__(self, secretData: SecretData):
-        self._nonRevocationIssuer = NonRevocationClaimIssuer(secretData)
-        self._primaryIssuer = PrimaryClaimIssuer(secretData)
+        self._primaryIssuer = PrimaryClaimIssuer(secretData.secrPrimary)
+        self._nonRevocationIssuer = None
+        if secretData.secrRevoc:
+            self._nonRevocationIssuer = NonRevocationClaimIssuer(secretData.secrRevoc)
 
     @classmethod
     def genCredDef(cls, name, version, attrNames, type='CL') -> CredentialDefinition:
@@ -32,21 +33,22 @@ class Issuer:
         return NonRevocationClaimIssuer.issueAccumulator(iA, pkR, L)
 
     @classmethod
-    def genContxt(cls, iA: int, userId: int) -> integer:
+    def genContxt(cls, iA: int, userId: int) -> cmod.integer:
         S = iA | userId
         H = bytes_to_int(get_hash(S))
-        return integer(H % (2 ** LARGE_MASTER_SECRET))
-
-    def encodeAttrs(self, attrs: Attribs):
-        return attrs.encoded()
+        return cmod.integer(H % (2 ** LARGE_MASTER_SECRET))
 
     def issuePrimaryClaim(self, attributes, m2, U) -> PrimaryClaim:
         return self._primaryIssuer.issuePrimaryClaim(attributes, m2, U)
 
     def issueNonRevocationClaim(self, m2, Ur, i=None) -> NonRevocationClaim:
+        if not self._nonRevocationIssuer:
+            raise ValueError('Non-revocation keys are not inititialized')
         return self._nonRevocationIssuer.issueNonRevocationClaim(m2, Ur, i)
 
     def revoke(self, i):
+        if not self._nonRevocationIssuer:
+            raise ValueError('Non-revocation keys are not inititialized')
         return self._nonRevocationIssuer.revoke(i)
 
     def __repr__(self):

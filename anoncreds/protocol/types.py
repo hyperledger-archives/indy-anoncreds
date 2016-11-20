@@ -1,10 +1,9 @@
+from collections import namedtuple
 from enum import Enum
 from hashlib import sha256
 from typing import TypeVar, Sequence, Dict, Set
 
-from charm.core.math.integer import integer
-from charm.core.math.pairing import ZR
-from charm.toolbox.conversion import Conversion
+from config.config import cmod
 
 
 class AttribType:
@@ -72,7 +71,7 @@ class Attribs:
 
             for at in attr_types:
                 if at.encode:
-                    encoded[at.name] = Conversion.bytes2integer(
+                    encoded[at.name] = cmod.Conversion.bytes2integer(
                         sha256(str(self._vals[at.name]).encode()).digest())
                 else:
                     encoded[at.name] = self._vals[at.name]
@@ -107,6 +106,11 @@ class PublicParams:
         self.h = h
 
 
+T = TypeVar('T')
+VType = Set[int]
+GType = Dict[int, cmod.integer]
+
+
 class CredentialDefinition:
     def __init__(self, name, version, attrNames, type):
         self.name = name
@@ -115,87 +119,20 @@ class CredentialDefinition:
         self.attrNames = attrNames
 
 
-class PublicKey:
-    def __init__(self, N, Rms, Rctxt, R, S, Z):
-        self.N = N
-        self.Rms = Rms
-        self.Rctxt = Rctxt
-        self.R = R
-        self.S = S
-        self.Z = Z
+# CredentialDefinition = namedtuple('CredentialDefinition', ['name', 'version', 'attrNames', 'type'])
 
-    @staticmethod
-    def deser(v, n):
-        if isinstance(v, integer):
-            return v % n
-        elif isinstance(v, int):
-            return integer(v) % n
-        else:
-            raise RuntimeError("unknown type: {}".format(type(v)))
+PublicKey = namedtuple('PublicKey', 'N Rms Rctxt R S Z')
 
-    def inFieldN(self):
-        """
-        Returns new Public Key with same values, in field N
-        :return:
-        """
+SecretKey = namedtuple('SecretKey', 'pPrime qPrime')
 
-        r = {k: self.deser(v, self.N) for k, v in self.R.items()}
-        return PublicKey(self.N,
-                         self.deser(self.Rms, self.N),
-                         self.deser(self.Rctxt, self.N),
-                         r,
-                         self.deser(self.S, self.N),
-                         self.deser(self.Z, self.N),
-                         self.attrNames)
+RevocationPublicKey = namedtuple('RevocationPublicKey',
+                                 'qr g h h0 h1 h2 htilde u pk y x groupType')
 
+RevocationSecretKey = namedtuple('RevocationSecretKey', 'x sk')
 
-class SecretKey:
-    def __init__(self, p, q):
-        self.p = p
-        self.q = q
+AccumulatorPublicKey = namedtuple('AccumulatorPublicKey', 'z')
 
-    def getPPrime(self):
-        return (self.p - 1) / 2
-
-    def getQPrime(self):
-        return (self.q - 1) / 2
-
-
-class RevocationPublicKey:
-    def __init__(self, qr, g, h, h0, h1, h2, htilde, u, pk, y, x, groupType):
-        self.qr = qr
-        self.g = g
-        self.h = h
-        self.h0 = h0
-        self.h1 = h1
-        self.h2 = h2
-        self.htilde = htilde
-        self.u = u
-        self.pk = pk
-        self.y = y
-        self.x = x
-        self.groupType = groupType
-
-
-class RevocationSecretKey:
-    def __init__(self, x, sk):
-        self.x = x
-        self.sk = sk
-
-
-class AccumulatorPublicKey:
-    def __init__(self, z):
-        self.z = z
-
-
-class AccumulatorSecretKey:
-    def __init__(self, gamma):
-        self.gamma = gamma
-
-
-T = TypeVar('T')
-VType = Set[int]
-GType = Dict[int, integer]
+AccumulatorSecretKey = namedtuple('AccumulatorSecretKey', 'gamma')
 
 
 # TODO: now we assume >= predicate. Support other types of predicates
@@ -232,84 +169,39 @@ class Accumulator:
         return self.currentI > self.L
 
 
-class SecretData:
-    def __init__(self, credDef: CredentialDefinition, pk: PublicKey, sk: SecretKey,
-                 pkR: RevocationPublicKey, skR: RevocationSecretKey,
-                 accum: Accumulator, g: GType,
-                 pkAccum: AccumulatorPublicKey, skAccum: AccumulatorSecretKey):
-        self.credDef = credDef
-        self.pk = pk
-        self.sk = sk
-        self.pkR = pkR
-        self.skR = skR
-        self.accum = accum
-        self.g = g
-        self.pkAccum = pkAccum
-        self.skAccum = skAccum
+# Accumulator = namedtuple('Accumulator', ['iA', 'acc', 'V', 'L'])
+
+PublicDataPrimary = namedtuple('PublicDataPrimary', 'credDef pk')
+PublicDataRevocation = namedtuple('PublicDataRevocation', 'credDef pkR accum pkAccum g')
+
+class PublicData(namedtuple('PublicData', 'pubPrimary pubRevoc')):
+    def __new__(cls, pubPrimary, pubRevoc=None):
+        return super(PublicData, cls).__new__(cls, pubPrimary, pubRevoc)
 
 
-class PublicData:
-    def __init__(self, credDef: CredentialDefinition, pk: PublicKey, pkR: RevocationPublicKey,
-                 accum: Accumulator, g: GType,
-                 pkAccum: AccumulatorPublicKey):
-        self.credDef = credDef
-        self.pk = pk
-        self.pkR = pkR
-        self.accum = accum
-        self.g = g
-        self.pkAccum = pkAccum
+SecretDataPrimary = namedtuple('SecretDataPrimary', 'pub sk')
+SecretDataRevocation = namedtuple('SecretDataRevocation', 'pub skR skAccum')
 
+SecretData = namedtuple('SecretData', 'secrPrimary secrRevoc')
+class SecretData(namedtuple('SecretData', 'secrPrimary secrRevoc')):
+    def __new__(cls, secrPrimary, secrRevoc=None):
+        return super(SecretData, cls).__new__(cls, secrPrimary, secrRevoc)
 
-class PrimaryClaim:
-    def __init__(self, attrs: Dict[str, T], m2, A, e, v):
-        self.attrs = attrs
-        self.m2 = m2
-        self.A = A
-        self.e = e
-        self.v = v
+PrimaryClaim = namedtuple('PrimaryClaim', 'attrs m2 A e v')
 
+Witness = namedtuple('Witness', 'sigmai ui gi omega V')
 
-class Witness:
-    def __init__(self, sigmai, ui, gi, omega, V: VType):
-        self.sigmai = sigmai
-        self.ui = ui
-        self.gi = gi
-        self.omega = omega
-        self.V = V
+NonRevocationClaim = namedtuple('NonRevocationClaim', 'iA sigma c v witness gi i m2')
 
+ProofInput = namedtuple('ProofInput', 'revealedAttrs predicates')
 
-class NonRevocationClaim:
-    def __init__(self, iA, sigma, c, v, witness: Witness, gi, i, m2):
-        self.iA = iA
-        self.sigma = sigma
-        self.c = c
-        self.v = v
-        self.witness = witness
-        self.gi = gi
-        self.i = i
-        self.m2 = m2
+class Claims(namedtuple('Claims', 'primaryClaim nonRevocClaim')):
+    def __new__(cls, primaryClaim=None, nonRevocClaim=None):
+        return super(Claims, cls).__new__(cls, primaryClaim, nonRevocClaim)
 
-
-class ProofInput:
-    def __init__(self, revealedAttrs: Sequence[str], predicates: Sequence[Predicate]):
-        self.revealedAttrs = revealedAttrs
-        self.predicates = predicates
-
-
-class Claims:
-    def __init__(self, primaryClaim: PrimaryClaim = None, nonRevocClaim: NonRevocationClaim = None):
-        self.nonRevocClaim = nonRevocClaim
-        self.primaryClaim = primaryClaim
-
-
-class ProofClaims:
-    def __init__(self, claims: Claims, revealedAttrs: Sequence[str] = None, predicates: Sequence[Predicate] = None):
-        self.claims = claims
-        self.revealedAttrs = revealedAttrs if revealedAttrs else []
-        self.predicates = predicates if predicates else []
-
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+class ProofClaims(namedtuple('ProofClaims', 'claims revealedAttrs predicates')):
+    def __new__(cls, claims=None, revealedAttrs=[], predicates=[]):
+        return super(ProofClaims, cls).__new__(cls, claims, revealedAttrs, predicates)
 
 
 class NonRevocProofXList:
@@ -331,7 +223,7 @@ class NonRevocProofXList:
         self.c = self._setValue(c, group)
 
     def _setValue(self, v=None, group=None):
-        return v if v else group.random(ZR) if group else None
+        return v if v else group.random(cmod.ZR) if group else None
 
     def asList(self):
         return [self.rho, self.o, self.c, self.oPrime, self.m, self.mPrime, self.t, self.tPrime,
@@ -486,7 +378,7 @@ class PrimaryProof:
 
 
 class Proof:
-    def __init__(self, nonRevocProof: NonRevocProof, primaryProof: PrimaryProof):
+    def __init__(self, primaryProof: PrimaryProof, nonRevocProof: NonRevocProof=None):
         self.nonRevocProof = nonRevocProof
         self.primaryProof = primaryProof
 

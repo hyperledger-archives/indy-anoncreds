@@ -1,6 +1,7 @@
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover, ProverInitializer
-from anoncreds.protocol.types import SecretData, PublicData, Claims, ProofInput, PredicateGE
+from anoncreds.protocol.types import SecretData, PublicData, Claims, ProofInput, PredicateGE, PublicDataPrimary, \
+    PublicDataRevocation, SecretDataPrimary, SecretDataRevocation
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.test.conftest import GVT, XYZCorp
 
@@ -33,14 +34,19 @@ def testSingleIssuerSingleProver(primes1):
 
     # ........................................
 
+    publicDataPrimary = PublicDataPrimary(credDef, pk)
+    publicDataRevoc = PublicDataRevocation(credDef, pkR, accum1, pkAccum1, g1)
+    publicData = PublicData(publicDataPrimary, publicDataRevoc)
 
+    secretDataPrimary = SecretDataPrimary(publicDataPrimary, sk)
+    secretDataRevoc = SecretDataRevocation(publicDataRevoc, skR, skAccum1)
+    secretData = SecretData(secretDataPrimary, secretDataRevoc)
 
     #### 2. New User added:
     userId = 111
 
     ### Issuer:
     # <--- load pk, sk, pkR, skR, accum1, g1, pkAccum1, skAccum1
-    secretData = SecretData(credDef, pk, sk, pkR, skR, accum1, g1, pkAccum1, skAccum1)
     issuer = Issuer(secretData)
 
     # Issuer computes context attr
@@ -52,7 +58,7 @@ def testSingleIssuerSingleProver(primes1):
     attrs = GVT.attribs(name='Alex', age=28, height=175, sex='male')
 
     # encode attrs to 256-bit ints
-    encodedAttrs = issuer.encodeAttrs(attrs)
+    encodedAttrs = attrs.encoded()
     # ---> store other attrs to semi-public storage
 
     ### Prover:
@@ -62,7 +68,6 @@ def testSingleIssuerSingleProver(primes1):
     # ---> store m1 to prover-private storage
 
     # <--- load pk, pkR, acc
-    publicData = PublicData(credDef, pk, pkR, accum1, g1, pkAccum1)
     proverInitializer = ProverInitializer(userId,
                                           {credDef: m2},
                                           {credDef: publicData},
@@ -134,7 +139,7 @@ def testSingleIssuerSingleProver(primes1):
     prover = Prover(userId, {credDef: publicData}, m1)
 
     # Prover updates witness
-    c2s = prover.updateNonRevocationClaims(proofClaims)
+    proofClaims = prover.updateNonRevocationClaims(proofClaims)
     # ---> store c2s
 
     # prepare proof
@@ -185,16 +190,28 @@ def testMultiplIssuersSingleProver(primes1, primes2):
 
     # ........................................
 
+    publicDataPrimary1 = PublicDataPrimary(credDef1, pk1)
+    publicDataRevoc1 = PublicDataRevocation(credDef1, pkR1, accum1, pkAccum1, g1)
+    publicData1 = PublicData(publicDataPrimary1, publicDataRevoc1)
 
+    publicDataPrimary2 = PublicDataPrimary(credDef2, pk2)
+    publicDataRevoc2 = PublicDataRevocation(credDef2, pkR2, accum2, pkAccum2, g2)
+    publicData2 = PublicData(publicDataPrimary2, publicDataRevoc2)
+
+    secretDataPrimary1 = SecretDataPrimary(publicDataPrimary1, sk1)
+    secretDataRevoc1 = SecretDataRevocation(publicDataRevoc1, skR1, skAccum1)
+    secretData1 = SecretData(secretDataPrimary1, secretDataRevoc1)
+
+    secretDataPrimary2 = SecretDataPrimary(publicDataPrimary2, sk2)
+    secretDataRevoc2 = SecretDataRevocation(publicDataRevoc2, skR2, skAccum2)
+    secretData2 = SecretData(secretDataPrimary2, secretDataRevoc2)
 
     #### 2. New User added:
     userId = 111
 
     ### Issuer:
     # <--- load pk, sk, pkR, skR, accum1, g1, pkAccum1, skAccum1
-    secretData1 = SecretData(credDef1, pk1, sk1, pkR1, skR1, accum1, g1, pkAccum1, skAccum1)
     issuer1 = Issuer(secretData1)
-    secretData2 = SecretData(credDef2, pk2, sk2, pkR2, skR2, accum2, g2, pkAccum2, skAccum2)
     issuer2 = Issuer(secretData2)
 
     # Issuer computes context attr
@@ -208,8 +225,8 @@ def testMultiplIssuersSingleProver(primes1, primes2):
     attrs2 = XYZCorp.attribs(status='FULL', period=8)
 
     # encode attrs to 256-bit ints
-    encodedAttrs1 = issuer1.encodeAttrs(attrs1)
-    encodedAttrs2 = issuer1.encodeAttrs(attrs2)
+    encodedAttrs1 = attrs1.encoded()
+    encodedAttrs2 = attrs2.encoded()
     # ---> store other attrs to semi-public storage
 
     ### Prover:
@@ -219,8 +236,6 @@ def testMultiplIssuersSingleProver(primes1, primes2):
     # ---> store m1 to prover-private storage
 
     # <--- load pk, pkR, acc
-    publicData1 = PublicData(credDef1, pk1, pkR1, accum1, g1, pkAccum1)
-    publicData2 = PublicData(credDef2, pk2, pkR2, accum2, g2, pkAccum2)
     proverInitializer = ProverInitializer(userId,
                                           {credDef1: m21, credDef2: m22},
                                           {credDef1: publicData1, credDef2: publicData2},
@@ -299,7 +314,7 @@ def testMultiplIssuersSingleProver(primes1, primes2):
     prover = Prover(userId, {credDef1: publicData1, credDef2: publicData2}, m1)
 
     # Prover updates witness
-    c2s = prover.updateNonRevocationClaims(proofClaims)
+    proofClaims = prover.updateNonRevocationClaims(proofClaims)
     # ---> store c2s
 
     # prepare proof
@@ -314,4 +329,55 @@ def testMultiplIssuersSingleProver(primes1, primes2):
 
     # verify proof
     allRevealedAttrs = {'status': encodedAttrs2['status']}
+    assert verifier.verify(proof, allRevealedAttrs, nonce)
+
+
+def testSingleIssuerSingleProverPrimaryOnly(primes1):
+    # 1. cred def
+    credDef = Issuer.genCredDef('GVT', '1.0', GVT.attribNames())
+
+    # 2. keys
+    pk, sk = Issuer.genKeys(credDef, **primes1)
+
+    publicDataPrimary = PublicDataPrimary(credDef, pk)
+    publicData = PublicData(publicDataPrimary)
+
+    secretDataPrimary = SecretDataPrimary(publicDataPrimary, sk)
+    secretData = SecretData(secretDataPrimary)
+
+    # 3. set attrs
+    userId = 111
+    iA = 100
+    issuer = Issuer(secretData)
+
+    attrs = GVT.attribs(name='Alex', age=28, height=175, sex='male')
+    encodedAttrs = attrs.encoded()
+
+    m1 = ProverInitializer.genMasterSecret()
+    m2 = Issuer.genContxt(iA, userId)
+
+    # 4. issie claim
+    proverInitializer = ProverInitializer(userId,
+                                          {credDef: m2},
+                                          {credDef: publicData},
+                                          m1)
+    U = proverInitializer.getU(credDef)
+    primaryClaim = issuer.issuePrimaryClaim(encodedAttrs, m2, U)
+    c1 = proverInitializer.initPrimaryClaim(credDef, primaryClaim)
+
+    # 5. to be proved
+    proofInput = ProofInput(['name'],
+                            [PredicateGE('age', 18)])
+    allClaims = {credDef: Claims(c1)}
+    proofClaims = Prover.findClaims(allClaims, proofInput)
+
+    # 6. create proof
+    prover = Prover(userId, {credDef: publicData}, m1)
+    nonce = Verifier.generateNonce()
+    proof = prover.prepareProof(proofClaims, nonce)
+
+    # 7. verify
+    verifId = 5555
+    verifier = Verifier(verifId, {credDef: publicData})
+    allRevealedAttrs = {'name': encodedAttrs['name']}
     assert verifier.verify(proof, allRevealedAttrs, nonce)

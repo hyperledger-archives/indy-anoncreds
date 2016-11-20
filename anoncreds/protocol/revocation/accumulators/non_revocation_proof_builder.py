@@ -1,18 +1,17 @@
 from typing import Dict
 
-from charm.toolbox.pairinggroup import PairingGroup, ZR, pair
-
 from anoncreds.protocol.revocation.accumulators.non_revocation_common import createTauListValues, \
     createTauListExpectedValues
 from anoncreds.protocol.types import NonRevocationClaim, PublicData, NonRevocInitProof, \
     NonRevocProofXList, NonRevocProofCList, NonRevocProof, \
-    T, CredentialDefinition
+    T, CredentialDefinition, PublicDataRevocation
 from anoncreds.protocol.utils import bytes_to_ZR
+from config.config import cmod
 
 
 class NonRevocationClaimInitializer:
-    def __init__(self, publicData: Dict[CredentialDefinition, PublicData], m1, m2: Dict[str, T]):
-        self._groups = {x: PairingGroup(y.pkR.groupType) for x, y in publicData.items()}
+    def __init__(self, publicData: Dict[CredentialDefinition, PublicDataRevocation], m1, m2: Dict[str, T]):
+        self._groups = {x: cmod.PairingGroup(y.pkR.groupType) for x, y in publicData.items()}
         self._data = publicData
         self._m1 = int(m1)
         self._m2 = {x: int(y) for x, y in m2.items()}
@@ -22,7 +21,7 @@ class NonRevocationClaimInitializer:
         self._vrPrime = {}
         self._Ur = {}
         for credDef, val in self._data.items():
-            vrPrime = self._groups[credDef].random(ZR)
+            vrPrime = self._groups[credDef].random(cmod.ZR)
             self._vrPrime[credDef] = vrPrime
             self._Ur[credDef] = (val.pkR.h2 ** vrPrime)
 
@@ -30,7 +29,8 @@ class NonRevocationClaimInitializer:
         return self._Ur[credDef]
 
     def initNonRevocationClaim(self, credDef, claim: NonRevocationClaim):
-        claim.v += self._vrPrime[credDef]
+        newV = claim.v + self._vrPrime[credDef]
+        claim = claim._replace(v = newV)
         self._testWitnessCredential(credDef, claim)
         return claim
 
@@ -40,17 +40,17 @@ class NonRevocationClaimInitializer:
         accPk = self._data[credDef].pkAccum
         m2 = self._m2[credDef]
 
-        zCalc = pair(claim.gi, acc.acc) / pair(pk.g, claim.witness.omega)
+        zCalc = cmod.pair(claim.gi, acc.acc) / cmod.pair(pk.g, claim.witness.omega)
         if zCalc != accPk.z:
             raise ValueError("issuer is sending incorrect data")
 
-        pairGGCalc = pair(pk.pk * claim.gi, claim.witness.sigmai)
-        pairGG = pair(pk.g, pk.g)
+        pairGGCalc = cmod.pair(pk.pk * claim.gi, claim.witness.sigmai)
+        pairGG = cmod.pair(pk.g, pk.g)
         if pairGGCalc != pairGG:
             raise ValueError("issuer is sending incorrect data")
 
-        pairH1 = pair(claim.sigma, pk.y * (pk.h ** claim.c))
-        pairH2 = pair(pk.h0 * (pk.h1 ** m2) * (pk.h2 ** claim.v) * claim.gi, pk.h)
+        pairH1 = cmod.pair(claim.sigma, pk.y * (pk.h ** claim.c))
+        pairH2 = cmod.pair(pk.h0 * (pk.h1 ** m2) * (pk.h2 ** claim.v) * claim.gi, pk.h)
         if pairH1 != pairH2:
             raise ValueError("issuer is sending incorrect data")
 
@@ -58,8 +58,8 @@ class NonRevocationClaimInitializer:
 
 
 class NonRevocationProofBuilder:
-    def __init__(self, publicData: PublicData):
-        self._groups = {x: PairingGroup(y.pkR.groupType) for x, y in publicData.items()}
+    def __init__(self, publicData: PublicDataRevocation):
+        self._groups = {x: cmod.PairingGroup(y.pkR.groupType) for x, y in publicData.items()}
         self._data = publicData
 
     def updateNonRevocationClaim(self, credDef, c2: NonRevocationClaim):
@@ -72,18 +72,19 @@ class NonRevocationProofBuilder:
             raise ValueError("Can not update Witness. I'm revoced.")
 
         if oldV != newV:
-            c2.witness.V = newV
-
             vOldMinusNew = oldV - newV
             vNewMinusOld = newV - oldV
             omegaDenom = 1
             for j in vOldMinusNew:
                 omegaDenom *= g[newAccum.L + 1 - j + c2.i]
             omegaNum = 1
+            newOmega = c2.witness.omega
             for j in vNewMinusOld:
                 omegaNum *= g[newAccum.L + 1 - j + c2.i]
+                newOmega *= omegaNum / omegaDenom
 
-                c2.witness.omega = c2.witness.omega * omegaNum / omegaDenom
+            newWitness = c2.witness._replace(V=newV, omega=newOmega)
+            c2 = c2._replace(witness=newWitness)
 
         return c2
 
@@ -118,18 +119,18 @@ class NonRevocationProofBuilder:
 
     def _genCListParams(self, credDef, c2: NonRevocationClaim) -> NonRevocProofXList:
         group = self._groups[credDef]
-        rho = group.random(ZR)
-        r = group.random(ZR)
-        rPrime = group.random(ZR)
-        rPrimePrime = group.random(ZR)
-        rPrimePrimePrime = group.random(ZR)
-        o = group.random(ZR)
-        oPrime = group.random(ZR)
+        rho = group.random(cmod.ZR)
+        r = group.random(cmod.ZR)
+        rPrime = group.random(cmod.ZR)
+        rPrimePrime = group.random(cmod.ZR)
+        rPrimePrimePrime = group.random(cmod.ZR)
+        o = group.random(cmod.ZR)
+        oPrime = group.random(cmod.ZR)
         m = rho * c2.c
         mPrime = r * rPrimePrime
         t = o * c2.c
         tPrime = oPrime * rPrimePrime
-        m2 = group.init(ZR, int(c2.m2))
+        m2 = group.init(cmod.ZR, int(c2.m2))
         return NonRevocProofXList(rho=rho, r=r, rPrime=rPrime, rPrimePrime=rPrimePrime,
                                   rPrimePrimePrime=rPrimePrimePrime,
                                   o=o, oPrime=oPrime, m=m, mPrime=mPrime, t=t, tPrime=tPrime, m2=m2, s=c2.v, c=c2.c)

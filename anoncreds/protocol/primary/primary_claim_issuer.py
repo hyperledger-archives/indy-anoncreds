@@ -1,12 +1,11 @@
-from charm.core.math.integer import integer, random, randomBits, randomPrime, isPrime
-
 from anoncreds.protocol.globals import LARGE_VPRIME_PRIME, LARGE_E_START, LARGE_E_END_RANGE, LARGE_PRIME
-from anoncreds.protocol.types import PublicKey, SecretKey, SecretData, PrimaryClaim
-from anoncreds.protocol.utils import get_prime_in_range, strToCharmInteger, randomQR
+from anoncreds.protocol.types import PublicKey, SecretKey, SecretData, PrimaryClaim, SecretDataPrimary
+from anoncreds.protocol.utils import get_prime_in_range, strToCryptoInteger, randomQR
+from config.config import cmod
 
 
 class PrimaryClaimIssuer:
-    def __init__(self, secretData: SecretData):
+    def __init__(self, secretData: SecretDataPrimary):
         self._secretData = secretData
 
     @classmethod
@@ -48,22 +47,22 @@ class PrimaryClaimIssuer:
         # Rctxt is a random number needed corresponding to context attribute m2
         Rctxt = (S ** PrimaryClaimIssuer._genX(p_prime, q_prime)) % n
 
-        return (PublicKey(n, Rms, Rctxt, R, S, Z), SecretKey(p, q))
+        return (PublicKey(n, Rms, Rctxt, R, S, Z), SecretKey(p_prime, q_prime))
 
     @classmethod
     def _genX(cls, p_prime, q_prime):
         maxValue = p_prime * q_prime - 1
         minValue = 2
-        return integer(random(maxValue - minValue)) + minValue
+        return cmod.integer(cmod.random(maxValue - minValue)) + minValue
 
     @classmethod
     def _genPrime(cls):
         # Generate 2 large primes `p_prime` and `q_prime` and use them
         # to generate another 2 primes `p` and `q` of 1024 bits
-        prime = randomPrime(LARGE_PRIME)
+        prime = cmod.randomPrime(LARGE_PRIME)
         i = 0
-        while not isPrime(2 * prime + 1):
-            prime = randomPrime(LARGE_PRIME)
+        while not cmod.isPrime(2 * prime + 1):
+            prime = cmod.randomPrime(LARGE_PRIME)
             i += 1
         print("In {} iterations, found prime {}".format(i, prime))
         return prime
@@ -78,13 +77,13 @@ class PrimaryClaimIssuer:
         """
         # This method works for one credDef only.
 
-        u = strToCharmInteger(U) if isinstance(U, str) else U
+        u = strToCryptoInteger(U) if isinstance(U, str) else U
 
         if not u:
             raise ValueError("u must be provided to issue a credential")
         # Generate a random prime and
         # Set the Most-significant-bit to 1
-        vprimeprime = integer(randomBits(LARGE_VPRIME_PRIME) |
+        vprimeprime = cmod.integer(cmod.randomBits(LARGE_VPRIME_PRIME) |
                               (2 ** (LARGE_VPRIME_PRIME - 1)))
         # Generate prime number in the range (2^596, 2^596 + 2^119)
         estart = 2 ** LARGE_E_START
@@ -94,7 +93,7 @@ class PrimaryClaimIssuer:
         return PrimaryClaim(attributes, m2, A, e, vprimeprime)
 
     def _sign(self, attrs, m2, v, u, e):
-        pk = self._secretData.pk
+        pk = self._secretData.pub.pk
         sk = self._secretData.sk
 
         Rx = 1 % pk.N
@@ -105,7 +104,7 @@ class PrimaryClaimIssuer:
         if u != 0:
             u = u % pk.N
             Rx *= u
-        nprime = sk.getPPrime() * sk.getQPrime()
+        nprime = sk.pPrime * sk.qPrime
         einverse = e % nprime
         Q = pk.Z / (Rx * (pk.S ** v)) % pk.N
         A = Q ** (einverse ** -1) % pk.N

@@ -1,56 +1,51 @@
-from typing import Dict
-
+from anoncreds.protocol.globals import PAIRING_GROUP
 from anoncreds.protocol.revocation.accumulators.non_revocation_common import createTauListValues, \
     createTauListExpectedValues
-from anoncreds.protocol.types import NonRevocationClaim, PublicData, NonRevocInitProof, \
+from anoncreds.protocol.types import NonRevocationClaim, NonRevocInitProof, \
     NonRevocProofXList, NonRevocProofCList, NonRevocProof, \
-    T, CredentialDefinition, PublicDataRevocation
+    ID, ClaimInitDataType
 from anoncreds.protocol.utils import bytes_to_ZR
+from anoncreds.protocol.wallet.prover_wallet import ProverWallet
 from config.config import cmod
 
 
 class NonRevocationClaimInitializer:
-    def __init__(self, publicData: Dict[CredentialDefinition, PublicDataRevocation], m1, m2: Dict[str, T]):
-        self._groups = {x: cmod.PairingGroup(y.pkR.groupType) for x, y in publicData.items()}
-        self._data = publicData
-        self._m1 = int(m1)
-        self._m2 = {x: int(y) for x, y in m2.items()}
-        self._genPresentationData()
+    def __init__(self, wallet: ProverWallet):
+        self._wallet = wallet
 
-    def _genPresentationData(self):
-        self._vrPrime = {}
-        self._Ur = {}
-        for credDef, val in self._data.items():
-            vrPrime = self._groups[credDef].random(cmod.ZR)
-            self._vrPrime[credDef] = vrPrime
-            self._Ur[credDef] = (val.pkR.h2 ** vrPrime)
+    def genClaimInitData(self, id: ID) -> ClaimInitDataType:
+        group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
+        pkR = self._wallet.getPublicKeyRevocation(id)
 
-    def getUr(self, credDef):
-        return self._Ur[credDef]
+        vrPrime = group.random(cmod.ZR)
+        Ur = (pkR.h2 ** vrPrime)
 
-    def initNonRevocationClaim(self, credDef, claim: NonRevocationClaim):
-        newV = claim.v + self._vrPrime[credDef]
-        claim = claim._replace(v = newV)
-        self._testWitnessCredential(credDef, claim)
+        return ClaimInitDataType(U=Ur, vPrime=vrPrime)
+
+    def initNonRevocationClaim(self, id: ID, claim: NonRevocationClaim):
+        vrPrime = self._wallet.getNonRevocClaimInitData(id).vPrime
+        newV = claim.v + vrPrime
+        claim = claim._replace(v=newV)
+        self._testWitnessCredential(id, claim)
         return claim
 
-    def _testWitnessCredential(self, credDef, claim: NonRevocationClaim):
-        pk = self._data[credDef].pkR
-        acc = self._data[credDef].accum
-        accPk = self._data[credDef].pkAccum
-        m2 = self._m2[credDef]
+    def _testWitnessCredential(self, id: ID, claim: NonRevocationClaim):
+        pkR = self._wallet.getPublicKeyRevocation(id)
+        acc = self._wallet.getAccumulator(id)
+        accPk = self._wallet.getPublicKeyAccumulator(id)
+        m2 = int(self._wallet.getContextAttr(id))
 
-        zCalc = cmod.pair(claim.gi, acc.acc) / cmod.pair(pk.g, claim.witness.omega)
+        zCalc = cmod.pair(claim.gi, acc.acc) / cmod.pair(pkR.g, claim.witness.omega)
         if zCalc != accPk.z:
             raise ValueError("issuer is sending incorrect data")
 
-        pairGGCalc = cmod.pair(pk.pk * claim.gi, claim.witness.sigmai)
-        pairGG = cmod.pair(pk.g, pk.g)
+        pairGGCalc = cmod.pair(pkR.pk * claim.gi, claim.witness.sigmai)
+        pairGG = cmod.pair(pkR.g, pkR.g)
         if pairGGCalc != pairGG:
             raise ValueError("issuer is sending incorrect data")
 
-        pairH1 = cmod.pair(claim.sigma, pk.y * (pk.h ** claim.c))
-        pairH2 = cmod.pair(pk.h0 * (pk.h1 ** m2) * (pk.h2 ** claim.v) * claim.gi, pk.h)
+        pairH1 = cmod.pair(claim.sigma, pkR.y * (pkR.h ** claim.c))
+        pairH2 = cmod.pair(pkR.h0 * (pkR.h1 ** m2) * (pkR.h2 ** claim.v) * claim.gi, pkR.h)
         if pairH1 != pairH2:
             raise ValueError("issuer is sending incorrect data")
 
@@ -58,15 +53,17 @@ class NonRevocationClaimInitializer:
 
 
 class NonRevocationProofBuilder:
-    def __init__(self, publicData: PublicDataRevocation):
-        self._groups = {x: cmod.PairingGroup(y.pkR.groupType) for x, y in publicData.items()}
-        self._data = publicData
+    def __init__(self, wallet: ProverWallet):
+        self._wallet = wallet
 
-    def updateNonRevocationClaim(self, credDef, c2: NonRevocationClaim):
+    def updateNonRevocationClaim(self, claimDefKey, c2: NonRevocationClaim, ts=None, seqNo=None):
+        if self._wallet.shouldUpdateAccumulator(id=ID(claimDefKey), ts=ts, seqNo=seqNo):
+            self._wallet.updateAccumulator(id=ID(claimDefKey), ts=ts, seqNo=seqNo)
+
         oldV = c2.witness.V
-        newV = self._data[credDef].accum.V
-        newAccum = self._data[credDef].accum
-        g = self._data[credDef].g
+        newAccum = self._wallet.getAccumulator(ID(claimDefKey=claimDefKey))
+        newV = newAccum.V
+        tails = self._wallet.getTails(ID(claimDefKey=claimDefKey))
 
         if c2.i not in newV:
             raise ValueError("Can not update Witness. I'm revoced.")
@@ -76,7 +73,7 @@ class NonRevocationProofBuilder:
             vNewMinusOld = newV - oldV
             omegaDenom = 1
             for j in vOldMinusNew:
-                omegaDenom *= g[newAccum.L + 1 - j + c2.i]
+                omegaDenom *= tails[newAccum.L + 1 - j + c2.i]
             omegaNum = 1
             newOmega = c2.witness.omega
             for j in vNewMinusOld:
@@ -86,39 +83,44 @@ class NonRevocationProofBuilder:
             newWitness = c2.witness._replace(V=newV, omega=newOmega)
             c2 = c2._replace(witness=newWitness)
 
+            self._wallet.submitNonRevocClaim(id=ID(claimDefKey), claim=c2)
+
         return c2
 
-    def initProof(self, credDef, c2: NonRevocationClaim) -> NonRevocInitProof:
+    def initProof(self, claimDefKey, c2: NonRevocationClaim) -> NonRevocInitProof:
         if not c2:
             return None
 
-        pkR = self._data[credDef].pkR
-        accum = self._data[credDef].accum
+        c2 = self.updateNonRevocationClaim(claimDefKey, c2)
+
+        pkR = self._wallet.getPublicKeyRevocation(ID(claimDefKey))
+        accum = self._wallet.getAccumulator(ID(claimDefKey=claimDefKey))
         CList = []
         TauList = []
 
-        cListParams = self._genCListParams(credDef, c2)
-        proofCList = self._createCListValues(credDef, c2, cListParams)
+        cListParams = self._genCListParams(claimDefKey, c2)
+        proofCList = self._createCListValues(claimDefKey, c2, cListParams)
         CList.extend(proofCList.asList())
 
-        tauListParams = self._genTauListParams(credDef)
+        tauListParams = self._genTauListParams(claimDefKey)
         proofTauList = createTauListValues(pkR, accum, tauListParams, proofCList)
         TauList.extend(proofTauList.asList())
 
         return NonRevocInitProof(proofCList, proofTauList, cListParams, tauListParams)
 
-    def finalizeProof(self, credDef, cH, initProof: NonRevocInitProof) -> NonRevocProof:
+    def finalizeProof(self, claimDefKey, cH, initProof: NonRevocInitProof) -> NonRevocProof:
         if not initProof:
             return None
 
-        chNum_z = bytes_to_ZR(cH, self._groups[credDef])
+        group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
+        chNum_z = bytes_to_ZR(cH, group)
         XList = NonRevocProofXList()
         XList.fromList(
             [x - chNum_z * y for x, y in zip(initProof.TauListParams.asList(), initProof.CListParams.asList())])
         return NonRevocProof(XList, initProof.CList)
 
-    def _genCListParams(self, credDef, c2: NonRevocationClaim) -> NonRevocProofXList:
-        group = self._groups[credDef]
+    def _genCListParams(self, claimDefKey, c2: NonRevocationClaim) -> NonRevocProofXList:
+        group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
         rho = group.random(cmod.ZR)
         r = group.random(cmod.ZR)
         rPrime = group.random(cmod.ZR)
@@ -135,28 +137,29 @@ class NonRevocationProofBuilder:
                                   rPrimePrimePrime=rPrimePrimePrime,
                                   o=o, oPrime=oPrime, m=m, mPrime=mPrime, t=t, tPrime=tPrime, m2=m2, s=c2.v, c=c2.c)
 
-    def _createCListValues(self, credDef, c2: NonRevocationClaim,
+    def _createCListValues(self, claimDefKey, c2: NonRevocationClaim,
                            params: NonRevocProofXList) -> NonRevocProofCList:
-        pk = self._data[credDef].pkR
-        E = (pk.h ** params.rho) * (pk.htilde ** params.o)
-        D = (pk.g ** params.r) * (pk.htilde ** params.oPrime)
-        A = c2.sigma * (pk.htilde ** params.rho)
-        G = c2.gi * (pk.htilde ** params.r)
-        W = c2.witness.omega * (pk.htilde ** params.rPrime)
-        S = c2.witness.sigmai * (pk.htilde ** params.rPrimePrime)
-        U = c2.witness.ui * (pk.htilde ** params.rPrimePrimePrime)
+        pkR = self._wallet.getPublicKeyRevocation(ID(claimDefKey))
+        E = (pkR.h ** params.rho) * (pkR.htilde ** params.o)
+        D = (pkR.g ** params.r) * (pkR.htilde ** params.oPrime)
+        A = c2.sigma * (pkR.htilde ** params.rho)
+        G = c2.gi * (pkR.htilde ** params.r)
+        W = c2.witness.omega * (pkR.htilde ** params.rPrime)
+        S = c2.witness.sigmai * (pkR.htilde ** params.rPrimePrime)
+        U = c2.witness.ui * (pkR.htilde ** params.rPrimePrimePrime)
         return NonRevocProofCList(E, D, A, G, W, S, U)
 
-    def _genTauListParams(self, credDef) -> NonRevocProofXList:
-        return NonRevocProofXList(group=self._groups[credDef])
+    def _genTauListParams(self, claimDefKey) -> NonRevocProofXList:
+        group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
+        return NonRevocProofXList(group=group)
 
-    def testProof(self, credDef, c2: NonRevocationClaim):
-        pkR = self._data[credDef].pkR
-        accum = self._data[credDef].accum
-        accumPk = self._data[credDef].pkAccum
+    def testProof(self, claimDefKey, c2: NonRevocationClaim):
+        pkR = self._wallet.getPublicKeyRevocation(ID(claimDefKey))
+        accum = self._wallet.getAccumulator(ID(claimDefKey=claimDefKey))
+        accumPk = self._wallet.getPublicKeyAccumulator(ID(claimDefKey=claimDefKey))
 
-        cListParams = self._genCListParams(credDef, c2)
-        proofCList = self._createCListValues(credDef, c2, cListParams)
+        cListParams = self._genCListParams(claimDefKey, c2)
+        proofCList = self._createCListValues(claimDefKey, c2, cListParams)
         proofTauList = createTauListValues(pkR, accum, cListParams, proofCList)
 
         proofTauListCalc = createTauListExpectedValues(pkR, accum, accumPk, proofCList)

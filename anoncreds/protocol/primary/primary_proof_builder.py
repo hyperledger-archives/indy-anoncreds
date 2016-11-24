@@ -1,90 +1,74 @@
-from typing import Dict, Sequence
+from typing import Sequence
 
 from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, LARGE_E_START, LARGE_ETILDE, \
     LARGE_VTILDE, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, DELTA
 from anoncreds.protocol.primary.primary_proof_common import calcTge, calcTeq
-from anoncreds.protocol.types import PrimaryClaim, PublicData, Predicate, PrimaryInitProof, \
+from anoncreds.protocol.types import PrimaryClaim, Predicate, PrimaryInitProof, \
     PrimaryEqualInitProof, PrimaryPrecicateGEInitProof, PrimaryProof, PrimaryEqualProof, PrimaryPredicateGEProof, \
-    CredentialDefinition, PublicDataPrimary
+    ID, ClaimInitDataType
 from anoncreds.protocol.utils import getUnrevealedAttrs, fourSquares
+from anoncreds.protocol.wallet.prover_wallet import ProverWallet
 from config.config import cmod
 
 
 class PrimaryClaimInitializer:
-    def __init__(self, publicData: Dict[CredentialDefinition, PublicDataPrimary], masterSecret):
-        """
-        Create a proof instance
+    def __init__(self, wallet: ProverWallet):
+        self._wallet = wallet
 
-        :param credDefPks: The public key of the Issuer(s)
-        """
+    def genClaimInitData(self, id: ID) -> ClaimInitDataType:
+        pk = self._wallet.getPublicKey(id)
+        ms = self._wallet.getMasterSecret(id)
+        vprime = cmod.randomBits(LARGE_VPRIME)
+        N = pk.N
+        Rms = pk.Rms
+        S = pk.S
+        U = (S ** vprime) * (Rms ** ms) % N
 
-        self._ms = masterSecret
-        self._data = publicData
+        return ClaimInitDataType(U=U, vPrime=vprime)
 
-        self._genPresentationData()
-
-    def _genPresentationData(self):
-        self._vprime = {}
-        self._U = {}
-        # Calculate the `U` values using Issuer's `S`, R["0"] and master secret
-        for credDef, val in self._data.items():
-            self._vprime[credDef] = cmod.randomBits(LARGE_VPRIME)
-            N = val.pk.N
-            Rms = val.pk.Rms
-            S = val.pk.S
-            self._U[credDef] = (S ** self._vprime[credDef]) * (Rms ** self._ms) % N
-
-    def getU(self, credDef):
-        return self._U[credDef]
-
-    def preparePrimaryClaim(self, credDef, claim: PrimaryClaim):
-        newV = claim.v + self._vprime[credDef]
+    def preparePrimaryClaim(self, id: ID, claim: PrimaryClaim):
+        claimInitDat = self._wallet.getPrimaryClaimInitData(id)
+        newV = claim.v + claimInitDat.vPrime
         claim = claim._replace(v=newV)
         return claim
 
 
 class PrimaryProofBuilder:
-    def __init__(self, publicData: Dict[CredentialDefinition, PublicDataPrimary], m1):
-        """
-        Create a proof instance
+    def __init__(self, wallet: ProverWallet):
+        self._wallet = wallet
 
-        :param credDefPks: The public key of the Issuer(s)
-        """
-        self._m1 = m1
-        self._data = publicData
-
-    def initProof(self, credDef, c1: PrimaryClaim, revealedAttrs: Sequence[str], predicates: Sequence[Predicate],
+    def initProof(self, claimDefKey, c1: PrimaryClaim, revealedAttrs: Sequence[str], predicates: Sequence[Predicate],
                   m1Tilde, m2Tilde) -> PrimaryInitProof:
         if not c1:
             return None
 
-        eqProof = self._initEqProof(credDef, c1, revealedAttrs, m1Tilde, m2Tilde)
+        eqProof = self._initEqProof(claimDefKey, c1, revealedAttrs, m1Tilde, m2Tilde)
         geProofs = []
         for predicate in predicates:
-            geProof = self._initGeProof(credDef, eqProof, c1, predicate)
+            geProof = self._initGeProof(claimDefKey, eqProof, c1, predicate)
             geProofs.append(geProof)
         return PrimaryInitProof(eqProof, geProofs)
 
-    def finalizeProof(self, credDef, cH, initProof: PrimaryInitProof) -> PrimaryProof:
+    def finalizeProof(self, claimDefKey, cH, initProof: PrimaryInitProof) -> PrimaryProof:
         if not initProof:
             return None
 
         cH = cmod.integer(cH)
-        eqProof = self._finalizeEqProof(credDef, cH, initProof.eqProof)
+        eqProof = self._finalizeEqProof(claimDefKey, cH, initProof.eqProof)
         geProofs = []
         for initGeProof in initProof.geProofs:
-            geProof = self._finalizeGeProof(credDef, cH, initGeProof, eqProof)
+            geProof = self._finalizeGeProof(claimDefKey, cH, initGeProof, eqProof)
             geProofs.append(geProof)
         return PrimaryProof(eqProof, geProofs)
 
-    def _initEqProof(self, credDef, c1: PrimaryClaim, revealedAttrs: Sequence[str], m1Tilde, m2Tilde) \
+    def _initEqProof(self, claimDefKey, c1: PrimaryClaim, revealedAttrs: Sequence[str], m1Tilde, m2Tilde) \
             -> PrimaryEqualInitProof:
         m2Tilde = m2Tilde if m2Tilde else cmod.integer(cmod.randomBits(LARGE_MVECT))
         unrevealedAttrs = getUnrevealedAttrs(c1.attrs, revealedAttrs)
         mtilde = self._getMTilde(unrevealedAttrs)
 
         Ra = cmod.integer(cmod.randomBits(LARGE_VPRIME))
-        pk = self._data[credDef].pk
+        pk = self._wallet.getPublicKey(ID(claimDefKey))
 
         A, e, v = c1.A, c1.e, c1.v
         Aprime = A * (pk.S ** Ra) % pk.N
@@ -107,10 +91,10 @@ class PrimaryProofBuilder:
         return PrimaryEqualInitProof(c1, Aprime, T, etilde, eprime, vtilde, vprime, mtilde, m1Tilde, m2Tilde,
                                      unrevealedAttrs.keys(), revealedAttrs)
 
-    def _initGeProof(self, credDef, eqProof: PrimaryEqualInitProof, c1: PrimaryClaim, predicate: Predicate) \
+    def _initGeProof(self, claimDefKey, eqProof: PrimaryEqualInitProof, c1: PrimaryClaim, predicate: Predicate) \
             -> PrimaryPrecicateGEInitProof:
         # gen U for Delta
-        pk = self._data[credDef].pk
+        pk = self._wallet.getPublicKey(ID(claimDefKey))
         k, value = predicate.attrName, predicate.value
         delta = c1.attrs[k] - value
         if delta < 0:
@@ -142,19 +126,20 @@ class PrimaryProofBuilder:
         TauList = calcTge(pk, utilde, rtilde, eqProof.mTilde[k], alphatilde, T)
         return PrimaryPrecicateGEInitProof(CList, TauList, u, utilde, r, rtilde, alphatilde, predicate, T)
 
-    def _finalizeEqProof(self, credDef, cH, initProof: PrimaryEqualInitProof) -> PrimaryEqualProof:
+    def _finalizeEqProof(self, claimDefKey, cH, initProof: PrimaryEqualInitProof) -> PrimaryEqualProof:
         e = initProof.eTilde + (cH * initProof.ePrime)
         v = initProof.vTilde + (cH * initProof.vPrime)
 
         m = {}
         for k in initProof.unrevealedAttrs:
             m[str(k)] = initProof.mTilde[str(k)] + (cH * initProof.c1.attrs[str(k)])
-        m1 = initProof.m1Tilde + (cH * self._m1)
+        ms = self._wallet.getMasterSecret(ID(claimDefKey))
+        m1 = initProof.m1Tilde + (cH * ms)
         m2 = initProof.m2Tilde + (cH * initProof.c1.m2)
 
         return PrimaryEqualProof(e, v, m, m1, m2, initProof.Aprime, initProof.revealedAttrs)
 
-    def _finalizeGeProof(self, credDef, cH, initProof: PrimaryPrecicateGEInitProof, eqProof: PrimaryEqualProof) \
+    def _finalizeGeProof(self, claimDefKey, cH, initProof: PrimaryPrecicateGEInitProof, eqProof: PrimaryEqualProof) \
             -> PrimaryPredicateGEProof:
         u = {}
         r = {}

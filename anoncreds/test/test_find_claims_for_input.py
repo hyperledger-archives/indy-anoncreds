@@ -5,7 +5,7 @@ from anoncreds.protocol.types import ProofInput, ProofClaims, PredicateGE
 
 def testEmpty(prover1, allClaimsProver1):
     proofInput = ProofInput([], [])
-    assert {} == prover1.findClaims(allClaimsProver1, proofInput)
+    assert {} == prover1._findClaims(proofInput)
 
 
 def testOneRevealedOnly(prover1, allClaimsProver1, credDefGvt):

@@ -14,5 +14,6 @@ def run():
         fails += int(failed)
     print("{} runs, {} failures".format(runs, fails))
 
+
 if __name__ == '__main__':
     run()

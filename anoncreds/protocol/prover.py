@@ -5,85 +5,82 @@ from anoncreds.protocol.globals import LARGE_MASTER_SECRET, LARGE_M2_TILDE
 from anoncreds.protocol.primary.primary_proof_builder import PrimaryClaimInitializer, PrimaryProofBuilder
 from anoncreds.protocol.revocation.accumulators.non_revocation_proof_builder import NonRevocationClaimInitializer, \
     NonRevocationProofBuilder
-from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, PublicData, \
-    Proof, Claims, InitProof, ProofInput, ProofClaims, FullProof, T, CredentialDefinition
+from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, Proof, InitProof, ProofInput, ProofClaims, \
+    FullProof, \
+    ClaimDefinition, ID, ClaimDefinitionKey
 from anoncreds.protocol.utils import get_hash
+from anoncreds.protocol.wallet.prover_wallet import ProverWallet
 from config.config import cmod
 
 
-class ProverInitializer:
-    def __init__(self, id, m2: Dict[CredentialDefinition, T], publicData: Dict[CredentialDefinition, PublicData], ms):
-        self.id = id
-
-        publicDataPrimary = {credDef: pub.pubPrimary for credDef, pub in publicData.items()}
-        publicDataRevoc = {credDef: pub.pubRevoc for credDef, pub in publicData.items() if pub.pubRevoc}
-
-        self._primaryClaimInitializer = PrimaryClaimInitializer(publicDataPrimary, ms)
-        if publicDataRevoc:
-            self._nonRevocClaimInitializer = NonRevocationClaimInitializer(publicDataRevoc, ms, m2)
-
-    @classmethod
-    def genMasterSecret(cls):
-        return cmod.integer(cmod.randomBits(LARGE_MASTER_SECRET))
-
-    def getU(self, credDef):
-        return self._primaryClaimInitializer.getU(credDef)
-
-    def getUr(self, credDef):
-        if not self._nonRevocClaimInitializer:
-            raise ValueError('Non-revocation keys are not initialized')
-        return self._nonRevocClaimInitializer.getUr(credDef)
-
-    def initPrimaryClaim(self, credDef, claim: PrimaryClaim):
-        return self._primaryClaimInitializer.preparePrimaryClaim(credDef, claim)
-
-    def initNonRevocationClaim(self, credDef, claim: NonRevocationClaim):
-        if not self._nonRevocClaimInitializer:
-            raise ValueError('Non-revocation keys are not initialized')
-        return self._nonRevocClaimInitializer.initNonRevocationClaim(credDef, claim)
-
-    def __repr__(self):
-        return str(self.__dict__)
-
-
 class Prover:
-    def __init__(self, id, publicData: Dict[str, PublicData], m1):
-        self.id = id
-        self._m1 = m1
+    def __init__(self, wallet: ProverWallet):
+        self._wallet = wallet
 
-        publicDataPrimary = {credDef: pub.pubPrimary for credDef, pub in publicData.items()}
-        publicDataRevoc = {credDef: pub.pubRevoc for credDef, pub in publicData.items() if pub.pubRevoc}
+        self._primaryClaimInitializer = PrimaryClaimInitializer(wallet)
+        self._nonRevocClaimInitializer = NonRevocationClaimInitializer(wallet)
 
-        self._primaryProofBuilder = PrimaryProofBuilder(publicDataPrimary, self._m1)
-        if publicDataRevoc:
-            self._nonRevocProofBuilder = NonRevocationProofBuilder(publicDataRevoc)
+        self._primaryProofBuilder = PrimaryProofBuilder(wallet)
+        self._nonRevocProofBuilder = NonRevocationProofBuilder(wallet)
 
-    def updateNonRevocationClaims(self, proofClaims: Dict[CredentialDefinition, ProofClaims]) -> Dict[
-        str, NonRevocationClaim]:
-        newProffClaims = {}
-        for credDef, proofClaim in proofClaims.items():
-            newNonRevocClaim = self._nonRevocProofBuilder.updateNonRevocationClaim(credDef,
-                                                                                   proofClaim.claims.nonRevocClaim)
-            newProffClaims[credDef] = proofClaim._replace(
-                claims=proofClaim.claims._replace(
-                    nonRevocClaim = newNonRevocClaim))
+    #
+    # PUBLIC
+    #
 
-        return newProffClaims
 
-    def updateNonRevocationClaim(self, credDef, c2: NonRevocationClaim):
-        if not self._nonRevocProofBuilder:
-            raise ValueError('Non-revocation keys are not initialized')
-        return self._nonRevocProofBuilder.updateNonRevocationClaim(credDef, c2)
+    def requestClaim(self, id: ID, fetcher):
+        self._genMasterSecret(id)
+        U = self._genU(id)
+        Ur = self._genUr(id)
 
-    @classmethod
-    def findClaims(cls, allClaims: Dict[CredentialDefinition, Claims], proofInput: ProofInput) -> Dict[
-        CredentialDefinition, ProofClaims]:
+        claims, m2 = fetcher.fetchClaims(self._wallet.id, id, U, Ur)
+
+        self._wallet.submitContextAttr(id, m2)
+        self._initPrimaryClaim(id, claims.primaryClaim)
+        self._initNonRevocationClaim(id, claims.nonRevocClaim)
+
+    def presentProof(self, proofInput: ProofInput, nonce) -> FullProof:
+        claims = self._findClaims(proofInput)
+        return self._prepareProof(claims, nonce)
+
+    #
+    # REQUEST CLAIMS
+    #
+
+    def _genMasterSecret(self, id: ID):
+        ms = cmod.integer(cmod.randomBits(LARGE_MASTER_SECRET))
+        self._wallet.submitMasterSecret(id=id, ms=ms)
+
+    def _genU(self, id: ID):
+        claimInitData = self._primaryClaimInitializer.genClaimInitData(id)
+        self._wallet.submitPrimaryClaimInitData(id=id, claimInitData=claimInitData)
+        return claimInitData.U
+
+    def _genUr(self, id: ID):
+        claimInitData = self._nonRevocClaimInitializer.genClaimInitData(id)
+        self._wallet.submitNonRevocClaimInitData(id=id, claimInitData=claimInitData)
+        return claimInitData.U
+
+    def _initPrimaryClaim(self, id: ID, claim: PrimaryClaim):
+        claim = self._primaryClaimInitializer.preparePrimaryClaim(id, claim)
+        self._wallet.submitPrimaryClaim(id=id, claim=claim)
+
+    def _initNonRevocationClaim(self, id: ID, claim: NonRevocationClaim):
+        claim = self._nonRevocClaimInitializer.initNonRevocationClaim(id, claim)
+        self._wallet.submitNonRevocClaim(id=id, claim=claim)
+
+    #
+    # PRESENT PROOF
+    #
+
+    def _findClaims(self, proofInput: ProofInput) -> Dict[ClaimDefinitionKey, ProofClaims]:
         revealedAttrs, predicates = set(proofInput.revealedAttrs), set(proofInput.predicates)
 
         proofClaims = {}
         foundRevealedAttrs = set()
         foundPredicates = set()
-        for credDef, claim in allClaims.items():
+
+        for credDefKey, claim in self._wallet.getAllClaims().items():
             revealedAttrsForClaim = []
             predicatesForClaim = []
 
@@ -98,7 +95,7 @@ class Prover:
                     foundPredicates.add(predicate)
 
             if revealedAttrsForClaim or predicatesForClaim:
-                proofClaims[credDef] = ProofClaims(claim, revealedAttrsForClaim, predicatesForClaim)
+                proofClaims[credDefKey] = ProofClaims(claim, revealedAttrsForClaim, predicatesForClaim)
 
         if foundRevealedAttrs != revealedAttrs:
             raise ValueError("A claim isn't found for the following attributes: {}", revealedAttrs - foundRevealedAttrs)
@@ -107,60 +104,55 @@ class Prover:
 
         return proofClaims
 
-    def findClaimsAndPrepareProof(self, allClaims: Dict[CredentialDefinition, Claims], proofInput: ProofInput,
-                                  nonce) -> FullProof:
-        proofClaims = Prover.findClaims(allClaims, proofInput)
-        return self.prepareProof(proofClaims, nonce)
-
-    def prepareProof(self, claims: Dict[CredentialDefinition, ProofClaims], nonce) -> FullProof:
+    def _prepareProof(self, claims: Dict[ClaimDefinitionKey, ProofClaims], nonce) -> FullProof:
         m1Tilde = cmod.integer(cmod.randomBits(LARGE_M2_TILDE))
         initProofs = {}
         CList = []
         TauList = []
 
         # 1. init proofs
-        for credDef, val in claims.items():
+        for claimDefKey, val in claims.items():
             c1, c2, revealedAttrs, predicates = val.claims.primaryClaim, val.claims.nonRevocClaim, val.revealedAttrs, val.predicates
 
             nonRevocInitProof = None
             if c2:
-                nonRevocInitProof = self._nonRevocProofBuilder.initProof(credDef, c2)
+                nonRevocInitProof = self._nonRevocProofBuilder.initProof(claimDefKey, c2)
                 CList += nonRevocInitProof.asCList()
                 TauList += nonRevocInitProof.asTauList()
 
             primaryInitProof = None
             if c1:
                 m2Tilde = cmod.integer(int(nonRevocInitProof.TauListParams.m2)) if nonRevocInitProof else None
-                primaryInitProof = self._primaryProofBuilder.initProof(credDef, c1, revealedAttrs, predicates,
+                primaryInitProof = self._primaryProofBuilder.initProof(claimDefKey, c1, revealedAttrs, predicates,
                                                                        m1Tilde, m2Tilde)
                 CList += primaryInitProof.asCList()
                 TauList += primaryInitProof.asTauList()
 
             initProof = InitProof(nonRevocInitProof, primaryInitProof)
-            initProofs[credDef] = initProof
+            initProofs[claimDefKey] = initProof
 
         # 2. hash
         cH = self._get_hash(CList, TauList, nonce)
 
         # 3. finalize proofs
         proofs = {}
-        for credDef, initProof in initProofs.items():
+        for claimDefKey, initProof in initProofs.items():
             nonRevocProof = None
             if initProof.nonRevocInitProof:
-                nonRevocProof = self._nonRevocProofBuilder.finalizeProof(credDef, cH, initProof.nonRevocInitProof)
-            primaryProof = self._primaryProofBuilder.finalizeProof(credDef, cH, initProof.primaryInitProof)
-            proofs[credDef] = Proof(primaryProof, nonRevocProof)
+                nonRevocProof = self._nonRevocProofBuilder.finalizeProof(claimDefKey, cH, initProof.nonRevocInitProof)
+            primaryProof = self._primaryProofBuilder.finalizeProof(claimDefKey, cH, initProof.primaryInitProof)
+            proofs[claimDefKey] = Proof(primaryProof, nonRevocProof)
 
         return FullProof(cH, proofs, CList)
 
-    def _getCList(self, initProofs: Dict[CredentialDefinition, InitProof]):
+    def _getCList(self, initProofs: Dict[ClaimDefinition, InitProof]):
         CList = []
         for initProof in initProofs.values():
             CList += initProof.nonRevocInitProof.asCList()
             CList += initProof.primaryInitProof.asCList()
             return CList
 
-    def _getTauList(self, initProofs: Dict[CredentialDefinition, InitProof]):
+    def _getTauList(self, initProofs: Dict[ClaimDefinition, InitProof]):
         TauList = []
         for initProof in initProofs.values():
             TauList += initProof.nonRevocInitProof.asTauList()

@@ -16,7 +16,7 @@ LARGE_ALPHATILDE = 2787
 LARGE_M2_TILDE = 1024
 ITERATIONS = 4
 
-PAIRING_GROUP = 'SS1024' # super singular curve, 1024 bits
+PAIRING_GROUP = 'SS1024'  # super singular curve, 1024 bits
 
 MASTER_SEC_RAND = "master_secret_rand"
 REVEALED_ATTRS = "revealedAttrs"

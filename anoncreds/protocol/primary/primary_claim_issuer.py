@@ -1,16 +1,17 @@
 from anoncreds.protocol.globals import LARGE_VPRIME_PRIME, LARGE_E_START, LARGE_E_END_RANGE, LARGE_PRIME
-from anoncreds.protocol.types import PublicKey, SecretKey, SecretData, PrimaryClaim, SecretDataPrimary
+from anoncreds.protocol.types import PublicKey, SecretKey, PrimaryClaim, ID
 from anoncreds.protocol.utils import get_prime_in_range, strToCryptoInteger, randomQR
+from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
 from config.config import cmod
 
 
 class PrimaryClaimIssuer:
-    def __init__(self, secretData: SecretDataPrimary):
-        self._secretData = secretData
+    def __init__(self, wallet: IssuerWallet):
+        self._wallet = wallet
 
-    @classmethod
-    def genKeys(cls, credDef, p_prime=None, q_prime=None) -> (PublicKey, SecretKey):
-        if not credDef.attrNames and isinstance(credDef.attrNames, list):
+    def genKeys(self, id: ID, p_prime=None, q_prime=None) -> (PublicKey, SecretKey):
+        claimDef = self._wallet.getClaimDef(id)
+        if not claimDef.attrNames and isinstance(claimDef.attrNames, list):
             raise ValueError("List of attribute names is required to "
                              "setup credential definition")
 
@@ -29,7 +30,7 @@ class PrimaryClaimIssuer:
         Xz = PrimaryClaimIssuer._genX(p_prime, q_prime)
         Xr = {}
 
-        for name in credDef.attrNames:
+        for name in claimDef.attrNames:
             Xr[str(name)] = PrimaryClaimIssuer._genX(p_prime, q_prime)
 
         # Generate `Z` as the exponentiation of the quadratic random 'S' .
@@ -38,7 +39,7 @@ class PrimaryClaimIssuer:
 
         # Generate random numbers corresponding to every attributes
         R = {}
-        for name in credDef.attrNames:
+        for name in claimDef.attrNames:
             R[str(name)] = (S ** Xr[str(name)]) % n
 
         # Rms is a random number needed corresponding to master secret m1
@@ -67,7 +68,7 @@ class PrimaryClaimIssuer:
         print("In {} iterations, found prime {}".format(i, prime))
         return prime
 
-    def issuePrimaryClaim(self, attributes, m2, U) -> PrimaryClaim:
+    def issuePrimaryClaim(self, id: ID, attributes, U) -> PrimaryClaim:
         """
         Issue the credential for the defined attributes
 
@@ -84,17 +85,20 @@ class PrimaryClaimIssuer:
         # Generate a random prime and
         # Set the Most-significant-bit to 1
         vprimeprime = cmod.integer(cmod.randomBits(LARGE_VPRIME_PRIME) |
-                              (2 ** (LARGE_VPRIME_PRIME - 1)))
+                                   (2 ** (LARGE_VPRIME_PRIME - 1)))
         # Generate prime number in the range (2^596, 2^596 + 2^119)
         estart = 2 ** LARGE_E_START
         eend = (estart + 2 ** LARGE_E_END_RANGE)
         e = get_prime_in_range(estart, eend)
-        A = self._sign(attributes, m2, vprimeprime, u, e)
+        A = self._sign(id, attributes, vprimeprime, u, e)
+
+        m2 = self._wallet.getContextAttr(id)
         return PrimaryClaim(attributes, m2, A, e, vprimeprime)
 
-    def _sign(self, attrs, m2, v, u, e):
-        pk = self._secretData.pub.pk
-        sk = self._secretData.sk
+    def _sign(self, id: ID, attrs, v, u, e):
+        pk = self._wallet.getPublicKey(id)
+        sk = self._wallet.getSecretKey(id)
+        m2 = self._wallet.getContextAttr(id)
 
         Rx = 1 % pk.N
         # Get the product sequence for the (R[i] and attrs[i]) combination

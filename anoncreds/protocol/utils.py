@@ -1,5 +1,6 @@
 import logging
 import string
+import time
 from hashlib import sha256
 from math import sqrt, floor
 from random import randint, sample
@@ -9,7 +10,7 @@ import base58
 
 from anoncreds.protocol.globals import KEYS, PK_R
 from anoncreds.protocol.globals import LARGE_PRIME, LARGE_MASTER_SECRET, LARGE_VPRIME, PAIRING_GROUP
-from anoncreds.protocol.types import SerFmt
+from anoncreds.protocol.types import SerFmt, TimestampType
 from config.config import cmod
 
 
@@ -28,7 +29,8 @@ def get_hash(*args, group: cmod.PairingGroup = None):
     group = group if group else cmod.PairingGroup(PAIRING_GROUP)
     h_challenge = sha256()
 
-    serialedArgs = [group.serialize(arg) if (type(arg) == cmod.pc_element) else cmod.Conversion.IP2OS(arg) for arg in args]
+    serialedArgs = [group.serialize(arg) if (type(arg) == cmod.pc_element) else cmod.Conversion.IP2OS(arg) for arg in
+                    args]
 
     for arg in sorted(serialedArgs):
         h_challenge.update(arg)
@@ -214,3 +216,7 @@ def shortenDictVals(d, size=None):
         else:
             r[k] = shortenMod(v, size)
     return r
+
+
+def currentTimestampMillisec() -> TimestampType:
+    return TimestampType(time.time() * 1000)  # millisec

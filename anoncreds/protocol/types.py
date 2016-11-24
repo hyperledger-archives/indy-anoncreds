@@ -70,11 +70,13 @@ class Attribs:
             attr_types = self.credType.attrTypes[i]
 
             for at in attr_types:
-                if at.encode:
-                    encoded[at.name] = cmod.Conversion.bytes2integer(
-                        sha256(str(self._vals[at.name]).encode()).digest())
-                else:
-                    encoded[at.name] = self._vals[at.name]
+                attrName = at.name
+                if attrName in self._vals:
+                    if at.encode:
+                        encoded[attrName] = cmod.Conversion.bytes2integer(
+                            sha256(str(self._vals[attrName]).encode()).digest())
+                    else:
+                        encoded[attrName] = self._vals[at.name]
         return encoded
 
     def __add__(self, other):
@@ -84,6 +86,9 @@ class Attribs:
 
     def __iter__(self):
         return self._vals.__iter__()
+
+    def __getitem__(self, key):
+        return self._vals[key]
 
     def keys(self):
         return self._vals.keys()
@@ -108,15 +113,51 @@ class PublicParams:
 
 T = TypeVar('T')
 VType = Set[int]
-GType = Dict[int, cmod.integer]
+TailsType = Dict[int, cmod.integer]
+TimestampType = int
+ClaimInitDataType = namedtuple('ClaimInitDataType', 'U vPrime')
 
 
-class CredentialDefinition:
-    def __init__(self, name, version, attrNames, type):
+class ClaimDefinition:
+    def __init__(self, name, version, attrNames, type, issuerId, id=None):
         self.name = name
         self.type = type
         self.version = version
         self.attrNames = attrNames
+        self.issuerId = issuerId
+        self.id = id
+
+    def getKey(self):
+        return ClaimDefinitionKey(self.name, self.version, self.issuerId)
+
+    def __repr__(self):
+        return str(self.__dict__)
+
+
+class ClaimDefinitionKey:
+    def __init__(self, name, version, issuerId):
+        self.name = name
+        self.version = version
+        self.issuerId = issuerId
+
+    def __key(self):
+        return (self.name, self.version, self.issuerId)
+
+    def __eq__(x, y):
+        return x.__key() == y.__key()
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __repr__(self):
+        return str(self.__dict__)
+
+
+class ID:
+    def __init__(self, claimDefKey: ClaimDefinitionKey = None, claimDefId=None, id=None):
+        self.id = id
+        self.claimDefId = claimDefId
+        self.claimDefKey = claimDefKey
 
 
 # CredentialDefinition = namedtuple('CredentialDefinition', ['name', 'version', 'attrNames', 'type'])
@@ -126,7 +167,7 @@ PublicKey = namedtuple('PublicKey', 'N Rms Rctxt R S Z')
 SecretKey = namedtuple('SecretKey', 'pPrime qPrime')
 
 RevocationPublicKey = namedtuple('RevocationPublicKey',
-                                 'qr g h h0 h1 h2 htilde u pk y x groupType')
+                                 'qr g h h0 h1 h2 htilde u pk y x')
 
 RevocationSecretKey = namedtuple('RevocationSecretKey', 'x sk')
 
@@ -171,22 +212,6 @@ class Accumulator:
 
 # Accumulator = namedtuple('Accumulator', ['iA', 'acc', 'V', 'L'])
 
-PublicDataPrimary = namedtuple('PublicDataPrimary', 'credDef pk')
-PublicDataRevocation = namedtuple('PublicDataRevocation', 'credDef pkR accum pkAccum g')
-
-class PublicData(namedtuple('PublicData', 'pubPrimary pubRevoc')):
-    def __new__(cls, pubPrimary, pubRevoc=None):
-        return super(PublicData, cls).__new__(cls, pubPrimary, pubRevoc)
-
-
-SecretDataPrimary = namedtuple('SecretDataPrimary', 'pub sk')
-SecretDataRevocation = namedtuple('SecretDataRevocation', 'pub skR skAccum')
-
-SecretData = namedtuple('SecretData', 'secrPrimary secrRevoc')
-class SecretData(namedtuple('SecretData', 'secrPrimary secrRevoc')):
-    def __new__(cls, secrPrimary, secrRevoc=None):
-        return super(SecretData, cls).__new__(cls, secrPrimary, secrRevoc)
-
 PrimaryClaim = namedtuple('PrimaryClaim', 'attrs m2 A e v')
 
 Witness = namedtuple('Witness', 'sigmai ui gi omega V')
@@ -195,9 +220,11 @@ NonRevocationClaim = namedtuple('NonRevocationClaim', 'iA sigma c v witness gi i
 
 ProofInput = namedtuple('ProofInput', 'revealedAttrs predicates')
 
+
 class Claims(namedtuple('Claims', 'primaryClaim nonRevocClaim')):
     def __new__(cls, primaryClaim=None, nonRevocClaim=None):
         return super(Claims, cls).__new__(cls, primaryClaim, nonRevocClaim)
+
 
 class ProofClaims(namedtuple('ProofClaims', 'claims revealedAttrs predicates')):
     def __new__(cls, claims=None, revealedAttrs=[], predicates=[]):
@@ -378,13 +405,13 @@ class PrimaryProof:
 
 
 class Proof:
-    def __init__(self, primaryProof: PrimaryProof, nonRevocProof: NonRevocProof=None):
+    def __init__(self, primaryProof: PrimaryProof, nonRevocProof: NonRevocProof = None):
         self.nonRevocProof = nonRevocProof
         self.primaryProof = primaryProof
 
 
 class FullProof:
-    def __init__(self, cHash, proofs: Dict[str, Proof],
+    def __init__(self, cHash, proofs: Dict[ClaimDefinitionKey, Proof],
                  CList: Sequence[T]):
         self.cHash = cHash
         self.proofs = proofs

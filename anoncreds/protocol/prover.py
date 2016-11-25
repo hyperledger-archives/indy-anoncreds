@@ -15,7 +15,7 @@ from config.config import cmod
 
 class Prover:
     def __init__(self, wallet: ProverWallet):
-        self._wallet = wallet
+        self.wallet = wallet
 
         self._primaryClaimInitializer = PrimaryClaimInitializer(wallet)
         self._nonRevocClaimInitializer = NonRevocationClaimInitializer(wallet)
@@ -27,15 +27,18 @@ class Prover:
     # PUBLIC
     #
 
+    @property
+    def id(self):
+        return self.wallet.id
 
     def requestClaim(self, id: ID, fetcher):
         self._genMasterSecret(id)
         U = self._genU(id)
         Ur = self._genUr(id)
 
-        claims, m2 = fetcher.fetchClaims(self._wallet.id, id, U, Ur)
+        claims, m2 = fetcher.fetchClaims(self.wallet.id, id, U, Ur)
 
-        self._wallet.submitContextAttr(id, m2)
+        self.wallet.submitContextAttr(id, m2)
         self._initPrimaryClaim(id, claims.primaryClaim)
         self._initNonRevocationClaim(id, claims.nonRevocClaim)
 
@@ -49,25 +52,25 @@ class Prover:
 
     def _genMasterSecret(self, id: ID):
         ms = cmod.integer(cmod.randomBits(LARGE_MASTER_SECRET))
-        self._wallet.submitMasterSecret(id=id, ms=ms)
+        self.wallet.submitMasterSecret(id=id, ms=ms)
 
     def _genU(self, id: ID):
         claimInitData = self._primaryClaimInitializer.genClaimInitData(id)
-        self._wallet.submitPrimaryClaimInitData(id=id, claimInitData=claimInitData)
+        self.wallet.submitPrimaryClaimInitData(id=id, claimInitData=claimInitData)
         return claimInitData.U
 
     def _genUr(self, id: ID):
         claimInitData = self._nonRevocClaimInitializer.genClaimInitData(id)
-        self._wallet.submitNonRevocClaimInitData(id=id, claimInitData=claimInitData)
+        self.wallet.submitNonRevocClaimInitData(id=id, claimInitData=claimInitData)
         return claimInitData.U
 
     def _initPrimaryClaim(self, id: ID, claim: PrimaryClaim):
         claim = self._primaryClaimInitializer.preparePrimaryClaim(id, claim)
-        self._wallet.submitPrimaryClaim(id=id, claim=claim)
+        self.wallet.submitPrimaryClaim(id=id, claim=claim)
 
     def _initNonRevocationClaim(self, id: ID, claim: NonRevocationClaim):
         claim = self._nonRevocClaimInitializer.initNonRevocationClaim(id, claim)
-        self._wallet.submitNonRevocClaim(id=id, claim=claim)
+        self.wallet.submitNonRevocClaim(id=id, claim=claim)
 
     #
     # PRESENT PROOF
@@ -80,7 +83,7 @@ class Prover:
         foundRevealedAttrs = set()
         foundPredicates = set()
 
-        for credDefKey, claim in self._wallet.getAllClaims().items():
+        for credDefKey, claim in self.wallet.getAllClaims().items():
             revealedAttrsForClaim = []
             predicatesForClaim = []
 

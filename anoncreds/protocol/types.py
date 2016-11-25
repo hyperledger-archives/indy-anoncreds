@@ -11,6 +11,12 @@ class AttribType:
         self.name = name
         self.encode = encode
 
+    def __eq__(x, y):
+        return x.__dict__ == y.__dict__
+
+    def __lt__(self, other):
+        return self.name < other.name
+
     def __repr__(self):
         return str(self.__dict__)
 
@@ -47,13 +53,17 @@ class AttribDef:
                 for attr_types in self.attrTypes
                 for at in attr_types]
 
+    def __eq__(x, y):
+        return sorted(x.names) == sorted(y.names) \
+               and sorted(x.attrTypes) == sorted(y.attrTypes)
+
     def __repr__(self):
         return str(self.__dict__)
 
 
 class Attribs:
-    def __init__(self, credType: AttribDef, **vals):
-        self.credType = credType
+    def __init__(self, credType: AttribDef = None, **vals):
+        self.credType = credType if credType else AttribDef([], [])
         self._vals = vals
 
     def encoded(self):
@@ -101,6 +111,10 @@ class Attribs:
 
     def __repr__(self):
         return str(self.__dict__)
+
+    def __eq__(x, y):
+        return x.credType == y.credType \
+               and x._vals == y._vals
 
 
 class PublicParams:
@@ -218,7 +232,9 @@ Witness = namedtuple('Witness', 'sigmai ui gi omega V')
 
 NonRevocationClaim = namedtuple('NonRevocationClaim', 'iA sigma c v witness gi i m2')
 
-ProofInput = namedtuple('ProofInput', 'revealedAttrs predicates')
+class ProofInput(namedtuple('ProofInput', 'revealedAttrs predicates ts seqNo')):
+    def __new__(cls, revealedAttrs=[], predicates=[], ts=None, seqNo=None):
+        return super(ProofInput, cls).__new__(cls, revealedAttrs, predicates, ts, seqNo)
 
 
 class Claims(namedtuple('Claims', 'primaryClaim nonRevocClaim')):

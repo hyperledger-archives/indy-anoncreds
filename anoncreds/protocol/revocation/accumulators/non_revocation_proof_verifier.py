@@ -3,7 +3,7 @@ from typing import Sequence
 from anoncreds.protocol.globals import PAIRING_GROUP
 from anoncreds.protocol.revocation.accumulators.non_revocation_common import createTauListExpectedValues, \
     createTauListValues
-from anoncreds.protocol.types import T, NonRevocProof, ID
+from anoncreds.protocol.types import T, NonRevocProof, ID, ProofInput
 from anoncreds.protocol.utils import bytes_to_ZR
 from anoncreds.protocol.wallet.wallet import Wallet
 from config.config import cmod
@@ -17,7 +17,10 @@ class NonRevocationProofVerifier:
     def nonce(self):
         return self._nonce
 
-    def verifyNonRevocation(self, claimDefKey, cHash, nonRevocProof: NonRevocProof) -> Sequence[T]:
+    def verifyNonRevocation(self, proofInput: ProofInput, claimDefKey, cHash, nonRevocProof: NonRevocProof) -> Sequence[T]:
+        if self._wallet.shouldUpdateAccumulator(id=ID(claimDefKey), ts=proofInput.ts, seqNo=proofInput.seqNo):
+            self._wallet.updateAccumulator(id=ID(claimDefKey), ts=proofInput.ts, seqNo=proofInput.seqNo)
+
         pkR = self._wallet.getPublicKeyRevocation(ID(claimDefKey))
         accum = self._wallet.getAccumulator(ID(claimDefKey))
         accumPk = self._wallet.getPublicKeyAccumulator(ID(claimDefKey))

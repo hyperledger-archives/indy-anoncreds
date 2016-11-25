@@ -3,7 +3,7 @@ from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
 from anoncreds.protocol.repo.attributes_repo import AttributeRepoInMemory
 from anoncreds.protocol.repo.public_repo import PublicRepoInMemory
-from anoncreds.protocol.types import Claims, ProofInput, PredicateGE, \
+from anoncreds.protocol.types import ProofInput, PredicateGE, \
     ID
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWalletInMemory
@@ -19,7 +19,7 @@ def testSingleIssuerSingleProver(primes1):
     issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
 
     # 2. Create a Claim Def
-    claimDef = issuer.genCredDef('GVT', '1.0', GVT.attribNames())
+    claimDef = issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
     claimDefId = ID(claimDef.getKey())
 
     # 3. Create keys for the Claim Def
@@ -38,16 +38,15 @@ def testSingleIssuerSingleProver(primes1):
     prover.requestClaim(claimDefId, SimpleFetcher(issuer))
 
     # 6. proof Claims
-    revealedAttrs = ['name']
-    predicates = [PredicateGE('age', 18)]
-    proofInput = ProofInput(revealedAttrs, predicates)
+    proofInput = ProofInput(
+        ['name'],
+        [PredicateGE('age', 18)])
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
     proof = prover.presentProof(proofInput, nonce)
-    assert verifier.verify(proof,
-                           attrRepo.getRevealedAttributes(claimDef.getKey(), userId, revealedAttrs).encoded(),
-                           nonce)
+    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
+    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
 def testMultiplIssuersSingleProver(primes1, primes2):
@@ -58,9 +57,9 @@ def testMultiplIssuersSingleProver(primes1, primes2):
     issuer2 = Issuer(IssuerWalletInMemory('issuer2', publicRepo), attrRepo)
 
     # 2. Create a Claim Def
-    claimDef1 = issuer1.genCredDef('GVT', '1.0', GVT.attribNames())
+    claimDef1 = issuer1.genClaimDef('GVT', '1.0', GVT.attribNames())
     claimDefId1 = ID(claimDef1.getKey())
-    claimDef2 = issuer2.genCredDef('XYZCorp', '1.0', XYZCorp.attribNames())
+    claimDef2 = issuer2.genClaimDef('XYZCorp', '1.0', XYZCorp.attribNames())
     claimDefId2 = ID(claimDef2.getKey())
 
     # 3. Create keys for the Claim Def
@@ -84,17 +83,16 @@ def testMultiplIssuersSingleProver(primes1, primes2):
     prover.requestClaim(claimDefId2, SimpleFetcher(issuer2))
 
     # 6. proof Claims
-    revealedAttrs = ['name']
-    predicates = [PredicateGE('age', 18), PredicateGE('period', 5)]
-    proofInput = ProofInput(revealedAttrs, predicates)
+    proofInput = ProofInput(['name', 'status'],
+                            [PredicateGE('age', 18), PredicateGE('period', 5)])
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
     proof = prover.presentProof(proofInput, nonce)
 
-    assert verifier.verify(proof,
-                           attrRepo.getRevealedAttributes(claimDef1.getKey(), userId, revealedAttrs).encoded(),
-                           nonce)
+    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
+    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
+
 
 def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     # 1. Init entities
@@ -103,9 +101,9 @@ def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
 
     # 2. Create a Claim Def
-    claimDef1 = issuer.genCredDef('GVT', '1.0', GVT.attribNames())
+    claimDef1 = issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
     claimDefId1 = ID(claimDef1.getKey())
-    claimDef2 = issuer.genCredDef('XYZCorp', '1.0', XYZCorp.attribNames())
+    claimDef2 = issuer.genClaimDef('XYZCorp', '1.0', XYZCorp.attribNames())
     claimDefId2 = ID(claimDef2.getKey())
 
     # 3. Create keys for the Claim Def
@@ -129,14 +127,13 @@ def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     prover.requestClaim(claimDefId2, SimpleFetcher(issuer))
 
     # 6. proof Claims
-    revealedAttrs = ['name']
-    predicates = [PredicateGE('age', 18), PredicateGE('period', 5)]
-    proofInput = ProofInput(revealedAttrs, predicates)
+    proofInput = ProofInput(
+        ['name'],
+        [PredicateGE('age', 18), PredicateGE('period', 5)])
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
     proof = prover.presentProof(proofInput, nonce)
 
-    assert verifier.verify(proof,
-                           attrRepo.getRevealedAttributes(claimDef1.getKey(), userId, revealedAttrs).encoded(),
-                           nonce)
+    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
+    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)

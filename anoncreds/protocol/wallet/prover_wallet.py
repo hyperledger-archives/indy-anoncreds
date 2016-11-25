@@ -64,10 +64,6 @@ class ProverWallet(Wallet):
     def getContextAttr(self, id: ID):
         raise NotImplementedError
 
-    @abstractmethod
-    def shouldUpdateAccumulator(self, id: ID, ts=None, seqNo=None):
-        raise NotImplementedError
-
 
 class ProverWalletInMemory(ProverWallet, WalletInMemory):
     def __init__(self, id, repo: PublicRepo):
@@ -124,7 +120,3 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
 
     def getContextAttr(self, id: ID):
         return self._getValueForId(self._m2s, id)
-
-    def shouldUpdateAccumulator(self, id: ID, ts=None, seqNo=None):
-        # TODO
-        return True

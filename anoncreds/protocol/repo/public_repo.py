@@ -111,11 +111,10 @@ class PublicRepoInMemory(PublicRepo):
 
     def _getValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID) -> Any:
         claimDefKey = self.getClaimDef(id).getKey()
-        value = dict[claimDefKey]
-        if not value:
+        if not claimDefKey in dict:
             raise ValueError(
                 'No value for claim definition with ID={} and key={}'.format(id.claimDefId, id.claimDefKey))
-        return value
+        return dict[claimDefKey]
 
     def _cacheValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID, value: Any):
         claimDefKey = self.getClaimDef(id).getKey()

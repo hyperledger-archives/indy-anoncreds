@@ -1,7 +1,7 @@
 from anoncreds.protocol.globals import LARGE_E_START, ITERATIONS, DELTA
 from anoncreds.protocol.primary.primary_proof_common import calcTeq, calcTge
 from anoncreds.protocol.types import PrimaryEqualProof, \
-    PrimaryPredicateGEProof, PrimaryProof, ID
+    PrimaryPredicateGEProof, PrimaryProof, ID, ProofInput
 from anoncreds.protocol.wallet.wallet import Wallet
 from config.config import cmod
 
@@ -10,7 +10,7 @@ class PrimaryProofVerifier:
     def __init__(self, wallet: Wallet):
         self._wallet = wallet
 
-    def verify(self, claimDefKey, cHash, primaryProof: PrimaryProof, allRevealedAttrs):
+    def verify(self, proofInput: ProofInput, claimDefKey, cHash, primaryProof: PrimaryProof, allRevealedAttrs):
         cH = cmod.integer(cHash)
         THat = self._verifyEquality(claimDefKey, cH, primaryProof.eqProof, allRevealedAttrs)
         for geProof in primaryProof.geProofs:

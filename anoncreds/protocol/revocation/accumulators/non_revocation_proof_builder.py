@@ -77,7 +77,7 @@ class NonRevocationProofBuilder:
             omegaNum = 1
             newOmega = c2.witness.omega
             for j in vNewMinusOld:
-                omegaNum *= g[newAccum.L + 1 - j + c2.i]
+                omegaNum *= tails[newAccum.L + 1 - j + c2.i]
                 newOmega *= omegaNum / omegaDenom
 
             newWitness = c2.witness._replace(V=newV, omega=newOmega)

@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, Sequence
 
 from anoncreds.protocol.repo.public_repo import PublicRepo
 from anoncreds.protocol.types import ClaimDefinition, ClaimDefinitionKey, PublicKey, ID, \
@@ -15,6 +15,10 @@ class Wallet():
 
     @abstractmethod
     def getClaimDef(self, id: ID) -> ClaimDefinition:
+        raise NotImplementedError
+
+    @abstractmethod
+    def getAllClaimDef(self) -> Sequence[ClaimDefinition]:
         raise NotImplementedError
 
     @abstractmethod
@@ -35,6 +39,10 @@ class Wallet():
 
     @abstractmethod
     def updateAccumulator(self, id: ID, ts=None, seqNo=None):
+        raise NotImplementedError
+
+    @abstractmethod
+    def shouldUpdateAccumulator(self, id: ID, ts=None, seqNo=None):
         raise NotImplementedError
 
     @abstractmethod
@@ -73,6 +81,10 @@ class WalletInMemory(Wallet):
 
         return claimDef
 
+    @abstractmethod
+    def getAllClaimDef(self) -> Sequence[ClaimDefinition]:
+        return self._claimDefsByKey.values()
+
     def getPublicKey(self, id: ID) -> PublicKey:
         return self._getValueForId(self._pks, id, self._repo.getPublicKey)
 
@@ -89,8 +101,12 @@ class WalletInMemory(Wallet):
         return self._getValueForId(self._tails, id, self._repo.getTails)
 
     def updateAccumulator(self, id: ID, ts=None, seqNo=None):
+        acc = self._repo.getAccumulator(id)
+        self._cacheValueForId(self._accums, id, acc)
+
+    def shouldUpdateAccumulator(self, id: ID, ts=None, seqNo=None):
         # TODO
-        pass
+        return True
 
     # HELPER
 
@@ -101,6 +117,7 @@ class WalletInMemory(Wallet):
         if claimDefKey in dict:
             return dict[claimDefKey]
 
+        value = None
         if getFromRepo:
             id.claimDefKey = claimDefKey
             id.claimDefId = claimDef.id

@@ -35,7 +35,7 @@ class PublicRepo():
     # SUBMIT
 
     @abstractmethod
-    def submitClaimDef(self, claimDef: ClaimDefinition):
+    def submitClaimDef(self, claimDef: ClaimDefinition) -> ClaimDefinition:
         raise NotImplementedError
 
     @abstractmethod
@@ -91,10 +91,16 @@ class PublicRepoInMemory(PublicRepo):
     # SUBMIT
 
     def submitClaimDef(self, claimDef: ClaimDefinition):
-        self._claimDefsByKey[claimDef.getKey()] = claimDef
-        claimDef.id = self._claimDefId
+        newClaimDef = ClaimDefinition(name=claimDef.name,
+                                      version=claimDef.version,
+                                      type=claimDef.type,
+                                      attrNames=claimDef.attrNames,
+                                      issuerId=claimDef.issuerId,
+                                      id=self._claimDefId)
+        self._claimDefsByKey[newClaimDef.getKey()] = newClaimDef
         self._claimDefId += 1
-        self._claimDefsById[claimDef.id] = claimDef
+        self._claimDefsById[newClaimDef.id] = newClaimDef
+        return newClaimDef
 
     def submitPublicKeys(self, id: ID, pk: PublicKey, pkR: RevocationPublicKey = None):
         self._cacheValueForId(self._pks, id, pk)

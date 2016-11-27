@@ -74,7 +74,7 @@ class IssuerWalletInMemory(IssuerWallet, WalletInMemory):
     # SUBMIT
 
     def submitClaimDef(self, claimDef: ClaimDefinition):
-        self._repo.submitClaimDef(claimDef)
+        claimDef = self._repo.submitClaimDef(claimDef)
         self._cacheClaimDef(claimDef)
 
     def submitPublicKeys(self, id: ID, pk: PublicKey, pkR: RevocationPublicKey = None):

@@ -26,10 +26,10 @@ def testSingleIssuerSingleProver(primes1):
     issuer.genKeys(claimDefId, **primes1)
 
     # 4. Issue accumulator
-    issuer.issueAccumulator(id=claimDefId, iA=110, L=5)
+    issuer.issueAccumulator(id=claimDefId, iA='110', L=5)
 
     # 4. set attributes for user1
-    userId = 111
+    userId = '111'
     attrs = GVT.attribs(name='Alex', age=28, height=175, sex='male')
     attrRepo.addAttributes(claimDef.getKey(), userId, attrs)
 
@@ -67,11 +67,11 @@ def testMultiplIssuersSingleProver(primes1, primes2):
     issuer2.genKeys(claimDefId2, **primes2)
 
     # 4. Issue accumulator
-    issuer1.issueAccumulator(id=claimDefId1, iA=110, L=5)
+    issuer1.issueAccumulator(id=claimDefId1, iA='110', L=5)
     issuer2.issueAccumulator(id=claimDefId2, iA=9999999, L=5)
 
     # 4. set attributes for user1
-    userId = 111
+    userId = '111'
     attrs1 = GVT.attribs(name='Alex', age=28, height=175, sex='male')
     attrs2 = XYZCorp.attribs(status='FULL', period=8)
     attrRepo.addAttributes(claimDef1.getKey(), userId, attrs1)
@@ -111,11 +111,11 @@ def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     issuer.genKeys(claimDefId2, **primes2)
 
     # 4. Issue accumulator
-    issuer.issueAccumulator(id=claimDefId1, iA=110, L=5)
+    issuer.issueAccumulator(id=claimDefId1, iA='110', L=5)
     issuer.issueAccumulator(id=claimDefId2, iA=9999999, L=5)
 
     # 4. set attributes for user1
-    userId = 111
+    userId = '111'
     attrs1 = GVT.attribs(name='Alex', age=28, height=175, sex='male')
     attrs2 = XYZCorp.attribs(status='FULL', period=8)
     attrRepo.addAttributes(claimDef1.getKey(), userId, attrs1)
@@ -152,10 +152,10 @@ def testSingleIssuerSingleProverPrimaryOnly(primes1):
     issuer.genKeys(claimDefId, **primes1)
 
     # 4. Issue accumulator
-    issuer.issueAccumulator(id=claimDefId, iA=110, L=5)
+    issuer.issueAccumulator(id=claimDefId, iA='110', L=5)
 
     # 4. set attributes for user1
-    userId = 111
+    userId = '111'
     attrs = GVT.attribs(name='Alex', age=28, height=175, sex='male')
     attrRepo.addAttributes(claimDef.getKey(), userId, attrs)
 

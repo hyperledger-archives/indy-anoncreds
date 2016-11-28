@@ -61,8 +61,8 @@ class Issuer:
     # PRIVATE
     #
 
-    def _genContxt(self, id: ID, iA: int, userId: int):
-        S = iA | userId
+    def _genContxt(self, id: ID, iA, userId):
+        S = int(iA) | int(userId)
         H = bytes_to_int(get_hash(S))
         m2 = cmod.integer(H % (2 ** LARGE_MASTER_SECRET))
         self.wallet.submitContextAttr(id, m2)

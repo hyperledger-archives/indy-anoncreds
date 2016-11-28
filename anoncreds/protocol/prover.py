@@ -31,16 +31,17 @@ class Prover:
     def id(self):
         return self.wallet.id
 
-    def requestClaim(self, id: ID, fetcher):
+    def requestClaim(self, id: ID, fetcher, reqNonRevoc=True):
         self._genMasterSecret(id)
         U = self._genU(id)
-        Ur = self._genUr(id)
+        Ur = None if not reqNonRevoc else self._genUr(id)
 
         claims, m2 = fetcher.fetchClaims(self.wallet.id, id, U, Ur)
 
         self.wallet.submitContextAttr(id, m2)
         self._initPrimaryClaim(id, claims.primaryClaim)
-        self._initNonRevocationClaim(id, claims.nonRevocClaim)
+        if reqNonRevoc:
+            self._initNonRevocationClaim(id, claims.nonRevocClaim)
 
     def presentProof(self, proofInput: ProofInput, nonce) -> FullProof:
         claims = self._findClaims(proofInput)

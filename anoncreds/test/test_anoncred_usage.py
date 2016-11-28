@@ -137,3 +137,39 @@ def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
 
     revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
     assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
+
+def testSingleIssuerSingleProverPrimaryOnly(primes1):
+    # 1. Init entities
+    publicRepo = PublicRepoInMemory()
+    attrRepo = AttributeRepoInMemory()
+    issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
+
+    # 2. Create a Claim Def
+    claimDef = issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
+    claimDefId = ID(claimDef.getKey())
+
+    # 3. Create keys for the Claim Def
+    issuer.genKeys(claimDefId, **primes1)
+
+    # 4. Issue accumulator
+    issuer.issueAccumulator(id=claimDefId, iA=110, L=5)
+
+    # 4. set attributes for user1
+    userId = 111
+    attrs = GVT.attribs(name='Alex', age=28, height=175, sex='male')
+    attrRepo.addAttributes(claimDef.getKey(), userId, attrs)
+
+    # 5. request Claims
+    prover = Prover(ProverWalletInMemory(userId, publicRepo))
+    prover.requestClaim(claimDefId, SimpleFetcher(issuer), False)
+
+    # 6. proof Claims
+    proofInput = ProofInput(
+        ['name'],
+        [PredicateGE('age', 18)])
+
+    verifier = Verifier(WalletInMemory('verifier1', publicRepo))
+    nonce = verifier.generateNonce()
+    proof = prover.presentProof(proofInput, nonce)
+    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
+    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)

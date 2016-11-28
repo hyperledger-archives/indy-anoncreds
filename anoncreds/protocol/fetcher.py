@@ -14,5 +14,5 @@ class SimpleFetcher(Fetcher):
     def __init__(self, issuer: Issuer):
         self._issuer = issuer
 
-    def fetchClaims(self, userId, id: ID, U, Ur) -> (Claims, str):
-        return self._issuer.issueClaims(id, U, Ur, userId)
+    def fetchClaims(self, userId, id: ID, U, Ur=None) -> (Claims, str):
+        return self._issuer.issueClaims(id, userId, U, Ur)

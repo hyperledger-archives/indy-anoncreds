@@ -106,7 +106,7 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
 
     def getClaims(self, id: ID) -> Claims:
         c1 = self._getValueForId(self._c1s, id)
-        c2 = self._getValueForId(self._c2s, id)
+        c2 = None if not self._c2s else self._getValueForId(self._c2s, id)
         return Claims(c1, c2)
 
     def getAllClaims(self) -> Dict[ClaimDefinitionKey, Claims]:

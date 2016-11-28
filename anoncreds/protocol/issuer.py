@@ -47,14 +47,14 @@ class Issuer:
         acc, ts = self._nonRevocationIssuer.revoke(id, i)
         self.wallet.submitAccumUpdate(id=id, accum=acc, timestampMs=ts)
 
-    def issueClaims(self, id: ID, U, Ur, userId, iA=None, i=None) -> (Claims, Any):
+    def issueClaims(self, id: ID, userId, U, Ur=None, iA=None, i=None) -> (Claims, Any):
         claimDefKey = self.wallet.getClaimDef(id).getKey()
         attributes = self._attrRepo.getAttributes(claimDefKey, userId).encoded()
         iA = iA if iA else self.wallet.getAccumulator(id).iA
 
         m2 = self._genContxt(id, iA, userId)
         c1 = self._issuePrimaryClaim(id, attributes, U)
-        c2 = self._issueNonRevocationClaim(id, Ur, i)
+        c2 = self._issueNonRevocationClaim(id, Ur, i) if Ur else None
         return (Claims(primaryClaim=c1, nonRevocClaim=c2), m2)
 
     #

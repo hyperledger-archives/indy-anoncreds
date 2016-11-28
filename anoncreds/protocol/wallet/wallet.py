@@ -135,6 +135,6 @@ class WalletInMemory(Wallet):
         dict[claimDefKey] = value
 
     def _cacheClaimDef(self, claimDef: ClaimDefinition):
-        self._claimDefsByKey[claimDef.getKey] = claimDef
+        self._claimDefsByKey[claimDef.getKey()] = claimDef
         if claimDef.id:
             self._claimDefsById[claimDef.id] = claimDef

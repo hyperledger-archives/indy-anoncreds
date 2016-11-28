@@ -128,6 +128,8 @@ def strToCryptoInteger(n):
     else:
         return cmod.integer(int(n))
 
+def strToInt(s):
+    return bytes_to_int(sha256(s.encode()).digest())
 
 def isCryptoInteger(n):
     return isinstance(n, cmod.integer)

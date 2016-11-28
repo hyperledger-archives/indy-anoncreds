@@ -6,7 +6,7 @@ from anoncreds.protocol.repo.attributes_repo import AttributeRepo
 from anoncreds.protocol.revocation.accumulators.non_revocation_claim_issuer import NonRevocationClaimIssuer
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, \
     ClaimDefinition, ID, Claims
-from anoncreds.protocol.utils import get_hash, bytes_to_int
+from anoncreds.protocol.utils import get_hash, bytes_to_int, strToInt
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
 
 from config.config import cmod
@@ -62,7 +62,9 @@ class Issuer:
     #
 
     def _genContxt(self, id: ID, iA, userId):
-        S = int(iA) | int(userId)
+        iA = strToInt(str(iA))
+        userId = strToInt(str(userId))
+        S = iA | userId
         H = bytes_to_int(get_hash(S))
         m2 = cmod.integer(H % (2 ** LARGE_MASTER_SECRET))
         self.wallet.submitContextAttr(id, m2)

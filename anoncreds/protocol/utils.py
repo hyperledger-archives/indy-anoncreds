@@ -1,16 +1,18 @@
 import logging
 import string
 import time
+from collections import OrderedDict
+from enum import Enum
 from hashlib import sha256
 from math import sqrt, floor
 from random import randint, sample
 from sys import byteorder
+from typing import Dict, List, Set
 
 import base58
 
 from anoncreds.protocol.globals import KEYS, PK_R
 from anoncreds.protocol.globals import LARGE_PRIME, LARGE_MASTER_SECRET, LARGE_VPRIME, PAIRING_GROUP
-from anoncreds.protocol.types import SerFmt, TimestampType
 from config.config import cmod
 
 
@@ -29,12 +31,106 @@ def get_hash(*args, group: cmod.PairingGroup = None):
     group = group if group else cmod.PairingGroup(PAIRING_GROUP)
     h_challenge = sha256()
 
-    serialedArgs = [group.serialize(arg) if (type(arg) == cmod.pc_element) else cmod.Conversion.IP2OS(arg) for arg in
-                    args]
+    serialedArgs = [group.serialize(arg) if isGroupElement(arg)
+                    else cmod.Conversion.IP2OS(arg)
+                    for arg in args]
 
     for arg in sorted(serialedArgs):
         h_challenge.update(arg)
     return h_challenge.digest()
+
+
+CRYPTO_INT_PREFIX = 'CryptoInt_'
+INT_PREFIX = 'Int_'
+GROUP_PREFIX = 'Group_'
+LIST_PREFIX = '['
+LIST_SUFFIX = ']'
+SET_PREFIX = '{'
+SET_SUFFIX = '}'
+STR_DICT_LIST_SEPARATOR = ","
+
+
+def serializeToStr(n):
+    if isCryptoInteger(n):
+        return CRYPTO_INT_PREFIX + cmod.serialize(n).decode()
+    if isInteger(n):
+        return INT_PREFIX + str(n)
+    if isGroupElement(n):
+        return GROUP_PREFIX + cmod.PairingGroup(PAIRING_GROUP).serialize(n).decode()
+    if isStr(n):
+        return n
+    if isinstance(n, Set):
+        return SET_PREFIX + STR_DICT_LIST_SEPARATOR.join([serializeToStr(v) for v in n]) + SET_SUFFIX
+    if isinstance(n, List):
+        return LIST_PREFIX + STR_DICT_LIST_SEPARATOR.join([serializeToStr(v) for v in n]) + LIST_SUFFIX
+
+    raise NotImplementedError('Unsupported type for serialization: {}'.format(n))
+
+
+def deserializeFromStr(n: str):
+    if n.startswith(CRYPTO_INT_PREFIX):
+        n = n[len(CRYPTO_INT_PREFIX):].encode()
+        return cmod.deserialize(n)
+
+    if n.startswith(INT_PREFIX):
+        n = n[len(INT_PREFIX):]
+        return int(n)
+
+    if n.startswith(GROUP_PREFIX):
+        n = n[len(GROUP_PREFIX):].encode()
+        res = cmod.PairingGroup(PAIRING_GROUP).deserialize(n)
+        # A fix for Identity element as serialized/deserialized not correctly
+        if str(res) == '[0, 0]':
+            return groupIdentityG1()
+        return res
+
+    if n.startswith(LIST_PREFIX) and n.endswith(LIST_SUFFIX):
+        n = n[len(LIST_PREFIX):-len(LIST_SUFFIX)]
+        return [deserializeFromStr(v) for v in n.split(STR_DICT_LIST_SEPARATOR)]
+
+    if n.startswith(SET_PREFIX) and n.endswith(SET_SUFFIX):
+        n = n[len(SET_PREFIX):-len(SET_SUFFIX)]
+        return {deserializeFromStr(v) for v in n.split(STR_DICT_LIST_SEPARATOR)}
+
+    return n
+
+
+def isCryptoInteger(n):
+    return isinstance(n, cmod.integer)
+
+
+def isGroupElement(n):
+    return isinstance(n, cmod.pc_element)
+
+
+def isInteger(n):
+    return isinstance(n, int)
+
+
+def isStr(n):
+    return isinstance(n, str)
+
+
+def toDictWithStrValues(d):
+    result = OrderedDict()
+    for key, value in d.items():
+        if isinstance(value, Dict):
+            result[str(key)] = toDictWithStrValues(value)
+        elif isinstance(value, tuple):  # assume it's a named tuple
+            result[str(key)] = toDictWithStrValues(value._asdict())
+        elif value:
+            result[str(key)] = serializeToStr(value)
+    return result
+
+
+def fromDictWithStrValues(d):
+    result = OrderedDict()
+    for key, value in d.items():
+        if isinstance(value, Dict):
+            result[str(key)] = fromDictWithStrValues(value)
+        elif value:
+            result[str(key)] = deserializeFromStr(value)
+    return result
 
 
 def bytes_to_int(bytesHash):
@@ -44,6 +140,12 @@ def bytes_to_int(bytesHash):
 def bytes_to_ZR(bytesHash, group):
     cHNum = bytes_to_int(bytesHash)
     return group.init(cmod.ZR, cHNum)
+
+
+def groupIdentityG1():
+    #elem = cmod.PairingGroup(PAIRING_GROUP).random(cmod.G1)
+    #return elem / elem
+    return cmod.PairingGroup(PAIRING_GROUP).init(cmod.G1, 0)
 
 
 def get_values_of_dicts(*args):
@@ -128,11 +230,9 @@ def strToCryptoInteger(n):
     else:
         return cmod.integer(int(n))
 
+
 def strToInt(s):
     return bytes_to_int(sha256(s.encode()).digest())
-
-def isCryptoInteger(n):
-    return isinstance(n, cmod.integer)
 
 
 def genPrime():
@@ -161,6 +261,12 @@ def base58decodedInt(i):
         return int(base58.b58decode(str(i)).decode())
     except Exception as ex:
         raise AttributeError from ex
+
+
+class SerFmt(Enum):
+    default = 1
+    py3Int = 2
+    base58 = 3
 
 
 SerFuncs = {
@@ -220,5 +326,5 @@ def shortenDictVals(d, size=None):
     return r
 
 
-def currentTimestampMillisec() -> TimestampType:
-    return TimestampType(time.time() * 1000)  # millisec
+def currentTimestampMillisec():
+    return int(time.time() * 1000)  # millisec

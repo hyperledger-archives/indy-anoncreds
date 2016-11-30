@@ -1,7 +1,7 @@
 from anoncreds.protocol.globals import PAIRING_GROUP
 from anoncreds.protocol.types import NonRevocationClaim, RevocationPublicKey, RevocationSecretKey, \
     Accumulator, TailsType, AccumulatorPublicKey, AccumulatorSecretKey, Witness, ID, TimestampType
-from anoncreds.protocol.utils import currentTimestampMillisec
+from anoncreds.protocol.utils import currentTimestampMillisec, groupIdentityG1
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
 from config.config import cmod
 
@@ -74,7 +74,7 @@ class NonRevocationClaimIssuer:
 
         m2 = group.init(cmod.ZR, int(m2))
         sigma = (pkR.h0 * (pkR.h1 ** m2) * Ur * g[i] * (pkR.h2 ** vrPrimeprime)) ** (1 / (skR.x + c))
-        omega = g[0] / g[0]
+        omega = groupIdentityG1()
         for j in accum.V:
             omega *= g[accum.L + 1 - j + i]
 

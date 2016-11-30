@@ -1,8 +1,9 @@
 from collections import namedtuple
-from enum import Enum
 from hashlib import sha256
 from typing import TypeVar, Sequence, Dict, Set
 
+from anoncreds.protocol.utils import toDictWithStrValues, \
+    fromDictWithStrValues
 from config.config import cmod
 
 
@@ -132,22 +133,6 @@ TimestampType = int
 ClaimInitDataType = namedtuple('ClaimInitDataType', 'U vPrime')
 
 
-class ClaimDefinition:
-    def __init__(self, name, version, attrNames, type, issuerId, id=None):
-        self.name = name
-        self.type = type
-        self.version = version
-        self.attrNames = attrNames
-        self.issuerId = issuerId
-        self.id = id
-
-    def getKey(self):
-        return ClaimDefinitionKey(self.name, self.version, self.issuerId)
-
-    def __repr__(self):
-        return str(self.__dict__)
-
-
 class ClaimDefinitionKey:
     def __init__(self, name, version, issuerId):
         self.name = name
@@ -174,18 +159,43 @@ class ID:
         self.claimDefKey = claimDefKey
 
 
-# CredentialDefinition = namedtuple('CredentialDefinition', ['name', 'version', 'attrNames', 'type'])
+class NamedTupleStrSerializer:
+    def toStrDict(self):
+        return toDictWithStrValues(self._asdict())
 
-PublicKey = namedtuple('PublicKey', 'N Rms Rctxt R S Z')
+    @classmethod
+    def fromStrDict(cls, d):
+        d = fromDictWithStrValues(d)
+        return cls(**d)
+
+
+class ClaimDefinition(namedtuple('CredentialDefinition', 'name, version, attrNames, type, issuerId, id'),
+                      NamedTupleStrSerializer):
+    def __new__(cls, name, version, attrNames, type, issuerId, id=None):
+        return super(ClaimDefinition, cls).__new__(cls, name, version, attrNames, type, issuerId, id)
+
+    def getKey(self):
+        return ClaimDefinitionKey(self.name, self.version, self.issuerId)
+
+
+class PublicKey(namedtuple('PublicKey', 'N Rms Rctxt R S Z'), NamedTupleStrSerializer):
+    pass
+
 
 SecretKey = namedtuple('SecretKey', 'pPrime qPrime')
 
-RevocationPublicKey = namedtuple('RevocationPublicKey',
-                                 'qr g h h0 h1 h2 htilde u pk y x')
+
+class RevocationPublicKey(namedtuple('RevocationPublicKey',
+                                     'qr g h h0 h1 h2 htilde u pk y x'), NamedTupleStrSerializer):
+    pass
+
 
 RevocationSecretKey = namedtuple('RevocationSecretKey', 'x sk')
 
-AccumulatorPublicKey = namedtuple('AccumulatorPublicKey', 'z')
+
+class AccumulatorPublicKey(namedtuple('AccumulatorPublicKey', 'z'), NamedTupleStrSerializer):
+    pass
+
 
 AccumulatorSecretKey = namedtuple('AccumulatorSecretKey', 'gamma')
 
@@ -226,20 +236,37 @@ class Accumulator:
 
 # Accumulator = namedtuple('Accumulator', ['iA', 'acc', 'V', 'L'])
 
-PrimaryClaim = namedtuple('PrimaryClaim', 'attrs m2 A e v')
+class PrimaryClaim(namedtuple('PrimaryClaim', 'attrs m2 A e v'), NamedTupleStrSerializer):
+    pass
 
-Witness = namedtuple('Witness', 'sigmai ui gi omega V')
 
-NonRevocationClaim = namedtuple('NonRevocationClaim', 'iA sigma c v witness gi i m2')
+class Witness(namedtuple('Witness', 'sigmai ui gi omega V'), NamedTupleStrSerializer):
+    pass
+
+
+class NonRevocationClaim(namedtuple('NonRevocationClaim', 'iA sigma c v witness gi i m2'), NamedTupleStrSerializer):
+    @classmethod
+    def fromStrDict(cls, d):
+        d = fromDictWithStrValues(d)
+        witness = Witness(**d['witness'])
+        result = cls(**d)
+        return result._replace(witness=witness)
+
+
+class Claims(namedtuple('Claims', 'primaryClaim nonRevocClaim'), NamedTupleStrSerializer):
+    def __new__(cls, primaryClaim=None, nonRevocClaim=None):
+        return super(Claims, cls).__new__(cls, primaryClaim, nonRevocClaim)
+
+    @classmethod
+    def fromStrDict(cls, d):
+        primary = PrimaryClaim.fromStrDict(d['primaryClaim'])
+        nonRevoc = NonRevocationClaim.fromStrDict(d['nonRevocClaim'])
+        return Claims(primaryClaim=primary, nonRevocClaim=nonRevoc)
+
 
 class ProofInput(namedtuple('ProofInput', 'revealedAttrs predicates ts seqNo')):
     def __new__(cls, revealedAttrs=[], predicates=[], ts=None, seqNo=None):
         return super(ProofInput, cls).__new__(cls, revealedAttrs, predicates, ts, seqNo)
-
-
-class Claims(namedtuple('Claims', 'primaryClaim nonRevocClaim')):
-    def __new__(cls, primaryClaim=None, nonRevocClaim=None):
-        return super(Claims, cls).__new__(cls, primaryClaim, nonRevocClaim)
 
 
 class ProofClaims(namedtuple('ProofClaims', 'claims revealedAttrs predicates')):
@@ -435,9 +462,3 @@ class FullProof:
 
     def getCredDefs(self):
         return self.proofs.keys()
-
-
-class SerFmt(Enum):
-    default = 1
-    py3Int = 2
-    base58 = 3

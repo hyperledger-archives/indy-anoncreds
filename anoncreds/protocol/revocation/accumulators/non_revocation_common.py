@@ -1,5 +1,6 @@
 from anoncreds.protocol.types import Accumulator, NonRevocProofXList, NonRevocProofCList, RevocationPublicKey, \
     NonRevocProofTauList, AccumulatorPublicKey
+from anoncreds.protocol.utils import groupIdentityG1
 from config.config import cmod
 
 
@@ -28,11 +29,11 @@ def createTauListValues(pk: RevocationPublicKey, accum: Accumulator, params: Non
 def createTauListExpectedValues(pk: RevocationPublicKey, accum: Accumulator, accumPk: AccumulatorPublicKey,
                                 proofC: NonRevocProofCList) -> NonRevocProofTauList:
     T1 = proofC.E
-    T2 = pk.h / pk.h
+    T2 = groupIdentityG1()
     T3 = cmod.pair(pk.h0 * proofC.G, pk.h) / cmod.pair(proofC.A, pk.y)
     T4 = cmod.pair(proofC.G, accum.acc) / (cmod.pair(pk.g, proofC.W) * accumPk.z)
     T5 = proofC.D
-    T6 = pk.h / pk.h
+    T6 = groupIdentityG1()
     T7 = cmod.pair(pk.pk * proofC.G, proofC.S) / cmod.pair(pk.g, pk.g)
     T8 = cmod.pair(proofC.G, pk.u) / cmod.pair(pk.g, proofC.U)
     return NonRevocProofTauList(T1, T2, T3, T4, T5, T6, T7, T8)

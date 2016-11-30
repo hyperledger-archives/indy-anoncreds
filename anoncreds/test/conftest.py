@@ -148,6 +148,10 @@ def keysGvt(primes1, issuerGvt, claimDefGvtId):
 
 
 @pytest.fixture(scope="function")
+def pkGvt(keysGvt, issuerWallet1, claimDefGvtId):
+    return issuerWallet1.getPublicKey(claimDefGvtId)
+
+@pytest.fixture(scope="function")
 def keysXyz(primes2, issuerXyz, claimDefXyzId):
     issuerXyz.genKeys(claimDefXyzId, **primes2)
 
@@ -250,6 +254,9 @@ def nonRevocClaimGvtProver1(requestClaimsProver1Gvt, prover1, claimDefGvtId):
 def primaryClaimGvtProver1(requestClaimsProver1Gvt, prover1, claimDefGvtId):
     return prover1.wallet.getClaims(claimDefGvtId).primaryClaim
 
+@pytest.fixture(scope="function")
+def claimsGvtProver1(requestClaimsProver1Gvt, prover1, claimDefGvtId):
+    return prover1.wallet.getClaims(claimDefGvtId)
 
 @pytest.fixture(scope="function")
 def nonce(verifier):

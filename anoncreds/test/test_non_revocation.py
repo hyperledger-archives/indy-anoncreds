@@ -1,6 +1,7 @@
 import pytest
 
 from anoncreds.protocol.types import ProofClaims, Claims, ProofInput
+from anoncreds.protocol.utils import groupIdentityG1
 from anoncreds.test.conftest import presentProofAndVerify
 
 
@@ -27,7 +28,7 @@ def testRevoce(nonRevocClaimGvtProver1, issuerGvt, claimDefGvtId):
 
     newAcc = issuerGvt.wallet.getAccumulator(claimDefGvtId)
     assert not newAcc.V
-    assert newAcc.acc == accPk.z / accPk.z
+    assert newAcc.acc == groupIdentityG1()
 
 
 def testUpdateWitnessNotChangedIfInSync(nonRevocClaimGvtProver1, claimDefGvtId, prover1):

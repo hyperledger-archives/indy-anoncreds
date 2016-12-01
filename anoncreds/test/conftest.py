@@ -151,6 +151,7 @@ def keysGvt(primes1, issuerGvt, claimDefGvtId):
 def pkGvt(keysGvt, issuerWallet1, claimDefGvtId):
     return issuerWallet1.getPublicKey(claimDefGvtId)
 
+
 @pytest.fixture(scope="function")
 def keysXyz(primes2, issuerXyz, claimDefXyzId):
     issuerXyz.genKeys(claimDefXyzId, **primes2)
@@ -203,13 +204,16 @@ def revealedGvtNameProver1(attrRepo, attrsProver1Gvt, claimDefGvt):
 def revealedGvtNameProver2(attrRepo, attrsProver2Gvt, claimDefGvt):
     return attrRepo.getRevealedAttributes(claimDefGvt.getKey(), proverId2, ['name']).encoded()
 
+
 @pytest.fixture(scope="function")
 def fetcherGvt(issuerGvt, keysGvt, issueAccumulatorGvt):
     return SimpleFetcher(issuerGvt)
 
+
 @pytest.fixture(scope="function")
 def fetcherXyz(issuerXyz, keysXyz, issueAccumulatorXyz):
     return SimpleFetcher(issuerXyz)
+
 
 @pytest.fixture(scope="function")
 def requestClaimsProver1Gvt(prover1, attrsProver1Gvt, fetcherGvt, claimDefGvtId):
@@ -246,25 +250,31 @@ def requestAllClaims(requestClaimsProver1Gvt, requestClaimsProver2Gvt, requestCl
                      requestClaimsProver2Xyz):
     pass
 
+
 @pytest.fixture(scope="function")
 def nonRevocClaimGvtProver1(requestClaimsProver1Gvt, prover1, claimDefGvtId):
     return prover1.wallet.getClaims(claimDefGvtId).nonRevocClaim
+
 
 @pytest.fixture(scope="function")
 def primaryClaimGvtProver1(requestClaimsProver1Gvt, prover1, claimDefGvtId):
     return prover1.wallet.getClaims(claimDefGvtId).primaryClaim
 
+
 @pytest.fixture(scope="function")
 def claimsGvtProver1(requestClaimsProver1Gvt, prover1, claimDefGvtId):
     return prover1.wallet.getClaims(claimDefGvtId)
+
 
 @pytest.fixture(scope="function")
 def nonce(verifier):
     return verifier.generateNonce()
 
+
 @pytest.fixture(scope="function")
 def genNonce(verifier):
     return verifier.generateNonce()
+
 
 # ############ function scope
 #
@@ -332,8 +342,12 @@ def verifyProof(verifier, proof, nonce, prover, attrRepo, proofInput):
     revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
     return verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
+
+def presentProof(prover, proofInput: ProofInput, nonce):
+    return prover.presentProof(proofInput, nonce)
+
+
 def presentProofAndVerify(verifier, proofInput: ProofInput, prover, attrRepo):
     nonce = verifier.generateNonce()
-    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
-    proof = prover.presentProof(proofInput, nonce)
-    return verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    proof = presentProof(prover, proofInput, nonce)
+    return verifyProof(verifier, proof, nonce, prover, attrRepo, proofInput)

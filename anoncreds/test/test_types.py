@@ -1,5 +1,12 @@
-from anoncreds.protocol.types import PublicKey, ClaimDefinition, Claims
+from anoncreds.protocol.types import PublicKey, ClaimDefinition, Claims, ProofInput, PredicateGE, FullProof, \
+    ClaimDefinitionKey
+from anoncreds.test.conftest import presentProof
 from config.config import cmod
+
+
+def testClaimDefKeyFromToDict():
+    claimDefKey = ClaimDefinitionKey(name='claimDefName', version='1.0', issuerId='issuer1')
+    assert claimDefKey == ClaimDefinitionKey.fromStrDict(claimDefKey.toStrDict())
 
 
 def testClaimDefFromToDict():
@@ -21,3 +28,9 @@ def testPKFromToDict():
 
 def testClaimsFromToDict(claimsGvtProver1):
     assert claimsGvtProver1 == Claims.fromStrDict(claimsGvtProver1.toStrDict())
+
+
+def testClaimProofFromToDict(prover1, nonce, claimsGvtProver1):
+    proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
+    proof = presentProof(prover1, proofInput, nonce)
+    assert proof == FullProof.fromStrDict(proof.toStrDict())

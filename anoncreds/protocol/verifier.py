@@ -24,7 +24,7 @@ class Verifier:
 
     def verify(self, proofInput: ProofInput, proof: FullProof, allRevealedAttrs, nonce):
         TauList = []
-        for claimDefKey, proofItem in proof.proofs.items():
+        for claimDefKey, proofItem in zip(proof.claimDefKeys, proof.proofs):
             if proofItem.nonRevocProof:
                 TauList += self._nonRevocVerifier.verifyNonRevocation(proofInput, claimDefKey, proof.cHash, proofItem.nonRevocProof)
             if proofItem.primaryProof:

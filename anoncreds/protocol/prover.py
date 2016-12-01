@@ -139,15 +139,17 @@ class Prover:
         cH = self._get_hash(CList, TauList, nonce)
 
         # 3. finalize proofs
-        proofs = {}
+        proofs = []
+        claimDefKeys = []
         for claimDefKey, initProof in initProofs.items():
+            claimDefKeys.append(claimDefKey)
             nonRevocProof = None
             if initProof.nonRevocInitProof:
                 nonRevocProof = self._nonRevocProofBuilder.finalizeProof(claimDefKey, cH, initProof.nonRevocInitProof)
             primaryProof = self._primaryProofBuilder.finalizeProof(claimDefKey, cH, initProof.primaryInitProof)
-            proofs[claimDefKey] = Proof(primaryProof, nonRevocProof)
+            proofs.append(Proof(primaryProof, nonRevocProof))
 
-        return FullProof(cH, proofs, CList)
+        return FullProof(cH, claimDefKeys, proofs, CList)
 
     def _getCList(self, initProofs: Dict[ClaimDefinition, InitProof]):
         CList = []

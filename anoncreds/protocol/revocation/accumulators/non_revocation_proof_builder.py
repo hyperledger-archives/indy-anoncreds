@@ -114,9 +114,9 @@ class NonRevocationProofBuilder:
 
         group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
         chNum_z = bytes_to_ZR(cH, group)
-        XList = NonRevocProofXList()
-        XList.fromList(
-            [x - chNum_z * y for x, y in zip(initProof.TauListParams.asList(), initProof.CListParams.asList())])
+        XList = NonRevocProofXList.fromList(
+            [x - chNum_z * y for x, y in zip(initProof.TauListParams.asList(), initProof.CListParams.asList())]
+        )
         return NonRevocProof(XList, initProof.CList)
 
     def _genCListParams(self, claimDefKey, c2: NonRevocationClaim) -> NonRevocProofXList:

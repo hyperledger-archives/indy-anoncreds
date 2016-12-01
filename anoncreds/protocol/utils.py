@@ -43,11 +43,7 @@ def get_hash(*args, group: cmod.PairingGroup = None):
 CRYPTO_INT_PREFIX = 'CryptoInt_'
 INT_PREFIX = 'Int_'
 GROUP_PREFIX = 'Group_'
-LIST_PREFIX = '['
-LIST_SUFFIX = ']'
-SET_PREFIX = '{'
-SET_SUFFIX = '}'
-STR_DICT_LIST_SEPARATOR = ","
+BYTES_PREFIX = 'Bytes_'
 
 
 def serializeToStr(n):
@@ -57,40 +53,25 @@ def serializeToStr(n):
         return INT_PREFIX + str(n)
     if isGroupElement(n):
         return GROUP_PREFIX + cmod.PairingGroup(PAIRING_GROUP).serialize(n).decode()
-    if isStr(n):
-        return n
-    if isinstance(n, Set):
-        return SET_PREFIX + STR_DICT_LIST_SEPARATOR.join([serializeToStr(v) for v in n]) + SET_SUFFIX
-    if isinstance(n, List):
-        return LIST_PREFIX + STR_DICT_LIST_SEPARATOR.join([serializeToStr(v) for v in n]) + LIST_SUFFIX
-
-    raise NotImplementedError('Unsupported type for serialization: {}'.format(n))
+    return n
 
 
 def deserializeFromStr(n: str):
-    if n.startswith(CRYPTO_INT_PREFIX):
+    if isStr(n) and n.startswith(CRYPTO_INT_PREFIX):
         n = n[len(CRYPTO_INT_PREFIX):].encode()
         return cmod.deserialize(n)
 
-    if n.startswith(INT_PREFIX):
+    if isStr(n) and n.startswith(INT_PREFIX):
         n = n[len(INT_PREFIX):]
         return int(n)
 
-    if n.startswith(GROUP_PREFIX):
+    if isStr(n) and n.startswith(GROUP_PREFIX):
         n = n[len(GROUP_PREFIX):].encode()
         res = cmod.PairingGroup(PAIRING_GROUP).deserialize(n)
         # A fix for Identity element as serialized/deserialized not correctly
         if str(res) == '[0, 0]':
             return groupIdentityG1()
         return res
-
-    if n.startswith(LIST_PREFIX) and n.endswith(LIST_SUFFIX):
-        n = n[len(LIST_PREFIX):-len(LIST_SUFFIX)]
-        return [deserializeFromStr(v) for v in n.split(STR_DICT_LIST_SEPARATOR)]
-
-    if n.startswith(SET_PREFIX) and n.endswith(SET_SUFFIX):
-        n = n[len(SET_PREFIX):-len(SET_SUFFIX)]
-        return {deserializeFromStr(v) for v in n.split(STR_DICT_LIST_SEPARATOR)}
 
     return n
 
@@ -110,26 +91,46 @@ def isInteger(n):
 def isStr(n):
     return isinstance(n, str)
 
+def isNamedTuple(n):
+    return isinstance(n, tuple) # TODO: assume it's a named tuple
 
 def toDictWithStrValues(d):
+    if isNamedTuple(d):
+        return toDictWithStrValues(d._asdict())
+    if not isinstance(d, Dict):
+        return serializeToStr(d)
     result = OrderedDict()
     for key, value in d.items():
         if isinstance(value, Dict):
-            result[str(key)] = toDictWithStrValues(value)
-        elif isinstance(value, tuple):  # assume it's a named tuple
-            result[str(key)] = toDictWithStrValues(value._asdict())
+            result[serializeToStr(key)] = toDictWithStrValues(value)
+        elif isinstance(value, str):
+            result[serializeToStr(key)] = serializeToStr(value)
+        elif isNamedTuple(value):
+            result[serializeToStr(key)] = toDictWithStrValues(value._asdict())
+        elif isinstance(value, Set):
+            result[serializeToStr(key)] = {toDictWithStrValues(v) for v in value}
+        elif isinstance(value, List):
+            result[serializeToStr(key)] = [toDictWithStrValues(v) for v in value]
         elif value:
-            result[str(key)] = serializeToStr(value)
+            result[serializeToStr(key)] = serializeToStr(value)
     return result
 
 
 def fromDictWithStrValues(d):
+    if not isinstance(d, Dict) and not isinstance(d, tuple) :
+        return deserializeFromStr(d)
     result = OrderedDict()
     for key, value in d.items():
         if isinstance(value, Dict):
-            result[str(key)] = fromDictWithStrValues(value)
+            result[deserializeFromStr(key)] = fromDictWithStrValues(value)
+        elif isinstance(value, str):
+            result[deserializeFromStr(key)] = deserializeFromStr(value)
+        elif isinstance(value, Set):
+            result[deserializeFromStr(key)] = {fromDictWithStrValues(v) for v in value}
+        elif isinstance(value, List):
+            result[deserializeFromStr(key)] = [fromDictWithStrValues(v) for v in value]
         elif value:
-            result[str(key)] = deserializeFromStr(value)
+            result[deserializeFromStr(key)] = deserializeFromStr(value)
     return result
 
 
@@ -143,8 +144,6 @@ def bytes_to_ZR(bytesHash, group):
 
 
 def groupIdentityG1():
-    #elem = cmod.PairingGroup(PAIRING_GROUP).random(cmod.G1)
-    #return elem / elem
     return cmod.PairingGroup(PAIRING_GROUP).init(cmod.G1, 0)
 
 

@@ -37,46 +37,70 @@ def testGroupElementZRIdentitySerializeToFromStr():
     identity = elem / elem
     assert identity == deserializeFromStr(serializeToStr(identity))
 
+
 def testGroupElementG1IdentitySerializeToFromStr():
     elem = cmod.PairingGroup(PAIRING_GROUP).random(cmod.G1)
     identity = cmod.PairingGroup(PAIRING_GROUP).init(cmod.G1, elem / elem)
     assert identity == deserializeFromStr(serializeToStr(identity))
 
 
-def testListStrSerializeToFromStr():
-    value = ['aaa', 'bbb', 'ccc']
-    assert value == deserializeFromStr(serializeToStr(value))
-
-
-def testSetStrSerializeToFromStr():
-    value = {'aaa', 'bbb', 'ccc'}
-    assert value == deserializeFromStr(serializeToStr(value))
-
-
-def testListIntSerializeToFromStr():
-    value = [111, 222, 333]
-    assert value == deserializeFromStr(serializeToStr(value))
-
-
-def testSetIntSerializeToFromStr():
-    value = {111, 222, 333}
-    assert value == deserializeFromStr(serializeToStr(value))
-
-
-def testListCryptoIntSerializeToFromStr():
-    value = [cmod.integer(111) % 11, cmod.integer(222), cmod.integer(333) % 45]
-    assert value == deserializeFromStr(serializeToStr(value))
-
-
-def testListMixedSerializeToFromStr():
-    group = cmod.PairingGroup(PAIRING_GROUP)
-    value = ['aaa', 111,
-             cmod.integer(111) % 11, cmod.integer(222),
-             group.init(cmod.ZR, 555), group.random(cmod.G1)]
-    assert value == deserializeFromStr(serializeToStr(value))
-
-
 def testToFromDictWithStrValues():
+    group = cmod.PairingGroup(PAIRING_GROUP)
+    dict = OrderedDict((
+        ('43', '43'),
+        ('3', 3),
+        ('5', cmod.integer(111) % 11),
+        ('10', group.random(cmod.G1))
+    ))
+    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+
+
+def testToFromDictWithStrValuesInteKeys():
+    dict = OrderedDict((
+        (11, '43'),
+        (12, 3)
+    ))
+    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+
+
+def testToFromDictWithStrValuesLists():
+    group = cmod.PairingGroup(PAIRING_GROUP)
+    dict = OrderedDict((
+        ('47', []),
+        ('7', [cmod.integer(111) % 11, cmod.integer(222), cmod.integer(333) % 45]),
+        ('6', [group.init(cmod.ZR, 555), group.random(cmod.G1), group.random(cmod.G1)])
+    ))
+    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+
+
+def testToFromDictWithStrValuesSets():
+    dict = OrderedDict((
+        ('44', {'aaa', 'bbb'}),
+        ('4', {111, 2222}),
+        ('1', {}),
+        ('3', 3),
+    ))
+    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+
+
+def testToFromDictWithStrValuesSubDicts():
+    group = cmod.PairingGroup(PAIRING_GROUP)
+    dict = OrderedDict((
+        ('4', {'aaa', 'bbb'}),
+        ('2', OrderedDict((
+            ('33',
+             OrderedDict((('45', 45), ('11', 11)))
+             ),
+            ('23',
+             OrderedDict((('47', 47), ('34', 34)))
+             )
+        ))),
+        ('3', 3)
+    ))
+    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+
+
+def testToFromDictWithStrValuesMixed():
     group = cmod.PairingGroup(PAIRING_GROUP)
     dict = OrderedDict((
         ('4', {'aaa', 'bbb'}),
@@ -94,6 +118,32 @@ def testToFromDictWithStrValues():
         ('7', [cmod.integer(111) % 11, cmod.integer(222), cmod.integer(333) % 45]),
         ('6', [group.init(cmod.ZR, 555), group.random(cmod.G1), group.random(cmod.G1)]),
         ('10', group.random(cmod.G1))
+    ))
+    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+
+
+def testToFromDictWithStrValuesDictInList():
+    dict = OrderedDict((
+        ('2', [
+            OrderedDict((
+                ('33',
+                 OrderedDict((('45', 45), ('11', 11)))
+                 ),
+                ('23',
+                 OrderedDict((('47', 47), ('34', 34)))
+                 )
+            )),
+            OrderedDict((
+                ('63',
+                 OrderedDict((('65', 45), ('61', 11)))
+                 ),
+                ('63',
+                 OrderedDict((('67', 47), ('64', 34)))
+                 )
+            ))
+        ]
+         ),
+        ('3', 3)
     ))
     assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
 

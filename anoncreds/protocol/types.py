@@ -130,7 +130,6 @@ T = TypeVar('T')
 VType = Set[int]
 TailsType = Dict[int, cmod.integer]
 TimestampType = int
-ClaimInitDataType = namedtuple('ClaimInitDataType', 'U vPrime')
 
 
 class NamedTupleStrSerializer:
@@ -155,7 +154,6 @@ class StrSerializer:
 
 class ClaimDefinitionKey(namedtuple('ClaimDefinitionKey', 'name, version, issuerId'),
                          NamedTupleStrSerializer):
-
     def __hash__(self):
         keys = (self.name, self.version, self.issuerId)
         return hash(keys)
@@ -228,6 +226,14 @@ class Accumulator:
         return self.currentI > self.L
 
 
+ClaimInitDataType = namedtuple('ClaimInitDataType', 'U vPrime')
+
+
+class ClaimRequest(namedtuple('ClaimRequest', 'userId U Ur'), NamedTupleStrSerializer):
+    def __new__(cls, userId, U, Ur=None):
+        return super(ClaimRequest, cls).__new__(cls, userId, U, Ur)
+
+
 # Accumulator = namedtuple('Accumulator', ['iA', 'acc', 'V', 'L'])
 
 class PrimaryClaim(namedtuple('PrimaryClaim', 'attrs m2 A e v'), NamedTupleStrSerializer):
@@ -248,7 +254,7 @@ class NonRevocationClaim(namedtuple('NonRevocationClaim', 'iA sigma c v witness 
 
 
 class Claims(namedtuple('Claims', 'primaryClaim nonRevocClaim'), NamedTupleStrSerializer):
-    def __new__(cls, primaryClaim=None, nonRevocClaim=None):
+    def __new__(cls, primaryClaim, nonRevocClaim=None):
         return super(Claims, cls).__new__(cls, primaryClaim, nonRevocClaim)
 
     @classmethod
@@ -379,7 +385,6 @@ class PrimaryPredicateGEProof(namedtuple('PrimaryPredicateGEProof', 'u, r, alpha
         predicate = PredicateGE(**d['predicate'])
         result = cls(**d)
         return result._replace(predicate=predicate)
-
 
 
 class NonRevocProof(namedtuple('NonRevocProof', 'XList CProof'), NamedTupleStrSerializer):

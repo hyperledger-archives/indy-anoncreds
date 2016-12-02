@@ -53,7 +53,7 @@ class NonRevocationClaimIssuer:
         accum = Accumulator(iA, acc, V, L)
         return (accum, g, accPK, accSK)
 
-    def issueNonRevocationClaim(self, id: ID, Ur, i) -> (NonRevocationClaim, Accumulator, TimestampType):
+    def issueNonRevocationClaim(self, id: ID, Ur, iA, i) -> (NonRevocationClaim, Accumulator, TimestampType):
         accum = self._wallet.getAccumulator(id)
         pkR = self._wallet.getPublicKeyRevocation(id)
         skR = self._wallet.getSecretKeyRevocation(id)

@@ -4,13 +4,13 @@ from anoncreds.protocol.types import ProofInput, PredicateGE
 from anoncreds.test.conftest import presentProofAndVerify
 
 
-def testNoPredicates(prover1, prover2, verifier, requestAllClaimsProver1, requestAllClaimsProver2, attrRepo):
+def testNoPredicates(prover1, prover2, verifier, allClaims, attrRepo):
     proofInput = ProofInput(['name', 'status'], [])
     assert presentProofAndVerify(verifier, proofInput, prover1, attrRepo)
     assert presentProofAndVerify(verifier, proofInput, prover2, attrRepo)
 
 
-def testGePredicate(prover1, prover2, verifier, requestAllClaimsProver1, requestAllClaimsProver2, attrRepo):
+def testGePredicate(prover1, prover2, verifier, allClaims, attrRepo):
     proofInput = ProofInput(['name'],
                             [PredicateGE('age', 18),
                              PredicateGE('period', 3)])
@@ -18,7 +18,7 @@ def testGePredicate(prover1, prover2, verifier, requestAllClaimsProver1, request
     assert presentProofAndVerify(verifier, proofInput, prover2, attrRepo)
 
 
-def testGePredicateNegativeForOne(prover1, prover2, verifier, requestAllClaimsProver1, requestAllClaimsProver2,
+def testGePredicateNegativeForOne(prover1, prover2, verifier, allClaims,
                                   attrRepo):
     proofInput = ProofInput(['name'],
                             [PredicateGE('age', 18),
@@ -28,7 +28,7 @@ def testGePredicateNegativeForOne(prover1, prover2, verifier, requestAllClaimsPr
         presentProofAndVerify(verifier, proofInput, prover1, attrRepo)
 
 
-def testGePredicateNegativeForBoth(prover1, prover2, verifier, requestAllClaimsProver1, requestAllClaimsProver2,
+def testGePredicateNegativeForBoth(prover1, prover2, verifier, allClaims,
                                    attrRepo):
     proofInput = ProofInput(['name'],
                             [PredicateGE('age', 18),

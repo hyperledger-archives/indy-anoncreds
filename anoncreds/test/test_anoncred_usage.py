@@ -1,4 +1,3 @@
-from anoncreds.protocol.fetcher import SimpleFetcher
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
 from anoncreds.protocol.repo.attributes_repo import AttributeRepoInMemory
@@ -35,7 +34,9 @@ def testSingleIssuerSingleProver(primes1):
 
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
-    prover.requestClaim(claimDefId, SimpleFetcher(issuer))
+    claimsReq = prover.createClaimRequest(claimDefId)
+    claims = issuer.issueClaim(claimDefId, claimsReq)
+    prover.processClaim(claimDefId, claims)
 
     # 6. proof Claims
     proofInput = ProofInput(
@@ -79,8 +80,12 @@ def testMultiplIssuersSingleProver(primes1, primes2):
 
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
-    prover.requestClaim(claimDefId1, SimpleFetcher(issuer1))
-    prover.requestClaim(claimDefId2, SimpleFetcher(issuer2))
+    claimsReq1 = prover.createClaimRequest(claimDefId1)
+    claimsReq2 = prover.createClaimRequest(claimDefId2)
+    claims1 = issuer1.issueClaim(claimDefId1, claimsReq1)
+    claims2 = issuer2.issueClaim(claimDefId2, claimsReq2)
+    prover.processClaim(claimDefId1, claims1)
+    prover.processClaim(claimDefId2, claims2)
 
     # 6. proof Claims
     proofInput = ProofInput(['name', 'status'],
@@ -123,8 +128,9 @@ def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
 
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
-    prover.requestClaim(claimDefId1, SimpleFetcher(issuer))
-    prover.requestClaim(claimDefId2, SimpleFetcher(issuer))
+    claimsReqs = prover.createClaimRequests([claimDefId1, claimDefId2])
+    claims = issuer.issueClaims(claimsReqs)
+    prover.processClaims(claims)
 
     # 6. proof Claims
     proofInput = ProofInput(
@@ -137,6 +143,7 @@ def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
 
     revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
     assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
+
 
 def testSingleIssuerSingleProverPrimaryOnly(primes1):
     # 1. Init entities
@@ -161,7 +168,9 @@ def testSingleIssuerSingleProverPrimaryOnly(primes1):
 
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
-    prover.requestClaim(claimDefId, SimpleFetcher(issuer), False)
+    claimsReq = prover.createClaimRequest(claimDefId, False)
+    claims = issuer.issueClaim(claimDefId, claimsReq)
+    prover.processClaim(claimDefId, claims)
 
     # 6. proof Claims
     proofInput = ProofInput(

@@ -1,6 +1,5 @@
 import pytest
 
-from anoncreds.protocol.fetcher import SimpleFetcher
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
 from anoncreds.protocol.repo.attributes_repo import AttributeRepoInMemory
@@ -204,66 +203,54 @@ def revealedGvtNameProver1(attrRepo, attrsProver1Gvt, claimDefGvt):
 def revealedGvtNameProver2(attrRepo, attrsProver2Gvt, claimDefGvt):
     return attrRepo.getRevealedAttributes(claimDefGvt.getKey(), proverId2, ['name']).encoded()
 
+@pytest.fixture(scope="function")
+def claimsRequestProver1Gvt(prover1, claimDefGvtId, keysGvt, issueAccumulatorGvt):
+    return prover1.createClaimRequest(claimDefGvtId)
 
 @pytest.fixture(scope="function")
-def fetcherGvt(issuerGvt, keysGvt, issueAccumulatorGvt):
-    return SimpleFetcher(issuerGvt)
-
-
-@pytest.fixture(scope="function")
-def fetcherXyz(issuerXyz, keysXyz, issueAccumulatorXyz):
-    return SimpleFetcher(issuerXyz)
-
-
-@pytest.fixture(scope="function")
-def requestClaimsProver1Gvt(prover1, attrsProver1Gvt, fetcherGvt, claimDefGvtId):
-    prover1.requestClaim(claimDefGvtId, fetcherGvt)
-
-
-@pytest.fixture(scope="function")
-def requestClaimsProver2Gvt(prover2, attrsProver2Gvt, fetcherGvt, claimDefGvtId):
-    prover2.requestClaim(claimDefGvtId, fetcherGvt)
-
-
-@pytest.fixture(scope="function")
-def requestClaimsProver1Xyz(prover1, attrsProver1Xyz, fetcherXyz, claimDefXyzId):
-    prover1.requestClaim(claimDefXyzId, fetcherXyz)
-
-
-@pytest.fixture(scope="function")
-def requestClaimsProver2Xyz(prover2, attrsProver2Xyz, fetcherXyz, claimDefXyzId):
-    prover2.requestClaim(claimDefXyzId, fetcherXyz)
-
-
-@pytest.fixture(scope="function")
-def requestAllClaimsProver1(requestClaimsProver1Gvt, requestClaimsProver1Xyz):
-    pass
-
-
-@pytest.fixture(scope="function")
-def requestAllClaimsProver2(requestClaimsProver2Gvt, requestClaimsProver2Xyz):
-    pass
-
-
-@pytest.fixture(scope="function")
-def requestAllClaims(requestClaimsProver1Gvt, requestClaimsProver2Gvt, requestClaimsProver1Xyz,
-                     requestClaimsProver2Xyz):
-    pass
-
-
-@pytest.fixture(scope="function")
-def nonRevocClaimGvtProver1(requestClaimsProver1Gvt, prover1, claimDefGvtId):
-    return prover1.wallet.getClaims(claimDefGvtId).nonRevocClaim
-
-
-@pytest.fixture(scope="function")
-def primaryClaimGvtProver1(requestClaimsProver1Gvt, prover1, claimDefGvtId):
-    return prover1.wallet.getClaims(claimDefGvtId).primaryClaim
-
-
-@pytest.fixture(scope="function")
-def claimsGvtProver1(requestClaimsProver1Gvt, prover1, claimDefGvtId):
+def claimsProver1Gvt(prover1, issuerGvt, claimsRequestProver1Gvt, claimDefGvtId, attrsProver1Gvt):
+    claims = issuerGvt.issueClaim(claimDefGvtId, claimsRequestProver1Gvt)
+    prover1.processClaim(claimDefGvtId, claims)
     return prover1.wallet.getClaims(claimDefGvtId)
+
+
+@pytest.fixture(scope="function")
+def claimsProver2Gvt(prover2, issuerGvt, claimDefGvtId, attrsProver2Gvt, keysGvt, issueAccumulatorGvt):
+    claimsReq = prover2.createClaimRequest(claimDefGvtId)
+    claims = issuerGvt.issueClaim(claimDefGvtId, claimsReq)
+    prover2.processClaim(claimDefGvtId, claims)
+    return prover2.wallet.getClaims(claimDefGvtId)
+
+
+@pytest.fixture(scope="function")
+def claimsProver1Xyz(prover1, issuerXyz, claimDefXyzId, attrsProver1Xyz, keysXyz, issueAccumulatorXyz):
+    claimsReq = prover1.createClaimRequest(claimDefXyzId)
+    claims = issuerXyz.issueClaim(claimDefXyzId, claimsReq)
+    prover1.processClaim(claimDefXyzId, claims)
+    return prover1.wallet.getClaims(claimDefXyzId)
+
+
+@pytest.fixture(scope="function")
+def claimsProver2Xyz(prover2, issuerXyz, claimDefXyzId, attrsProver2Xyz, keysXyz, issueAccumulatorXyz):
+    claimsReq = prover2.createClaimRequest(claimDefXyzId)
+    claims = issuerXyz.issueClaim(claimDefXyzId, claimsReq)
+    prover2.processClaim(claimDefXyzId, claims)
+    return prover2.wallet.getClaims(claimDefXyzId)
+
+
+@pytest.fixture(scope="function")
+def claimsProver1(claimsProver1Gvt, claimsProver1Xyz):
+    return (claimsProver1Gvt, claimsProver1Xyz)
+
+
+@pytest.fixture(scope="function")
+def claimsProver2(claimsProver2Gvt, claimsProver2Xyz):
+    return (claimsProver2Gvt, claimsProver2Xyz)
+
+
+@pytest.fixture(scope="function")
+def allClaims(claimsProver1, claimsProver2):
+    return (claimsProver1, claimsProver2)
 
 
 @pytest.fixture(scope="function")
@@ -275,68 +262,6 @@ def nonce(verifier):
 def genNonce(verifier):
     return verifier.generateNonce()
 
-
-# ############ function scope
-#
-# @pytest.fixture(scope="function")
-# def newIssueAccumulatorGvt(revocKeysGvt):
-#     return Issuer.issueAccumulator(iA1, revocKeysGvt[0], L)
-#
-#
-# @pytest.fixture(scope="function")
-# def newPublicDataGvtIssuer(credDefGvt, keysGvt, revocKeysGvt, newIssueAccumulatorGvt):
-#     publicDataPrimary = PublicDataPrimary(credDefGvt, keysGvt[0])
-#     publicDataRevoc = PublicDataRevocation(credDefGvt, revocKeysGvt[0], newIssueAccumulatorGvt[0],
-#                                            newIssueAccumulatorGvt[2],
-#                                            newIssueAccumulatorGvt[1])
-#     return PublicData(publicDataPrimary, publicDataRevoc)
-#
-#
-# @pytest.fixture(scope="function")
-# def newSecretDataGvtIssuer(newPublicDataGvtIssuer, keysGvt, revocKeysGvt, newIssueAccumulatorGvt):
-#     secretDataPrimary = SecretDataPrimary(newPublicDataGvtIssuer.pubPrimary, keysGvt[1])
-#     secretDataRevoc = SecretDataRevocation(newPublicDataGvtIssuer.pubRevoc, revocKeysGvt[1], newIssueAccumulatorGvt[3])
-#     return SecretData(secretDataPrimary, secretDataRevoc)
-#
-#
-# @pytest.fixture(scope="function")
-# def newIssuerGvt(newSecretDataGvtIssuer):
-#     return Issuer(newSecretDataGvtIssuer)
-#
-#
-# @pytest.fixture(scope="function")
-# def newM2GvtProver1(newIssueAccumulatorGvt):
-#     return Issuer.genContxt(newIssueAccumulatorGvt[0].iA, proverId1)
-#
-#
-# @pytest.fixture(scope="function")
-# def newProver1Initializer(newM2GvtProver1, m1Prover1, newPublicDataGvtIssuer, credDefGvt):
-#     return ProverInitializer(proverId1,
-#                              {credDefGvt: newM2GvtProver1},
-#                              {credDefGvt: newPublicDataGvtIssuer},
-#                              m1Prover1)
-#
-#
-# @pytest.fixture(scope="function")
-# def newProver1UGvt(newProver1Initializer, credDefGvt):
-#     return newProver1Initializer.getU(credDefGvt), newProver1Initializer.getUr(credDefGvt)
-#
-#
-# @pytest.fixture(scope="function")
-# def newNonRevocClaimProver1Gvt(newIssuerGvt, newM2GvtProver1, newProver1UGvt):
-#     return newIssuerGvt.issueNonRevocationClaim(newM2GvtProver1, newProver1UGvt[1])
-#
-#
-# @pytest.fixture(scope="function")
-# def newInitNonRevocClaimProver1Gvt(newProver1Initializer, newNonRevocClaimProver1Gvt, credDefGvt):
-#     return newProver1Initializer.initNonRevocationClaim(credDefGvt, newNonRevocClaimProver1Gvt)
-#
-#
-# @pytest.fixture(scope="function")
-# def newProver1(newPublicDataGvtIssuer, m1Prover1):
-#     return Prover(proverId1,
-#                   {newPublicDataGvtIssuer.pubPrimary.credDef: newPublicDataGvtIssuer},
-#                   m1Prover1)
 
 def verifyProof(verifier, proof, nonce, prover, attrRepo, proofInput):
     revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()

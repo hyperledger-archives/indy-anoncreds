@@ -4,19 +4,19 @@ from anoncreds.protocol.types import Attribs
 from anoncreds.test.conftest import GVT, XYZCorp
 
 
-def testEmpty(prover1, requestAllClaims, attrRepo):
+def testEmpty(prover1, allClaims, attrRepo):
     revealedAttrs = attrRepo.getRevealedAttributesForProver(prover1, [])
     assert Attribs() == revealedAttrs
 
 
-def testOneFromOneClaimDef(prover1, requestAllClaims, attrRepo, attrsProver1Gvt):
+def testOneFromOneClaimDef(prover1, allClaims, attrRepo, attrsProver1Gvt):
     revealedAttrs = attrRepo.getRevealedAttributesForProver(prover1, ['name'])
     expected = Attribs(GVT,
                        **{'name': attrsProver1Gvt['name']})
     assert expected == revealedAttrs
 
 
-def testTwoFromOneClaimDef(prover1, requestAllClaims, attrRepo, attrsProver1Gvt):
+def testTwoFromOneClaimDef(prover1, allClaims, attrRepo, attrsProver1Gvt):
     revealedAttrs = attrRepo.getRevealedAttributesForProver(prover1, ['name', 'age'])
     expected = Attribs(GVT,
                        **{'name': attrsProver1Gvt['name'],
@@ -24,7 +24,7 @@ def testTwoFromOneClaimDef(prover1, requestAllClaims, attrRepo, attrsProver1Gvt)
     assert expected == revealedAttrs
 
 
-def testOneFromTwoClaimDef(prover1, requestAllClaims, attrRepo, attrsProver1Gvt, attrsProver1Xyz):
+def testOneFromTwoClaimDef(prover1, allClaims, attrRepo, attrsProver1Gvt, attrsProver1Xyz):
     revealedAttrs = attrRepo.getRevealedAttributesForProver(prover1, ['name', 'status'])
     expected = Attribs(GVT + XYZCorp,
                        **{'name': attrsProver1Gvt['name'],
@@ -32,7 +32,7 @@ def testOneFromTwoClaimDef(prover1, requestAllClaims, attrRepo, attrsProver1Gvt,
     assert expected == revealedAttrs
 
 
-def testTwoFromTwoClaimDef(prover1, requestAllClaims, attrRepo, attrsProver1Gvt, attrsProver1Xyz):
+def testTwoFromTwoClaimDef(prover1, allClaims, attrRepo, attrsProver1Gvt, attrsProver1Xyz):
     revealedAttrs = attrRepo.getRevealedAttributesForProver(prover1, ['name', 'age', 'status', 'period'])
     expected = Attribs(GVT + XYZCorp,
                        **{'name': attrsProver1Gvt['name'],
@@ -42,16 +42,16 @@ def testTwoFromTwoClaimDef(prover1, requestAllClaims, attrRepo, attrsProver1Gvt,
     assert expected == revealedAttrs
 
 
-def testUnknownAttribute(prover1, requestAllClaims, attrRepo):
+def testUnknownAttribute(prover1, allClaims, attrRepo):
     with pytest.raises(ValueError):
         attrRepo.getRevealedAttributesForProver(prover1, ['aaa'])
 
 
-def testNotAllAttrsFound(prover1, requestAllClaims, attrRepo):
+def testNotAllAttrsFound(prover1, allClaims, attrRepo):
     with pytest.raises(ValueError):
         attrRepo.getRevealedAttributesForProver(prover1, ['name', 'aaa'])
 
 
-def testNoClaimForAttr(prover1, requestClaimsProver2Gvt, attrRepo):
+def testNoClaimForAttr(prover1, claimsProver2Gvt, attrRepo):
     with pytest.raises(ValueError):
         attrRepo.getRevealedAttributesForProver(prover1, ['name'])

@@ -1,5 +1,5 @@
 from functools import reduce
-from typing import Dict
+from typing import Dict, Sequence
 
 from anoncreds.protocol.globals import LARGE_MASTER_SECRET, LARGE_M2_TILDE
 from anoncreds.protocol.primary.primary_proof_builder import PrimaryClaimInitializer, PrimaryProofBuilder
@@ -7,7 +7,7 @@ from anoncreds.protocol.revocation.accumulators.non_revocation_proof_builder imp
     NonRevocationProofBuilder
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, Proof, InitProof, ProofInput, ProofClaims, \
     FullProof, \
-    ClaimDefinition, ID, ClaimDefinitionKey
+    ClaimDefinition, ID, ClaimDefinitionKey, ClaimRequest, Claims
 from anoncreds.protocol.utils import get_hash
 from anoncreds.protocol.wallet.prover_wallet import ProverWallet
 from config.config import cmod
@@ -31,17 +31,23 @@ class Prover:
     def id(self):
         return self.wallet.id
 
-    def requestClaim(self, id: ID, fetcher, reqNonRevoc=True):
+    def createClaimRequest(self, id: ID, reqNonRevoc=True) -> ClaimRequest:
         self._genMasterSecret(id)
         U = self._genU(id)
         Ur = None if not reqNonRevoc else self._genUr(id)
+        return ClaimRequest(userId=self.id, U=U, Ur=Ur)
 
-        claims, m2 = fetcher.fetchClaims(self.wallet.id, id, U, Ur)
+    def createClaimRequests(self, ids: Sequence[ID], reqNonRevoc=True) -> Dict[ID, ClaimRequest]:
+        return {id : self.createClaimRequest(id, reqNonRevoc) for id in ids}
 
-        self.wallet.submitContextAttr(id, m2)
+    def processClaim(self, id: ID, claims: Claims):
+        self.wallet.submitContextAttr(id, claims.primaryClaim.m2)
         self._initPrimaryClaim(id, claims.primaryClaim)
-        if reqNonRevoc:
+        if claims.nonRevocClaim:
             self._initNonRevocationClaim(id, claims.nonRevocClaim)
+
+    def processClaims(self, allClaims: Dict[ID, Claims]):
+        return [self.processClaim(id, claims) for id, claims in allClaims.items()]
 
     def presentProof(self, proofInput: ProofInput, nonce) -> FullProof:
         claims = self._findClaims(proofInput)

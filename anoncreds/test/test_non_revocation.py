@@ -1,11 +1,12 @@
 import pytest
 
-from anoncreds.protocol.types import ProofClaims, Claims, ProofInput
+from anoncreds.protocol.types import ProofInput
 from anoncreds.protocol.utils import groupIdentityG1
 from anoncreds.test.conftest import presentProofAndVerify
 
 
-def testIssueRevocationCredential(nonRevocClaimGvtProver1, issuerGvt, claimDefGvtId):
+def testIssueRevocationCredential(claimsProver1Gvt, issuerGvt, claimDefGvtId):
+    nonRevocClaimGvtProver1 = claimsProver1Gvt.nonRevocClaim
     acc = issuerGvt.wallet.getAccumulator(claimDefGvtId)
     tails = issuerGvt.wallet.getTails(claimDefGvtId)
     assert nonRevocClaimGvtProver1
@@ -20,18 +21,15 @@ def testIssueRevocationCredential(nonRevocClaimGvtProver1, issuerGvt, claimDefGv
     assert nonRevocClaimGvtProver1.witness.V == acc.V
 
 
-def testRevoce(nonRevocClaimGvtProver1, issuerGvt, claimDefGvtId):
-    acc = issuerGvt.wallet.getAccumulator(claimDefGvtId)
-    accPk = issuerGvt.wallet.getPublicKeyAccumulator(claimDefGvtId)
-
+def testRevoce(claimsProver1Gvt, issuerGvt, claimDefGvtId):
     issuerGvt.revoke(claimDefGvtId, 1)
-
     newAcc = issuerGvt.wallet.getAccumulator(claimDefGvtId)
     assert not newAcc.V
     assert newAcc.acc == groupIdentityG1()
 
 
-def testUpdateWitnessNotChangedIfInSync(nonRevocClaimGvtProver1, claimDefGvtId, prover1):
+def testUpdateWitnessNotChangedIfInSync(claimsProver1Gvt, claimDefGvtId, prover1):
+    nonRevocClaimGvtProver1 = claimsProver1Gvt.nonRevocClaim
     acc = prover1.wallet.getAccumulator(claimDefGvtId)
 
     # not changed as in sync
@@ -42,7 +40,8 @@ def testUpdateWitnessNotChangedIfInSync(nonRevocClaimGvtProver1, claimDefGvtId, 
     assert oldOmega == c2.witness.omega
 
 
-def testUpdateWitnessChangedIfOutOfSync(nonRevocClaimGvtProver1, issuerGvt, claimDefGvtId, prover1):
+def testUpdateWitnessChangedIfOutOfSync(claimsProver1Gvt, issuerGvt, claimDefGvtId, prover1):
+    nonRevocClaimGvtProver1 = claimsProver1Gvt.nonRevocClaim
     acc = issuerGvt.wallet.getAccumulator(claimDefGvtId)
 
     # not in sync
@@ -56,41 +55,40 @@ def testUpdateWitnessChangedIfOutOfSync(nonRevocClaimGvtProver1, issuerGvt, clai
     assert oldOmega != c2.witness.omega
 
 
-def testUpdateRevocedWitness(nonRevocClaimGvtProver1, issuerGvt, claimDefGvtId, prover1):
+def testUpdateRevocedWitness(claimsProver1Gvt, issuerGvt, claimDefGvtId, prover1):
+    nonRevocClaimGvtProver1 = claimsProver1Gvt.nonRevocClaim
     issuerGvt.revoke(claimDefGvtId, 1)
     with pytest.raises(ValueError):
         prover1._nonRevocProofBuilder.updateNonRevocationClaim(claimDefGvtId.claimDefKey, nonRevocClaimGvtProver1)
 
 
-def testInitNonRevocClaim(claimDefGvtId, prover1, attrsProver1Gvt, fetcherGvt):
-    prover1._genMasterSecret(claimDefGvtId)
-    U = prover1._genU(claimDefGvtId)
-    Ur = prover1._genUr(claimDefGvtId)
+def testInitNonRevocClaim(claimDefGvtId, prover1, issuerGvt, attrsProver1Gvt, keysGvt, issueAccumulatorGvt):
+    claimsReq = prover1.createClaimRequest(claimDefGvtId)
+    claims = issuerGvt.issueClaim(claimDefGvtId, claimsReq)
 
-    claims, m2 = fetcherGvt.fetchClaims(prover1.wallet.id, claimDefGvtId, U, Ur)
-    prover1.wallet.submitContextAttr(claimDefGvtId, m2)
     oldV = claims.nonRevocClaim.v
-    prover1._initPrimaryClaim(claimDefGvtId, claims.primaryClaim)
-    prover1._initNonRevocationClaim(claimDefGvtId, claims.nonRevocClaim)
-
+    prover1.processClaim(claimDefGvtId, claims)
     newC2 = prover1.wallet.getClaims(claimDefGvtId).nonRevocClaim
     vrPrime = prover1.wallet.getNonRevocClaimInitData(claimDefGvtId).vPrime
+
     assert oldV + vrPrime == newC2.v
 
 
-def testCAndTauList(nonRevocClaimGvtProver1, claimDefGvtId, prover1):
+def testCAndTauList(claimsProver1Gvt, claimDefGvtId, prover1):
+    nonRevocClaimGvtProver1 = claimsProver1Gvt.nonRevocClaim
     proofRevBuilder = prover1._nonRevocProofBuilder
     assert proofRevBuilder.testProof(claimDefGvtId.claimDefKey, nonRevocClaimGvtProver1)
 
 
-def testRevocedWithUpdateWitness(claimDefGvtId, issuerGvt, prover1, verifier, attrRepo, requestClaimsProver1Gvt):
+def testRevocedWithUpdateWitness(claimDefGvtId, issuerGvt, prover1, verifier, attrRepo, claimsProver1Gvt):
     issuerGvt.revoke(claimDefGvtId, 1)
 
     proofInput = ProofInput(['name'], [])
     with pytest.raises(ValueError):
         presentProofAndVerify(verifier, proofInput, prover1, attrRepo)
 
-def testRevocedWithoutUpdateWitness(claimDefGvtId, issuerGvt, prover1, verifier, attrRepo, requestClaimsProver1Gvt):
+
+def testRevocedWithoutUpdateWitness(claimDefGvtId, issuerGvt, prover1, verifier, attrRepo, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [])
     nonce = verifier.generateNonce()
     proof = prover1.presentProof(proofInput, nonce)

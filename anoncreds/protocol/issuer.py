@@ -1,14 +1,13 @@
-from typing import Any
+from typing import Dict
 
 from anoncreds.protocol.globals import LARGE_MASTER_SECRET, TYPE_CL
 from anoncreds.protocol.primary.primary_claim_issuer import PrimaryClaimIssuer
 from anoncreds.protocol.repo.attributes_repo import AttributeRepo
 from anoncreds.protocol.revocation.accumulators.non_revocation_claim_issuer import NonRevocationClaimIssuer
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, \
-    ClaimDefinition, ID, Claims
+    ClaimDefinition, ID, Claims, ClaimRequest
 from anoncreds.protocol.utils import get_hash, bytes_to_int, strToInt
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
-
 from config.config import cmod
 
 
@@ -47,15 +46,19 @@ class Issuer:
         acc, ts = self._nonRevocationIssuer.revoke(id, i)
         self.wallet.submitAccumUpdate(id=id, accum=acc, timestampMs=ts)
 
-    def issueClaims(self, id: ID, userId, U, Ur=None, iA=None, i=None) -> (Claims, Any):
+    def issueClaim(self, id: ID, claimRequest: ClaimRequest, iA=None, i=None) -> Claims:
         claimDefKey = self.wallet.getClaimDef(id).getKey()
-        attributes = self._attrRepo.getAttributes(claimDefKey, userId).encoded()
+        attributes = self._attrRepo.getAttributes(claimDefKey, claimRequest.userId).encoded()
         iA = iA if iA else self.wallet.getAccumulator(id).iA
 
-        m2 = self._genContxt(id, iA, userId)
-        c1 = self._issuePrimaryClaim(id, attributes, U)
-        c2 = self._issueNonRevocationClaim(id, Ur, i) if Ur else None
-        return (Claims(primaryClaim=c1, nonRevocClaim=c2), m2)
+        self._genContxt(id, iA, claimRequest.userId)
+
+        c1 = self._issuePrimaryClaim(id, attributes, claimRequest.U)
+        c2 = self._issueNonRevocationClaim(id, claimRequest.Ur, iA, i) if claimRequest.Ur else None
+        return Claims(primaryClaim=c1, nonRevocClaim=c2)
+
+    def issueClaims(self, allClaimRequest: Dict[ID, ClaimRequest]) -> Dict[ID, Claims]:
+        return {id: self.issueClaim(id, claimReq) for id, claimReq in allClaimRequest.items()}
 
     #
     # PRIVATE
@@ -73,8 +76,8 @@ class Issuer:
     def _issuePrimaryClaim(self, id: ID, attributes, U) -> PrimaryClaim:
         return self._primaryIssuer.issuePrimaryClaim(id, attributes, U)
 
-    def _issueNonRevocationClaim(self, id: ID, Ur, i=None) -> NonRevocationClaim:
-        claim, accum, ts = self._nonRevocationIssuer.issueNonRevocationClaim(id, Ur, i)
+    def _issueNonRevocationClaim(self, id: ID, Ur, iA=None, i=None) -> NonRevocationClaim:
+        claim, accum, ts = self._nonRevocationIssuer.issueNonRevocationClaim(id, Ur, iA, i)
         self.wallet.submitAccumUpdate(id=id, accum=accum, timestampMs=ts)
         return claim
 

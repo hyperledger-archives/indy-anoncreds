@@ -264,9 +264,16 @@ class Claims(namedtuple('Claims', 'primaryClaim nonRevocClaim'), NamedTupleStrSe
         return Claims(primaryClaim=primary, nonRevocClaim=nonRevoc)
 
 
-class ProofInput(namedtuple('ProofInput', 'revealedAttrs predicates ts seqNo')):
+class ProofInput(namedtuple('ProofInput', 'revealedAttrs predicates ts seqNo'), NamedTupleStrSerializer):
     def __new__(cls, revealedAttrs=[], predicates=[], ts=None, seqNo=None):
         return super(ProofInput, cls).__new__(cls, revealedAttrs, predicates, ts, seqNo)
+
+    @classmethod
+    def fromStrDict(cls, d):
+        d = fromDictWithStrValues(d)
+        predicates = [Predicate.fromStrDict(v) for v in d['predicates']]
+        result = cls(**d)
+        return result._replace(predicates=predicates)
 
 
 class ProofClaims(namedtuple('ProofClaims', 'claims revealedAttrs predicates')):

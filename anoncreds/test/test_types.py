@@ -38,3 +38,8 @@ def testClaimProofFromToDict(prover1, nonce, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
     proof = presentProof(prover1, proofInput, nonce)
     assert proof == FullProof.fromStrDict(proof.toStrDict())
+
+
+def testProofInputFromToDict():
+    proofInput = ProofInput(['name', 'age'], [PredicateGE('age', 18), PredicateGE('age', 25)])
+    assert proofInput == ProofInput.fromStrDict(proofInput.toStrDict())

@@ -28,8 +28,7 @@ class Issuer:
 
     def genClaimDef(self, name, version, attrNames, type=TYPE_CL) -> ClaimDefinition:
         claimDef = ClaimDefinition(name, version, attrNames, type, self.wallet.id)
-        self.wallet.submitClaimDef(claimDef)
-        return claimDef
+        return self.wallet.submitClaimDef(claimDef)
 
     def genKeys(self, id: ID, p_prime=None, q_prime=None):
         pk, sk = self._primaryIssuer.genKeys(id, p_prime, q_prime)

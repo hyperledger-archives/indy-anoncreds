@@ -14,7 +14,7 @@ class IssuerWallet(Wallet):
     # SUBMIT
 
     @abstractmethod
-    def submitClaimDef(self, claimDef: ClaimDefinition):
+    def submitClaimDef(self, claimDef: ClaimDefinition) -> ClaimDefinition:
         raise NotImplementedError
 
     @abstractmethod
@@ -73,9 +73,10 @@ class IssuerWalletInMemory(IssuerWallet, WalletInMemory):
 
     # SUBMIT
 
-    def submitClaimDef(self, claimDef: ClaimDefinition):
+    def submitClaimDef(self, claimDef: ClaimDefinition) -> ClaimDefinition:
         claimDef = self._repo.submitClaimDef(claimDef)
         self._cacheClaimDef(claimDef)
+        return claimDef
 
     def submitPublicKeys(self, id: ID, pk: PublicKey, pkR: RevocationPublicKey = None):
         self._repo.submitPublicKeys(id, pk, pkR)

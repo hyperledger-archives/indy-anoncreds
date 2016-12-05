@@ -91,8 +91,10 @@ def isInteger(n):
 def isStr(n):
     return isinstance(n, str)
 
+
 def isNamedTuple(n):
-    return isinstance(n, tuple) # TODO: assume it's a named tuple
+    return isinstance(n, tuple)  # TODO: assume it's a named tuple
+
 
 def toDictWithStrValues(d):
     if isNamedTuple(d):
@@ -117,7 +119,7 @@ def toDictWithStrValues(d):
 
 
 def fromDictWithStrValues(d):
-    if not isinstance(d, Dict) and not isinstance(d, tuple) :
+    if not isinstance(d, Dict) and not isinstance(d, tuple):
         return deserializeFromStr(d)
     result = OrderedDict()
     for key, value in d.items():

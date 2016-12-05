@@ -1,5 +1,5 @@
 from functools import reduce
-from typing import Dict, Sequence
+from typing import Dict, Sequence, Any
 
 from anoncreds.protocol.globals import LARGE_MASTER_SECRET, LARGE_M2_TILDE
 from anoncreds.protocol.primary.primary_proof_builder import PrimaryClaimInitializer, PrimaryProofBuilder
@@ -38,7 +38,7 @@ class Prover:
         return ClaimRequest(userId=self.id, U=U, Ur=Ur)
 
     def createClaimRequests(self, ids: Sequence[ID], reqNonRevoc=True) -> Dict[ID, ClaimRequest]:
-        return {id : self.createClaimRequest(id, reqNonRevoc) for id in ids}
+        return {id: self.createClaimRequest(id, reqNonRevoc) for id in ids}
 
     def processClaim(self, id: ID, claims: Claims):
         self.wallet.submitContextAttr(id, claims.primaryClaim.m2)
@@ -49,9 +49,9 @@ class Prover:
     def processClaims(self, allClaims: Dict[ID, Claims]):
         return [self.processClaim(id, claims) for id, claims in allClaims.items()]
 
-    def presentProof(self, proofInput: ProofInput, nonce) -> FullProof:
-        claims = self._findClaims(proofInput)
-        return self._prepareProof(claims, nonce)
+    def presentProof(self, proofInput: ProofInput, nonce) -> (FullProof, Dict[str, Any]):
+        claims, revealedAttrsWithValues = self._findClaims(proofInput)
+        return (self._prepareProof(claims, nonce), revealedAttrsWithValues)
 
     #
     # REQUEST CLAIMS
@@ -83,12 +83,13 @@ class Prover:
     # PRESENT PROOF
     #
 
-    def _findClaims(self, proofInput: ProofInput) -> Dict[ClaimDefinitionKey, ProofClaims]:
+    def _findClaims(self, proofInput: ProofInput) -> (Dict[ClaimDefinitionKey, ProofClaims], Dict[str, Any]):
         revealedAttrs, predicates = set(proofInput.revealedAttrs), set(proofInput.predicates)
 
         proofClaims = {}
         foundRevealedAttrs = set()
         foundPredicates = set()
+        revealedAttrsWithValues = {}
 
         for credDefKey, claim in self.wallet.getAllClaims().items():
             revealedAttrsForClaim = []
@@ -98,6 +99,7 @@ class Prover:
                 if revealedAttr in claim.primaryClaim.attrs:
                     revealedAttrsForClaim.append(revealedAttr)
                     foundRevealedAttrs.add(revealedAttr)
+                    revealedAttrsWithValues[revealedAttr] = claim.primaryClaim.attrs[revealedAttr]
 
             for predicate in predicates:
                 if predicate.attrName in claim.primaryClaim.attrs:
@@ -112,7 +114,7 @@ class Prover:
         if foundPredicates != predicates:
             raise ValueError("A claim isn't found for the following predicates: {}", predicates - foundPredicates)
 
-        return proofClaims
+        return (proofClaims, revealedAttrsWithValues)
 
     def _prepareProof(self, claims: Dict[ClaimDefinitionKey, ProofClaims], nonce) -> FullProof:
         m1Tilde = cmod.integer(cmod.randomBits(LARGE_M2_TILDE))

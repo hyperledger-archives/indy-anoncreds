@@ -45,8 +45,7 @@ def testSingleIssuerSingleProver(primes1):
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
-    proof = prover.presentProof(proofInput, nonce)
-    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
+    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
     assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
@@ -93,9 +92,7 @@ def testMultiplIssuersSingleProver(primes1, primes2):
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
-    proof = prover.presentProof(proofInput, nonce)
-
-    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
+    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
     assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
@@ -139,9 +136,7 @@ def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
-    proof = prover.presentProof(proofInput, nonce)
-
-    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
+    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
     assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
@@ -179,6 +174,5 @@ def testSingleIssuerSingleProverPrimaryOnly(primes1):
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
-    proof = prover.presentProof(proofInput, nonce)
-    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
+    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
     assert verifier.verify(proofInput, proof, revealedAttrs, nonce)

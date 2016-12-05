@@ -26,7 +26,8 @@ class Verifier:
         TauList = []
         for claimDefKey, proofItem in zip(proof.claimDefKeys, proof.proofs):
             if proofItem.nonRevocProof:
-                TauList += self._nonRevocVerifier.verifyNonRevocation(proofInput, claimDefKey, proof.cHash, proofItem.nonRevocProof)
+                TauList += self._nonRevocVerifier.verifyNonRevocation(proofInput, claimDefKey, proof.cHash,
+                                                                      proofItem.nonRevocProof)
             if proofItem.primaryProof:
                 TauList += self._primaryVerifier.verify(proofInput, claimDefKey, proof.cHash, proofItem.primaryProof,
                                                         allRevealedAttrs)

@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Sequence
 
 from anoncreds.protocol.prover import Prover
-from anoncreds.protocol.types import Attribs, ClaimDefinitionKey, AttribDef
+from anoncreds.protocol.types import Attribs, ClaimDefinitionKey
 
 
 class AttributeRepo:

@@ -203,9 +203,11 @@ def revealedGvtNameProver1(attrRepo, attrsProver1Gvt, claimDefGvt):
 def revealedGvtNameProver2(attrRepo, attrsProver2Gvt, claimDefGvt):
     return attrRepo.getRevealedAttributes(claimDefGvt.getKey(), proverId2, ['name']).encoded()
 
+
 @pytest.fixture(scope="function")
 def claimsRequestProver1Gvt(prover1, claimDefGvtId, keysGvt, issueAccumulatorGvt):
     return prover1.createClaimRequest(claimDefGvtId)
+
 
 @pytest.fixture(scope="function")
 def claimsProver1Gvt(prover1, issuerGvt, claimsRequestProver1Gvt, claimDefGvtId, attrsProver1Gvt):
@@ -263,16 +265,7 @@ def genNonce(verifier):
     return verifier.generateNonce()
 
 
-def verifyProof(verifier, proof, nonce, prover, attrRepo, proofInput):
-    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover, proofInput.revealedAttrs).encoded()
-    return verifier.verify(proofInput, proof, revealedAttrs, nonce)
-
-
-def presentProof(prover, proofInput: ProofInput, nonce):
-    return prover.presentProof(proofInput, nonce)
-
-
-def presentProofAndVerify(verifier, proofInput: ProofInput, prover, attrRepo):
+def presentProofAndVerify(verifier, proofInput: ProofInput, prover):
     nonce = verifier.generateNonce()
-    proof = presentProof(prover, proofInput, nonce)
-    return verifyProof(verifier, proof, nonce, prover, attrRepo, proofInput)
+    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
+    return verifier.verify(proofInput, proof, revealedAttrs, nonce)

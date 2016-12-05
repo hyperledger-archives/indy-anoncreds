@@ -17,7 +17,8 @@ class NonRevocationProofVerifier:
     def nonce(self):
         return self._nonce
 
-    def verifyNonRevocation(self, proofInput: ProofInput, claimDefKey, cHash, nonRevocProof: NonRevocProof) -> Sequence[T]:
+    def verifyNonRevocation(self, proofInput: ProofInput, claimDefKey, cHash, nonRevocProof: NonRevocProof) \
+            -> Sequence[T]:
         if self._wallet.shouldUpdateAccumulator(id=ID(claimDefKey), ts=proofInput.ts, seqNo=proofInput.seqNo):
             self._wallet.updateAccumulator(id=ID(claimDefKey), ts=proofInput.ts, seqNo=proofInput.seqNo)
 

@@ -80,20 +80,19 @@ def testCAndTauList(claimsProver1Gvt, claimDefGvtId, prover1):
     assert proofRevBuilder.testProof(claimDefGvtId.claimDefKey, nonRevocClaimGvtProver1)
 
 
-def testRevocedWithUpdateWitness(claimDefGvtId, issuerGvt, prover1, verifier, attrRepo, claimsProver1Gvt):
+def testRevocedWithUpdateWitness(claimDefGvtId, issuerGvt, prover1, verifier, claimsProver1Gvt):
     issuerGvt.revoke(claimDefGvtId, 1)
 
     proofInput = ProofInput(['name'], [])
     with pytest.raises(ValueError):
-        presentProofAndVerify(verifier, proofInput, prover1, attrRepo)
+        presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testRevocedWithoutUpdateWitness(claimDefGvtId, issuerGvt, prover1, verifier, attrRepo, claimsProver1Gvt):
+def testRevocedWithoutUpdateWitness(claimDefGvtId, issuerGvt, prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [])
     nonce = verifier.generateNonce()
-    proof = prover1.presentProof(proofInput, nonce)
+    proof, revealedAttrs = prover1.presentProof(proofInput, nonce)
 
     issuerGvt.revoke(claimDefGvtId, 1)
 
-    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover1, proofInput.revealedAttrs).encoded()
     return verifier.verify(proofInput, proof, revealedAttrs, nonce)

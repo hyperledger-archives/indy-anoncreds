@@ -1,313 +1,178 @@
 from anoncreds.protocol.issuer import Issuer
-from anoncreds.protocol.prover import Prover, ProverInitializer
-from anoncreds.protocol.types import SecretData, PublicData, Claims, ProofInput, PredicateGE
+from anoncreds.protocol.prover import Prover
+from anoncreds.protocol.repo.attributes_repo import AttributeRepoInMemory
+from anoncreds.protocol.repo.public_repo import PublicRepoInMemory
+from anoncreds.protocol.types import ProofInput, PredicateGE, \
+    ID
 from anoncreds.protocol.verifier import Verifier
+from anoncreds.protocol.wallet.issuer_wallet import IssuerWalletInMemory
+from anoncreds.protocol.wallet.prover_wallet import ProverWalletInMemory
+from anoncreds.protocol.wallet.wallet import WalletInMemory
 from anoncreds.test.conftest import GVT, XYZCorp
 
 
 def testSingleIssuerSingleProver(primes1):
-    #### 1. Issuer setup
-    issuerId = 3333
+    # 1. Init entities
+    publicRepo = PublicRepoInMemory()
+    attrRepo = AttributeRepoInMemory()
+    issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
 
-    # generate Issuer's public and secret keys
-    pk, sk = Issuer.genKeys(GVT.attribNames(), **primes1)
+    # 2. Create a Claim Def
+    claimDef = issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
+    claimDefId = ID(claimDef.getKey())
 
-    # ---> store pk in a public torage
-    # ---> store sk in an issuer-private storage
+    # 3. Create keys for the Claim Def
+    issuer.genKeys(claimDefId, **primes1)
 
-    # generate Issuer's public and secret revocation keys
-    pkR, skR = Issuer.genRevocationKeys()
-    # ---> store pkR in a public torage
-    # ---> store skR in an issuer-private storage
+    # 4. Issue accumulator
+    issuer.issueAccumulator(id=claimDefId, iA='110', L=5)
 
-    # issue empty accumulators with public/secret keys and corresponding Gi
-    L = 5
-    iA = 110
-    accum1, g1, pkAccum1, skAccum1 = Issuer.issueAccumulator(iA, pkR, L)
-    # ---> store accum1, g1, pkAccum1 in a public storage
-    # ---> store skAccum1 in an issuer-private storage
-
-
-
-    # ........................................
-
-
-
-    #### 2. New User added:
-    userId = 111
-
-    ### Issuer:
-    # <--- load pk, sk, pkR, skR, accum1, g1, pkAccum1, skAccum1
-    secretData = SecretData(pk, sk, pkR, skR, accum1, g1, pkAccum1, skAccum1)
-    issuer = Issuer(issuerId, secretData)
-
-    # Issuer computes context attr
-    # <--- load iA
-    m2 = Issuer.genContxt(iA, userId)
-    # ---> store m2 to issuer-prover-private storage
-
-    # set attributes
+    # 4. set attributes for user1
+    userId = '111'
     attrs = GVT.attribs(name='Alex', age=28, height=175, sex='male')
+    attrRepo.addAttributes(claimDef.getKey(), userId, attrs)
 
-    # encode attrs to 256-bit ints
-    encodedAttrs = issuer.encodeAttrs(attrs)
-    # ---> store other attrs to semi-public storage
+    # 5. request Claims
+    prover = Prover(ProverWalletInMemory(userId, publicRepo))
+    claimsReq = prover.createClaimRequest(claimDefId)
+    claims = issuer.issueClaim(claimDefId, claimsReq)
+    prover.processClaim(claimDefId, claims)
 
-    ### Prover:
+    # 6. proof Claims
+    proofInput = ProofInput(
+        ['name'],
+        [PredicateGE('age', 18)])
 
-    # prover generate a master secret m1 (common for all)
-    m1 = ProverInitializer.genMasterSecret()
-    # ---> store m1 to prover-private storage
-
-    # <--- load pk, pkR, acc
-    publicData = PublicData(pk, pkR, accum1, g1, pkAccum1)
-    proverInitializer = ProverInitializer(userId,
-                                          {issuerId: m2},
-                                          {issuerId: publicData},
-                                          m1)
-
-    #### 3. Issuance of claims
-
-    ### Prover:
-
-    # Prover gens v' and U
-    U = proverInitializer.getU(issuerId)
-    Ur = proverInitializer.getUr(issuerId)
-    # ~~~~> send U, Ur to Issuer
-
-    ### Issuer:
-
-    # Issuer issues primary claim
-    primaryClaim = issuer.issuePrimaryClaim(encodedAttrs, m2, U)
-
-    # Issuer issues non-revocation claim
-    nonRevocationClaim = issuer.issueNonRevocationClaim(m2, Ur)
-
-    # ---> publish updated acc
-    # ~~~~> send primaryClaim, nonRevocationClaim to prover
-
-    ### Prover:
-
-    # update primary claim with private value and store
-    c1 = proverInitializer.initPrimaryClaim(issuerId, primaryClaim)
-    # ---> store primaryClaim in prover-private storage
-
-    # update non-revocation claim with private value and store
-    c2 = proverInitializer.initNonRevocationClaim(issuerId, nonRevocationClaim)
-    # ---> store primaryClaim in prover-private storage
-
-
-
-
-
-    # ...........................................................
-
-
-
-
-
-
-    #### Presentation
-
-    ### Verifier:
-
-    # attributes to be validated
-    proofInput = ProofInput(['name'],
-                            [PredicateGE('age', 18)])
-    # gen nonce
-    nonce = Verifier.generateNonce()
-
-    # ~~~> send attrs to be validated and Nonce to Prover
-
-
-    ### Prover:
-
-    # find claims needed to validate the attributes
-    # probably it can be defined outside anoncred protocol
-    # ---> load all claims (c1, c2)
-    allClaims = {issuerId: Claims(c1, c2)}
-    proofClaims = Prover.findClaims(allClaims, proofInput)
-
-    # <--- load pk, pkR, accum1, g1, pkAccum1 for required issuers
-    prover = Prover(userId, {issuerId: publicData}, m1)
-
-    # Prover updates witness
-    c2s = prover.updateNonRevocationClaims(proofClaims)
-    # ---> store c2s
-
-    # prepare proof
-    proof = prover.prepareProof(proofClaims, nonce)
-    # ~~~> send proof to verifier
-
-    ### Verifier:
-
-    # <--- load pk, pkR, accum1, g1, pkAccum1 for issuers participating in proof
-    verifId = 5555
-    verifier = Verifier(verifId, {issuerId: publicData})
-
-    # verify proof
-    allRevealedAttrs = {'name': encodedAttrs['name']}
-    assert verifier.verify(proof, allRevealedAttrs, nonce)
+    verifier = Verifier(WalletInMemory('verifier1', publicRepo))
+    nonce = verifier.generateNonce()
+    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
+    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
 def testMultiplIssuersSingleProver(primes1, primes2):
-    #### 1. Issuer setup
+    # 1. Init entities
+    publicRepo = PublicRepoInMemory()
+    attrRepo = AttributeRepoInMemory()
+    issuer1 = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
+    issuer2 = Issuer(IssuerWalletInMemory('issuer2', publicRepo), attrRepo)
 
-    # generate Issuer's public and secret keys
-    pk1, sk1 = Issuer.genKeys(GVT.attribNames(), **primes1)
-    pk2, sk2 = Issuer.genKeys(XYZCorp.attribNames(), **primes2)
+    # 2. Create a Claim Def
+    claimDef1 = issuer1.genClaimDef('GVT', '1.0', GVT.attribNames())
+    claimDefId1 = ID(claimDef1.getKey())
+    claimDef2 = issuer2.genClaimDef('XYZCorp', '1.0', XYZCorp.attribNames())
+    claimDefId2 = ID(claimDef2.getKey())
 
-    # ---> store pk in a public torage
-    # ---> store sk in an issuer-private storage
+    # 3. Create keys for the Claim Def
+    issuer1.genKeys(claimDefId1, **primes1)
+    issuer2.genKeys(claimDefId2, **primes2)
 
-    # generate Issuer's public and secret revocation keys
-    pkR1, skR1 = Issuer.genRevocationKeys()
-    pkR2, skR2 = Issuer.genRevocationKeys()
-    # ---> store pkR in a public torage
-    # ---> store skR in an issuer-private storage
+    # 4. Issue accumulator
+    issuer1.issueAccumulator(id=claimDefId1, iA='110', L=5)
+    issuer2.issueAccumulator(id=claimDefId2, iA=9999999, L=5)
 
-    # issue empty accumulators with public/secret keys and corresponding Gi
-    L = 5
-    iA1 = 110
-    accum1, g1, pkAccum1, skAccum1 = Issuer.issueAccumulator(iA1, pkR1, L)
-    iA2 = 111
-    accum2, g2, pkAccum2, skAccum2 = Issuer.issueAccumulator(iA2, pkR2, L)
-    # ---> store accum1, g1, pkAccum1 in a public storage
-    # ---> store skAccum1 in an issuer-private storage
-
-
-
-    # ........................................
-
-
-
-    #### 2. New User added:
-    userId = 111
-    issuerId1 = 3333
-    issuerId2 = 4444
-
-    ### Issuer:
-    # <--- load pk, sk, pkR, skR, accum1, g1, pkAccum1, skAccum1
-    secretData1 = SecretData(pk1, sk1, pkR1, skR1, accum1, g1, pkAccum1, skAccum1)
-    issuer1 = Issuer(issuerId1, secretData1)
-    secretData2 = SecretData(pk2, sk2, pkR2, skR2, accum2, g2, pkAccum2, skAccum2)
-    issuer2 = Issuer(issuerId2, secretData2)
-
-    # Issuer computes context attr
-    # <--- load iA
-    m21 = Issuer.genContxt(iA1, userId)
-    m22 = Issuer.genContxt(iA2, userId)
-    # ---> store m2 to issuer-prover-private storage
-
-    # set attributes
+    # 4. set attributes for user1
+    userId = '111'
     attrs1 = GVT.attribs(name='Alex', age=28, height=175, sex='male')
     attrs2 = XYZCorp.attribs(status='FULL', period=8)
+    attrRepo.addAttributes(claimDef1.getKey(), userId, attrs1)
+    attrRepo.addAttributes(claimDef2.getKey(), userId, attrs2)
 
-    # encode attrs to 256-bit ints
-    encodedAttrs1 = issuer1.encodeAttrs(attrs1)
-    encodedAttrs2 = issuer1.encodeAttrs(attrs2)
-    # ---> store other attrs to semi-public storage
+    # 5. request Claims
+    prover = Prover(ProverWalletInMemory(userId, publicRepo))
+    claimsReq1 = prover.createClaimRequest(claimDefId1)
+    claimsReq2 = prover.createClaimRequest(claimDefId2)
+    claims1 = issuer1.issueClaim(claimDefId1, claimsReq1)
+    claims2 = issuer2.issueClaim(claimDefId2, claimsReq2)
+    prover.processClaim(claimDefId1, claims1)
+    prover.processClaim(claimDefId2, claims2)
 
-    ### Prover:
+    # 6. proof Claims
+    proofInput = ProofInput(['name', 'status'],
+                            [PredicateGE('age', 18), PredicateGE('period', 5)])
 
-    # prover generate a master secret m1 (common for all)
-    m1 = ProverInitializer.genMasterSecret()
-    # ---> store m1 to prover-private storage
-
-    # <--- load pk, pkR, acc
-    publicData1 = PublicData(pk1, pkR1, accum1, g1, pkAccum1)
-    publicData2 = PublicData(pk2, pkR2, accum2, g2, pkAccum2)
-    proverInitializer = ProverInitializer(userId,
-                                          {issuerId1: m21, issuerId2: m22},
-                                          {issuerId1: publicData1, issuerId2: publicData2},
-                                          m1)
-
-    #### 3. Issuance of claims
-
-    ### Prover:
-
-    # Prover gens v' and U
-    U1 = proverInitializer.getU(issuerId1)
-    Ur1 = proverInitializer.getUr(issuerId1)
-    U2 = proverInitializer.getU(issuerId2)
-    Ur2 = proverInitializer.getUr(issuerId2)
-    # ~~~~> send U, Ur to Issuer
-
-    ### Issuer:
-
-    # Issuer issues primary claim
-    primaryClaim1 = issuer1.issuePrimaryClaim(encodedAttrs1, m21, U1)
-    primaryClaim2 = issuer2.issuePrimaryClaim(encodedAttrs2, m22, U2)
-
-    # Issuer issues non-revocation claim
-    nonRevocationClaim1 = issuer1.issueNonRevocationClaim(m21, Ur1)
-    nonRevocationClaim2 = issuer2.issueNonRevocationClaim(m22, Ur2)
-
-    # ---> publish updated acc
-    # ~~~~> send primaryClaim, nonRevocationClaim to prover
-
-    ### Prover:
-
-    # update primary claim with private value and store
-    c11 = proverInitializer.initPrimaryClaim(issuerId1, primaryClaim1)
-    c12 = proverInitializer.initPrimaryClaim(issuerId2, primaryClaim2)
-    # ---> store primaryClaim in prover-private storage
-
-    # update non-revocation claim with private value and store
-    c21 = proverInitializer.initNonRevocationClaim(issuerId1, nonRevocationClaim1)
-    c22 = proverInitializer.initNonRevocationClaim(issuerId2, nonRevocationClaim2)
-    # ---> store primaryClaim in prover-private storage
+    verifier = Verifier(WalletInMemory('verifier1', publicRepo))
+    nonce = verifier.generateNonce()
+    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
+    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
+def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
+    # 1. Init entities
+    publicRepo = PublicRepoInMemory()
+    attrRepo = AttributeRepoInMemory()
+    issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
+
+    # 2. Create a Claim Def
+    claimDef1 = issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
+    claimDefId1 = ID(claimDef1.getKey())
+    claimDef2 = issuer.genClaimDef('XYZCorp', '1.0', XYZCorp.attribNames())
+    claimDefId2 = ID(claimDef2.getKey())
+
+    # 3. Create keys for the Claim Def
+    issuer.genKeys(claimDefId1, **primes1)
+    issuer.genKeys(claimDefId2, **primes2)
+
+    # 4. Issue accumulator
+    issuer.issueAccumulator(id=claimDefId1, iA='110', L=5)
+    issuer.issueAccumulator(id=claimDefId2, iA=9999999, L=5)
+
+    # 4. set attributes for user1
+    userId = '111'
+    attrs1 = GVT.attribs(name='Alex', age=28, height=175, sex='male')
+    attrs2 = XYZCorp.attribs(status='FULL', period=8)
+    attrRepo.addAttributes(claimDef1.getKey(), userId, attrs1)
+    attrRepo.addAttributes(claimDef2.getKey(), userId, attrs2)
+
+    # 5. request Claims
+    prover = Prover(ProverWalletInMemory(userId, publicRepo))
+    claimsReqs = prover.createClaimRequests([claimDefId1, claimDefId2])
+    claims = issuer.issueClaims(claimsReqs)
+    prover.processClaims(claims)
+
+    # 6. proof Claims
+    proofInput = ProofInput(
+        ['name'],
+        [PredicateGE('age', 18), PredicateGE('period', 5)])
+
+    verifier = Verifier(WalletInMemory('verifier1', publicRepo))
+    nonce = verifier.generateNonce()
+    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
+    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
+def testSingleIssuerSingleProverPrimaryOnly(primes1):
+    # 1. Init entities
+    publicRepo = PublicRepoInMemory()
+    attrRepo = AttributeRepoInMemory()
+    issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
 
-    # ...........................................................
+    # 2. Create a Claim Def
+    claimDef = issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
+    claimDefId = ID(claimDef.getKey())
 
+    # 3. Create keys for the Claim Def
+    issuer.genKeys(claimDefId, **primes1)
 
+    # 4. Issue accumulator
+    issuer.issueAccumulator(id=claimDefId, iA='110', L=5)
 
+    # 4. set attributes for user1
+    userId = '111'
+    attrs = GVT.attribs(name='Alex', age=28, height=175, sex='male')
+    attrRepo.addAttributes(claimDef.getKey(), userId, attrs)
 
+    # 5. request Claims
+    prover = Prover(ProverWalletInMemory(userId, publicRepo))
+    claimsReq = prover.createClaimRequest(claimDefId, False)
+    claims = issuer.issueClaim(claimDefId, claimsReq)
+    prover.processClaim(claimDefId, claims)
 
+    # 6. proof Claims
+    proofInput = ProofInput(
+        ['name'],
+        [PredicateGE('age', 18)])
 
-    #### Presentation
-
-    ### Verifier:
-
-    # attributes to be validated
-    proofInput = ProofInput(['status'],
-                            [PredicateGE('age', 18)])
-    # gen nonce
-    nonce = Verifier.generateNonce()
-
-    # ~~~> send attrs to be validated and Nonce to Prover
-
-
-    ### Prover:
-
-    # find claims needed to validate the attributes
-    # probably it can be defined outside anoncred protocol
-    # ---> load all claims (c1, c2)
-    allClaims = {issuerId1: Claims(c11, c21),
-                 issuerId2: Claims(c12, c22),}
-    proofClaims = Prover.findClaims(allClaims, proofInput)
-
-    # <--- load pk, pkR, accum1, g1, pkAccum1 for required issuers
-    prover = Prover(userId, {issuerId1: publicData1, issuerId2: publicData2}, m1)
-
-    # Prover updates witness
-    c2s = prover.updateNonRevocationClaims(proofClaims)
-    # ---> store c2s
-
-    # prepare proof
-    proof = prover.prepareProof(proofClaims, nonce)
-    # ~~~> send proof to verifier
-
-    ### Verifier:
-
-    # <--- load pk, pkR, accum1, g1, pkAccum1 for issuers participating in proof
-    verifId = 5555
-    verifier = Verifier(verifId, {issuerId1: publicData1, issuerId2: publicData2})
-
-    # verify proof
-    allRevealedAttrs = {'status': encodedAttrs2['status']}
-    assert verifier.verify(proof, allRevealedAttrs, nonce)
+    verifier = Verifier(WalletInMemory('verifier1', publicRepo))
+    nonce = verifier.generateNonce()
+    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
+    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)

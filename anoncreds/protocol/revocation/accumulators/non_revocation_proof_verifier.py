@@ -1,33 +1,37 @@
 from typing import Sequence
 
-from charm.toolbox.pairinggroup import PairingGroup
-
+from anoncreds.protocol.globals import PAIRING_GROUP
 from anoncreds.protocol.revocation.accumulators.non_revocation_common import createTauListExpectedValues, \
     createTauListValues
-from anoncreds.protocol.revocation.accumulators.non_revocation_proof_builder import NonRevocationProofBuilder
-from anoncreds.protocol.types import T, PublicData, \
-    NonRevocProof
+from anoncreds.protocol.types import T, NonRevocProof, ID, ProofInput
 from anoncreds.protocol.utils import bytes_to_ZR
+from anoncreds.protocol.wallet.wallet import Wallet
+from config.config import cmod
 
 
 class NonRevocationProofVerifier:
-    def __init__(self, publicData: PublicData):
-        self._groups = {x: PairingGroup(y.pkR.groupType) for x, y in publicData.items()}
-        self._data = publicData
+    def __init__(self, wallet: Wallet):
+        self._wallet = wallet
 
     @property
     def nonce(self):
         return self._nonce
 
-    def verifyNonRevocation(self, issuerId, cHash, nonRevocProof: NonRevocProof) -> Sequence[T]:
-        pk = self._data[issuerId].pkR
-        accum = self._data[issuerId].accum
-        accumPk = self._data[issuerId].pkAccum
+    def verifyNonRevocation(self, proofInput: ProofInput, claimDefKey, cHash, nonRevocProof: NonRevocProof) \
+            -> Sequence[T]:
+        if self._wallet.shouldUpdateAccumulator(id=ID(claimDefKey), ts=proofInput.ts, seqNo=proofInput.seqNo):
+            self._wallet.updateAccumulator(id=ID(claimDefKey), ts=proofInput.ts, seqNo=proofInput.seqNo)
+
+        pkR = self._wallet.getPublicKeyRevocation(ID(claimDefKey))
+        accum = self._wallet.getAccumulator(ID(claimDefKey))
+        accumPk = self._wallet.getPublicKeyAccumulator(ID(claimDefKey))
+
         CProof = nonRevocProof.CProof
         XList = nonRevocProof.XList
 
-        THatExpected = createTauListExpectedValues(pk, accum, accumPk, CProof)
-        THatCalc = createTauListValues(pk, accum, XList, CProof)
-        chNum_z = bytes_to_ZR(cHash, self._groups[issuerId])
+        group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
+        THatExpected = createTauListExpectedValues(pkR, accum, accumPk, CProof)
+        THatCalc = createTauListValues(pkR, accum, XList, CProof)
+        chNum_z = bytes_to_ZR(cHash, group)
 
         return [(x ** chNum_z) * y for x, y in zip(THatExpected.asList(), THatCalc.asList())]

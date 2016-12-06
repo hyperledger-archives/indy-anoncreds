@@ -1,52 +1,139 @@
 import logging
 import string
+import time
+from collections import OrderedDict
+from enum import Enum
 from hashlib import sha256
 from math import sqrt, floor
 from random import randint, sample
 from sys import byteorder
-from typing import Dict
+from typing import Dict, List, Set
 
 import base58
-from charm.core.math.integer import random, isPrime, integer
-from charm.toolbox.conversion import Conversion
-from charm.toolbox.pairinggroup import PairingGroup, pc_element, ZR
 
 from anoncreds.protocol.globals import KEYS, PK_R
-from anoncreds.protocol.types import T
+from anoncreds.protocol.globals import LARGE_PRIME, LARGE_MASTER_SECRET, LARGE_VPRIME, PAIRING_GROUP
+from config.config import cmod
 
 
 def randomQR(n):
-    return random(n) ** 2
+    return cmod.random(n) ** 2
 
 
-# def encodeAttrs(attrs):
-#     """
-#     This function will encode all the attributes to 256 bit integers
-#
-#     :param attrs: The attributes to pass in credentials
-#     :return:
-#     """
-#
-#     return {key: Conversion.bytes2integer(sha256(value.encode()).digest())
-#             for key, value in attrs.items()}
-
-
-def get_hash(*args, group: PairingGroup = None):
+def get_hash(*args, group: cmod.PairingGroup = None):
     """
     Enumerate over the input tuple and generate a hash using the tuple values
 
     :param args:
     :return:
     """
-    group = group if group else PairingGroup('SS1024')
+
+    group = group if group else cmod.PairingGroup(PAIRING_GROUP)
     h_challenge = sha256()
-    for arg in args:
-        if (type(arg) == pc_element):
-            byteArg = group.serialize(arg)
-            h_challenge.update(byteArg)
-        else:
-            h_challenge.update(Conversion.IP2OS(arg))
+
+    serialedArgs = [group.serialize(arg) if isGroupElement(arg)
+                    else cmod.Conversion.IP2OS(arg)
+                    for arg in args]
+
+    for arg in sorted(serialedArgs):
+        h_challenge.update(arg)
     return h_challenge.digest()
+
+
+CRYPTO_INT_PREFIX = 'CryptoInt_'
+INT_PREFIX = 'Int_'
+GROUP_PREFIX = 'Group_'
+BYTES_PREFIX = 'Bytes_'
+
+
+def serializeToStr(n):
+    if isCryptoInteger(n):
+        return CRYPTO_INT_PREFIX + cmod.serialize(n).decode()
+    if isInteger(n):
+        return INT_PREFIX + str(n)
+    if isGroupElement(n):
+        return GROUP_PREFIX + cmod.PairingGroup(PAIRING_GROUP).serialize(n).decode()
+    return n
+
+
+def deserializeFromStr(n: str):
+    if isStr(n) and n.startswith(CRYPTO_INT_PREFIX):
+        n = n[len(CRYPTO_INT_PREFIX):].encode()
+        return cmod.deserialize(n)
+
+    if isStr(n) and n.startswith(INT_PREFIX):
+        n = n[len(INT_PREFIX):]
+        return int(n)
+
+    if isStr(n) and n.startswith(GROUP_PREFIX):
+        n = n[len(GROUP_PREFIX):].encode()
+        res = cmod.PairingGroup(PAIRING_GROUP).deserialize(n)
+        # A fix for Identity element as serialized/deserialized not correctly
+        if str(res) == '[0, 0]':
+            return groupIdentityG1()
+        return res
+
+    return n
+
+
+def isCryptoInteger(n):
+    return isinstance(n, cmod.integer)
+
+
+def isGroupElement(n):
+    return isinstance(n, cmod.pc_element)
+
+
+def isInteger(n):
+    return isinstance(n, int)
+
+
+def isStr(n):
+    return isinstance(n, str)
+
+
+def isNamedTuple(n):
+    return isinstance(n, tuple)  # TODO: assume it's a named tuple
+
+
+def toDictWithStrValues(d):
+    if isNamedTuple(d):
+        return toDictWithStrValues(d._asdict())
+    if not isinstance(d, Dict):
+        return serializeToStr(d)
+    result = OrderedDict()
+    for key, value in d.items():
+        if isinstance(value, Dict):
+            result[serializeToStr(key)] = toDictWithStrValues(value)
+        elif isinstance(value, str):
+            result[serializeToStr(key)] = serializeToStr(value)
+        elif isNamedTuple(value):
+            result[serializeToStr(key)] = toDictWithStrValues(value._asdict())
+        elif isinstance(value, Set):
+            result[serializeToStr(key)] = {toDictWithStrValues(v) for v in value}
+        elif isinstance(value, List):
+            result[serializeToStr(key)] = [toDictWithStrValues(v) for v in value]
+        elif value:
+            result[serializeToStr(key)] = serializeToStr(value)
+    return result
+
+
+def fromDictWithStrValues(d):
+    if not isinstance(d, Dict) and not isinstance(d, tuple):
+        return deserializeFromStr(d)
+    result = OrderedDict()
+    for key, value in d.items():
+        if isinstance(value, Dict):
+            result[deserializeFromStr(key)] = fromDictWithStrValues(value)
+        elif isinstance(value, str):
+            result[deserializeFromStr(key)] = deserializeFromStr(value)
+        elif isinstance(value, Set):
+            result[deserializeFromStr(key)] = {fromDictWithStrValues(v) for v in value}
+        elif isinstance(value, List):
+            result[deserializeFromStr(key)] = [fromDictWithStrValues(v) for v in value]
+        elif value:
+            result[deserializeFromStr(key)] = deserializeFromStr(value)
+    return result
 
 
 def bytes_to_int(bytesHash):
@@ -55,7 +142,11 @@ def bytes_to_int(bytesHash):
 
 def bytes_to_ZR(bytesHash, group):
     cHNum = bytes_to_int(bytesHash)
-    return group.init(ZR, cHNum)
+    return group.init(cmod.ZR, cHNum)
+
+
+def groupIdentityG1():
+    return cmod.PairingGroup(PAIRING_GROUP).init(cmod.G1, 0)
 
 
 def get_values_of_dicts(*args):
@@ -70,21 +161,20 @@ def get_prime_in_range(start, end):
     maxIter = 100000
     while n < maxIter:
         r = randint(start, end)
-        if isPrime(r):
-            logging.debug("Found prime in {} iteration between {} and {}".
-                          format(n, start, end))
+        if cmod.isPrime(r):
+            logging.debug("Found prime in {} iterations".format(n))
             return r
         n += 1
     raise Exception("Cannot find prime in {} iterations".format(maxIter))
 
 
-def splitRevealedAttrs(attrs, revealedAttrs):
+def splitRevealedAttrs(encodedAttrs, revealedAttrs):
     # Revealed attributes
     Ar = {}
     # Unrevealed attributes
     Aur = {}
 
-    for k, value in attrs.items():
+    for k, value in encodedAttrs.items():
         if k in revealedAttrs:
             Ar[k] = value
         else:
@@ -118,14 +208,6 @@ def flattenDict(attrs):
             for x, y in z.items()}
 
 
-def strToCharmInteger(n):
-    if "mod" in n:
-        a, b = n.split("mod")
-        return integer(int(a.strip())) % integer(int(b.strip()))
-    else:
-        return integer(int(n))
-
-
 def largestSquareLessThan(x: int):
     sqrtx = int(floor(sqrt(x)))
     return sqrtx
@@ -142,22 +224,29 @@ def fourSquares(delta: int):
         raise Exception("Cannot get the four squares for delta {0}".format(delta))
 
 
-def updateDict(obj: Dict[str, Dict[str, T]], parentKey: str,
-               key: str, val: any):
-    parentVal = obj.get(parentKey, {})
-    parentVal[key] = val
-    obj[parentKey] = parentVal
+def strToCryptoInteger(n):
+    if "mod" in n:
+        a, b = n.split("mod")
+        return cmod.integer(int(a.strip())) % cmod.integer(int(b.strip()))
+    else:
+        return cmod.integer(int(n))
 
 
-def serialize(data, serfunc):
-    for k, v in data[KEYS].items():
-        if isinstance(v, integer):
-            # int casting works with Python 3 only.
-            # for Python 2, charm's serialization api must be used.
-            data[KEYS][k] = serfunc(v)
-        if k == PK_R:
-            data[KEYS][k] = {key: serfunc(val) for key, val in v.items()}
-    return data
+def strToInt(s):
+    return bytes_to_int(sha256(s.encode()).digest())
+
+
+def genPrime():
+    """
+    Generate 2 large primes `p_prime` and `q_prime` and use them
+    to generate another 2 primes `p` and `q` of 1024 bits
+    """
+    prime = cmod.randomPrime(LARGE_PRIME)
+    i = 0
+    while not cmod.isPrime(2 * prime + 1):
+        prime = cmod.randomPrime(LARGE_PRIME)
+        i += 1
+    return prime
 
 
 def base58encode(i):
@@ -169,5 +258,74 @@ def base58decode(i):
 
 
 def base58decodedInt(i):
-    # TODO: DO exception handling
-    return int(base58.b58decode(str(i)).decode())
+    try:
+        return int(base58.b58decode(str(i)).decode())
+    except Exception as ex:
+        raise AttributeError from ex
+
+
+class SerFmt(Enum):
+    default = 1
+    py3Int = 2
+    base58 = 3
+
+
+SerFuncs = {
+    SerFmt.py3Int: int,
+    SerFmt.default: cmod.integer,
+    SerFmt.base58: base58encode,
+}
+
+
+def serialize(data, serFmt):
+    serfunc = SerFuncs[serFmt]
+    if KEYS in data:
+        for k, v in data[KEYS].items():
+            if isinstance(v, cmod.integer):
+                # int casting works with Python 3 only.
+                # for Python 2, charm's serialization api must be used.
+                data[KEYS][k] = serfunc(v)
+            if k == PK_R:
+                data[KEYS][k] = {key: serfunc(val) for key, val in v.items()}
+    return data
+
+
+def generateMasterSecret():
+    # Generate the master secret
+    return cmod.integer(
+        cmod.randomBits(LARGE_MASTER_SECRET))
+
+
+def generateVPrime():
+    return cmod.randomBits(LARGE_VPRIME)
+
+
+def shorten(s, size=None):
+    size = size or 10
+    if isinstance(s, str):
+        if len(s) <= size:
+            return s
+        else:
+            head = int((size - 2) * 5 / 8)
+            tail = int(size) - 2 - head
+            return s[:head] + '..' + s[-tail:]
+    else:  # assume it's an iterable
+        return [shorten(x, size) for x in iter(s)]
+
+
+def shortenMod(s, size=None):
+    return ' mod '.join(shorten(str(s).split(' mod '), size))
+
+
+def shortenDictVals(d, size=None):
+    r = {}
+    for k, v in d.items():
+        if isinstance(v, dict):
+            r[k] = shortenDictVals(v, size)
+        else:
+            r[k] = shortenMod(v, size)
+    return r
+
+
+def currentTimestampMillisec():
+    return int(time.time() * 1000)  # millisec

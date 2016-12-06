@@ -1,64 +1,47 @@
 import pytest
 
 from anoncreds.protocol.types import ProofInput, PredicateGE
+from anoncreds.test.conftest import presentProofAndVerify
 
 
-def testNoPredicates(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt, attrsProver1Xyz):
+def testNoPredicates(prover1, verifier, claimsProver1):
     proofInput = ProofInput(['name', 'status'], [])
-    revealedAttrs = {'name': attrsProver1Gvt['name'],
-                     'status': attrsProver1Xyz['status']}
-
-    proof = prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
-    assert verifier.verify(proof, revealedAttrs, nonce)
+    assert presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testGePredicate(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt):
+def testGePredicate(prover1, verifier, claimsProver1):
     proofInput = ProofInput(['name'], [PredicateGE('period', 5)])
-    revealedAttrs = {'name': attrsProver1Gvt['name']}
-
-    proof = prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
-    assert verifier.verify(proof, revealedAttrs, nonce)
+    assert presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testGePredicateForEqual(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt):
+def testGePredicateForEqual(prover1, verifier, claimsProver1):
     proofInput = ProofInput(['name'], [PredicateGE('period', 8)])
-    revealedAttrs = {'name': attrsProver1Gvt['name']}
-
-    proof = prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
-    assert verifier.verify(proof, revealedAttrs, nonce)
+    assert presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testGePredicateNegative(prover1, allClaimsProver1, nonce):
+def testGePredicateNegative(prover1, verifier, claimsProver1):
     proofInput = ProofInput(['name'], [PredicateGE('period', 9)])
     with pytest.raises(ValueError):
-        prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
+        presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testMultipleGePredicate(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt):
+def testMultipleGePredicate(prover1, verifier, claimsProver1):
     proofInput = ProofInput(['name'],
                             [PredicateGE('age', 18),
                              PredicateGE('period', 5)])
-    revealedAttrs = {'name': attrsProver1Gvt['name']}
-
-    proof = prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
-    assert verifier.verify(proof, revealedAttrs, nonce)
+    presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testMultipleGePredicateMultipleRevealed(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt,
-                                            attrsProver1Xyz):
+def testMultipleGePredicateMultipleRevealed(prover1, verifier, claimsProver1):
     proofInput = ProofInput(['name', 'status'],
                             [PredicateGE('age', 18),
                              PredicateGE('period', 5)])
-    revealedAttrs = {'name': attrsProver1Gvt['name'],
-                     'status': attrsProver1Xyz['status']}
-
-    proof = prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
-    assert verifier.verify(proof, revealedAttrs, nonce)
+    presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testMultipleGePredicateNegative(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt):
+def testMultipleGePredicateNegative(prover1, verifier, claimsProver1):
     proofInput = ProofInput(['name'],
                             [PredicateGE('age', 18),
                              PredicateGE('period', 9)])
     with pytest.raises(ValueError):
-        prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
+        presentProofAndVerify(verifier, proofInput, prover1)

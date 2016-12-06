@@ -1,128 +1,110 @@
 import pytest
 
 from anoncreds.protocol.types import ProofInput, PredicateGE, Claims, ProofClaims
-from anoncreds.test.conftest import issuerId1
+from anoncreds.test.conftest import presentProofAndVerify
 
 
-def testNoClaims(prover1, verifier, nonce):
-    proof = prover1.prepareProof(
-        {issuerId1: ProofClaims(Claims())},
-        nonce)
-    assert verifier.verify(proof, [], nonce)
+def testPrimaryClaimOnlyEmpty(prover1, verifier, claimsProver1Gvt, nonce):
+    proofInput = ProofInput([])
+    claims, revealedAttrs = prover1._findClaims(proofInput)
+    claims = {claimDefKey: ProofClaims(Claims(primaryClaim=proofClaim.claims.primaryClaim))
+              for claimDefKey, proofClaim in claims.items()}
+    proof = prover1._prepareProof(claims, nonce)
+    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
-def testNonRevocClaimOnly(prover1, verifier, initNonRevocClaimProver1Gvt, nonce):
-    proof = prover1.prepareProof(
-        {issuerId1: ProofClaims(Claims(nonRevocClaim=initNonRevocClaimProver1Gvt))},
-        nonce)
-    assert verifier.verify(proof, [], nonce)
+def testPrimaryClaimNoPredicates(prover1, verifier, claimsProver1Gvt, nonce, claimDefGvtId,
+                                 attrRepo):
+    revealledAttrs = ['name']
+    proofInput = ProofInput(revealledAttrs)
+    claims, revealedAttrs = prover1._findClaims(proofInput)
+    claims = {
+        claimDefKey: ProofClaims(Claims(primaryClaim=proofClaim.claims.primaryClaim), revealedAttrs=revealledAttrs)
+        for claimDefKey, proofClaim in claims.items()}
+    proof = prover1._prepareProof(claims, nonce)
+    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
-def testPrimaryClaimOnlyEmpty(prover1, verifier, initPrimaryClaimProver1Gvt, nonce):
-    proof = prover1.prepareProof(
-        {issuerId1: ProofClaims(Claims(primaryClaim=initPrimaryClaimProver1Gvt))},
-        nonce)
-    assert verifier.verify(proof, [], nonce)
+def testPrimaryClaimPredicatesOnly(prover1, verifier, claimsProver1Gvt, nonce, claimDefGvtId,
+                                   attrRepo):
+    predicates = [PredicateGE('age', 18)]
+    proofInput = ProofInput(predicates=predicates)
+    claims, revealedAttrs = prover1._findClaims(proofInput)
+    claims = {claimDefKey: ProofClaims(Claims(primaryClaim=proofClaim.claims.primaryClaim), predicates=predicates)
+              for claimDefKey, proofClaim in claims.items()}
+    proof = prover1._prepareProof(claims, nonce)
+    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
-def testPrimaryClaimNoPredicates(prover1, verifier, initPrimaryClaimProver1Gvt, attrsProver1Gvt, nonce):
-    revealedAttrs = {'name': attrsProver1Gvt['name']}
-    proofCliams = ProofClaims(Claims(primaryClaim=initPrimaryClaimProver1Gvt),
-                              revealedAttrs=['name'])
-    proof = prover1.prepareProof({issuerId1: proofCliams}, nonce)
-    assert verifier.verify(proof, revealedAttrs, nonce)
+def testEmpty(prover1, verifier, claimsProver1Gvt):
+    assert presentProofAndVerify(verifier, ProofInput(), prover1)
 
 
-def testPrimaryClaimPredicatesOnly(prover1, verifier, initPrimaryClaimProver1Gvt, nonce):
-    proofCliams = ProofClaims(Claims(primaryClaim=initPrimaryClaimProver1Gvt),
-                              predicates=[PredicateGE('age', 18)])
-    proof = prover1.prepareProof({issuerId1: proofCliams}, nonce)
-    assert verifier.verify(proof, [], nonce)
-
-
-def testNoPredicates(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt):
+def testNoPredicates(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [])
-    revealedAttrs = {'name': attrsProver1Gvt['name']}
-
-    proof = prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
-    assert verifier.verify(proof, revealedAttrs, nonce)
+    assert presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testMultipleRevealedAttrs(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt):
+def testMultipleRevealedAttrs(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name', 'sex'], [])
-    revealedAttrs = {'name': attrsProver1Gvt['name'],
-                     'sex': attrsProver1Gvt['sex']}
-
-    proof = prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
-    assert verifier.verify(proof, revealedAttrs, nonce)
+    assert presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testGePredicate(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt):
+def testGePredicate(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
-    revealedAttrs = {'name': attrsProver1Gvt['name']}
-
-    proof = prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
-    assert verifier.verify(proof, revealedAttrs, nonce)
+    assert presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testGePredicateForEqual(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt):
+def testGePredicateForEqual(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 28)])
-    revealedAttrs = {'name': attrsProver1Gvt['name']}
-
-    proof = prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
-    assert verifier.verify(proof, revealedAttrs, nonce)
+    assert presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testGePredicateNegative(prover1, allClaimsProver1, nonce):
+def testGePredicateNegative(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 29)])
     with pytest.raises(ValueError):
-        prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
+        assert presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testMultipleGePredicate(prover1, allClaimsProver1, verifier, nonce, attrsProver1Gvt):
+def testMultipleGePredicate(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'],
                             [PredicateGE('age', 18),
                              PredicateGE('height', 170)])
-    revealedAttrs = {'name': attrsProver1Gvt['name']}
-
-    proof = prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
-    assert verifier.verify(proof, revealedAttrs, nonce)
+    assert presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testMultipleGePredicateNegative(prover1, allClaimsProver1, nonce):
+def testMultipleGePredicateNegative(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'],
                             [PredicateGE('age', 18),
                              PredicateGE('height', 180)])
     with pytest.raises(ValueError):
-        prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
+        presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testNonceShouldBeSame(prover1, allClaimsProver1, verifier, nonce, genNonce, attrsProver1Gvt):
+def testNonceShouldBeSame(prover1, verifier, claimsProver1Gvt, nonce, genNonce):
+    revealedAttrs = ['name']
+    proofInput = ProofInput(revealedAttrs, [])
+    proof, revealedAttrs = prover1.presentProof(proofInput, nonce)
+    assert not verifier.verify(proofInput, proof, revealedAttrs, genNonce)
+
+
+def testUParamShouldBeSame(prover1, verifier, issuerGvt, claimDefGvtId, attrsProver1Gvt, keysGvt,
+                           issueAccumulatorGvt):
+    claimsReq = prover1.createClaimRequest(claimDefGvtId)
+
+    claimsReq = claimsReq._replace(U=claimsReq.U ** 2)
+    claims = issuerGvt.issueClaim(claimDefGvtId, claimsReq)
+    prover1.processClaim(claimDefGvtId, claims)
+
     proofInput = ProofInput(['name'], [])
-    revealedAttrs = {'name': attrsProver1Gvt['name']}
-
-    proof = prover1.findClaimsAndPrepareProof(allClaimsProver1, proofInput, nonce)
-    assert not verifier.verify(proof, revealedAttrs, genNonce)
+    assert not presentProofAndVerify(verifier, proofInput, prover1)
 
 
-def testUParamShouldBeSame(issuerGvt, prover1, verifier,
-                           attrsProver1Gvt, m2GvtProver1,
-                           prover1Initializer, nonRevocClaimProver1Gvt,
-                           prover1UGvt, nonce):
-    incorrectU = prover1UGvt[0] ** 2
-    c1 = issuerGvt.issuePrimaryClaim(attrsProver1Gvt, m2GvtProver1, U=incorrectU)
-    c1 = prover1Initializer.initPrimaryClaim(issuerId1, c1)
+def testUrParamShouldBeSame(prover1, issuerGvt, claimDefGvtId, attrsProver1Gvt, keysGvt, issueAccumulatorGvt):
+    claimsReq = prover1.createClaimRequest(claimDefGvtId)
 
-    allClaims = {issuerId1: Claims(c1, nonRevocClaimProver1Gvt)}
-    proofInput = ProofInput(['name'], [])
-    revealedAttrs = {'name': attrsProver1Gvt['name']}
+    claimsReq = claimsReq._replace(Ur=claimsReq.Ur ** 2)
+    claims = issuerGvt.issueClaim(claimDefGvtId, claimsReq)
 
-    proof = prover1.findClaimsAndPrepareProof(allClaims, proofInput, nonce)
-    assert not verifier.verify(proof, revealedAttrs, nonce)
-
-
-def testUrParamShouldBeSame(issuerGvt, m2GvtProver1, prover1Initializer, prover1UGvt):
-    incorrectUr = prover1UGvt[1] ** 2
-    c2 = issuerGvt.issueNonRevocationClaim(m2GvtProver1, Ur=incorrectUr)
     with pytest.raises(ValueError):
-        prover1Initializer.initNonRevocationClaim(issuerId1, c2)
+        prover1.processClaim(claimDefGvtId, claims)

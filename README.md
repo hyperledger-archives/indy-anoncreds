@@ -1,30 +1,29 @@
 # AnonCreds: Anonymous credentials protocol implementation in python
 
-Implementation of Anonymous Credential using python.
+This is a python implementation of the anonymous credentials ideas
+developed by IBM Research (see https://idemix.wordpress.com/ and
+http://www.research.ibm.com/labs/zurich/idemix/). We have built
+some additional features for revocation.
 
-## Setup the project and dependencies
-Execute `bash setup.sh`
+Anonymous Credentials requires a cryptographic framework. We have tested it with charm-crypto.
+ 
+# Installation of charm-crypto
+ 
+## Installation on Linux
+ 
+To install charm-crypto you just have to run `setup-charm.sh` script. It will require sudo privileges on the system.
 
-## Questions related to AnonCreds and their responses from Dmitry
+## Installation on Mac
 
-1. What does *Gamma* denote? 
-A: It is a number derived as 1 + product of ‘b’ and ‘rho’. It must be prime, so a few (b,rho) must be generated to have this.
+As a prerequisite first install http://brew.sh and OpenSLL https://solitum.net/openssl-os-x-el-capitan-and-brew
 
-2. Is *r* random prime or just a random number `< rho`?
-A: Just random number
+Then:
 
-3. What does the combination (Gamma, rho, g, h) denote?
-A: It is a 4-tuple of numbers that constitutes a public parameter to compute pseudonyms.
+`git clone https://github.com/evernym/anoncreds.git`
 
-# Questions regarding Predicate implementation with AnonCreds:
-4. In Prepare Proof, step 2, is (mj >= zj) the condition we want to prove? 
-A: Yes
+`sh setup-charm-homebrew.sh`
 
-5. Are u1, u2 ... u4 random integers? If yes, is there any specific criteria to calculate them or just brute-force mechanism?
-A: any integers that satisfy equation. They must be found by some algorithm, possibly bruteforce for small Delta
+## Installation on Windows
 
-6. Is the count of `u` fixed a 4 or will it vary with number of attributes? What exactly is u?
-A: always 4
-
-7. Is the mathematical proof of the implementation still valid, with all the changes needed to support predicates?
-A: Everything remains valid, yes
+Please refer to the following guide on how to install charm-crypto on Windows x64: 
+[Windows Installation](windows-installation-guide.md)

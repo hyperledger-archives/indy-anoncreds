@@ -1,12 +1,11 @@
 @startuml
-participant "Issuer" as I
 actor Prover as P
+participant "Issuer" as I
 participant "Verifier" as V
 participant "Sovrin" as S
 participant "Reliable\nPublic Storage" as D
 
 note over I, D #white
-    Txns description: https://docs.google.com/document/d/1N-OnXYESb-30Y5ypQJNqY3jAmtFDK_QDhNzzCc4Kgq8/edit#
     dashed arrows: a value may be cached, so a call to the ledger/public storage may not be needed
     <font color=green>green:</font> submit/get to/from Sovrin
     <font color=blue>blue:</font> submit/get to/from Reliable Public Storage
@@ -38,19 +37,20 @@ I -[#green]> S: Submit Accumulator Definition: **REVOC_REG** txn
 I -[#blue]> D: Publish **Tails**
 
 
-== Prover setup ==
+== Claim Issuance for a Claim Definition==
+
 
 note over P: Generate Master Secret **m1**
 
 P -> P: Store **m1**
 
-== Issuance for a Claim Definition==
+S -[#green]-> P: Get **PK** and **PKr**: **ISSUER_KEY** txn
 
-S -[#green]-> I: Get **accum** value: **REVOC_REG_UPDATE** txn
+note over P: **P1.** generate U, vPrime, Ur and vrPrime with prover-generated values
 
-S -[#green]-> I: Get **PKaccum** value: **REVOC_REG** txn
+P -> P: Store **vPrime**, **vrPrime**
 
-S -[#green]-> I: Get **PK** and **PKr**: **ISSUER_KEY** txn
+P -[#black]> I: **P2.** Request Claim for the given Claim Def, U and Ur.
 
 note over I
     **I1.** Set attribute values **m3,...ml** and encode to 256 bits
@@ -60,13 +60,12 @@ end note
 
 I -> I: Store **m2,...,ml**
 
-I -[#black]> P: **I4.** request U and Ur for given ClaimDef and m2
+S -[#green]-> I: Get **accum** value: **REVOC_REG_UPDATE** txn
 
-S -[#green]-> P: Get **PK** and **PKr**: **ISSUER_KEY** txn
+S -[#green]-> I: Get **PKaccum** value: **REVOC_REG** txn
 
-note over P: **P1.** generate U and Ur with prover-generated values
+S -[#green]-> I: Get **PK** and **PKr**: **ISSUER_KEY** txn
 
-P -[#black]> I: U and Ur
 
 note over I
     **I5.** Create Primary Claim Credentials **c1=c1(...,{m2,m3,...ml},...)**
@@ -74,26 +73,26 @@ note over I
     **I7.** Update Revocation Registry (**accum**)
 end note
 
-I -[#black]> P: Send **c1**, **c2**, **accum**
-
 I -[#green]> S: Submit accumulator update: **REVOC_REG_UPDATE** txn
+
+I -[#black]> P: Send **c1**, **c2**, **m2**
 
 S -[#green]-> P: Get **PKaccum** value: **REVOC_REG** txn
 
 note over P
-    **P2.** Init **c1** and **c2** with prover-generated values
-    **P3.** Check that **c2** is correct
-endnote
+    **P3.** update **c1**, **c2** with **vPrime, vrPrime**
+    **P4.** Check that **c2** is correct
+end note
 
-P -> P: Store **c1** and **c2**
+P -> P: Store **c1,c2,m2**
 
-P -> P: Store current **accum** value
 
 == Presentation for each Claim Definition ==
 
-note over V: **V1.** Generate nonce **n1**
-
-V -[#black]> P: **V2.** Request a proof for the ClaimDef:\n **revealedAttributes, predicates, accumSeqNo/TS, n1**
+note over P
+    **P1.** Take nonce **n1** from a Verifier's link
+    **P1.** Take **revealedAttributes, predicates, accumSeqNo/TS** from a Verifier's link
+end note
 
 S -[#green]-> P: Get **PK** and **PKr**: **ISSUER_KEY** txn
 
@@ -101,14 +100,14 @@ S -[#green]-> P: Get **PKaccum** value: **REVOC_REG** txn
 
 D -[#blue]-> P: Get **Tails**
 
-note over P: **P1.** Check accumSeqNo/TS of the last **accum**\n and update the latest accum if needed
+note over P: **P3.** Check accumSeqNo/TS of the last **accum**\n and update the latest accum if needed
 
 S -[#green]> P: Update **accum** and get all issued/revoced since the last update: **GET_TXNS** query request
 
 note over P
-    **P2.** Update **c2** (witness) for the latest **accum**
-    **P3.** Create Primary Proof for **c1** and each predicate: **PrC**
-    **P4.** Create NonRevocationProof for **c2**: **PrP**
+    **P4.** Update **c2** (witness) for the latest **accum**
+    **P5.** Create Primary Proof for **c1** and each predicate: **PrC**
+    **P6.** Create NonRevocationProof for **c2**: **PrP**
 end note
 
 P -[#black]> V: Send Full Proof: **Pr=(PrC, PrP)**
@@ -119,7 +118,7 @@ S -[#green]-> V: Get **PK** and **PKr**: **ISSUER_KEY** txn
 
 S -[#green]-> V: Get **PKaccum** value: **REVOC_REG** txn
 
-note over V: **V3.** Verify **Pr**
+note over V: **V1.** Verify **Pr**
 
 
 

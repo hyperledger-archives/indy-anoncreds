@@ -4,7 +4,7 @@ participant "Issuer" as I
 participant "Verifier" as V
 participant "Public Repo" as S
 
-note over I, D #white
+note over I, S #white
     dashed arrows: a value may be cached, so a call to the ledger/public storage may not be needed
     <font color=green>green:</font> submit/get to/from Public Repo
     black: communication between Issuer/Prover/Verifier

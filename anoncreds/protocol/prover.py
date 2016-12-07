@@ -31,14 +31,15 @@ class Prover:
     def id(self):
         return self.wallet.id
 
-    def createClaimRequest(self, id: ID, reqNonRevoc=True) -> ClaimRequest:
+    def createClaimRequest(self, id: ID, proverId=None, reqNonRevoc=True) -> ClaimRequest:
         self._genMasterSecret(id)
         U = self._genU(id)
         Ur = None if not reqNonRevoc else self._genUr(id)
-        return ClaimRequest(userId=self.id, U=U, Ur=Ur)
+        proverId = proverId if proverId else self.id
+        return ClaimRequest(userId=proverId, U=U, Ur=Ur)
 
-    def createClaimRequests(self, ids: Sequence[ID], reqNonRevoc=True) -> Dict[ID, ClaimRequest]:
-        return {id: self.createClaimRequest(id, reqNonRevoc) for id in ids}
+    def createClaimRequests(self, ids: Sequence[ID], proverId=None, reqNonRevoc=True) -> Dict[ID, ClaimRequest]:
+        return {id: self.createClaimRequest(id, proverId, reqNonRevoc) for id in ids}
 
     def processClaim(self, id: ID, claims: Claims):
         self.wallet.submitContextAttr(id, claims.primaryClaim.m2)

@@ -163,7 +163,7 @@ def testSingleIssuerSingleProverPrimaryOnly(primes1):
 
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
-    claimsReq = prover.createClaimRequest(claimDefId, False)
+    claimsReq = prover.createClaimRequest(claimDefId, None, False)
     claims = issuer.issueClaim(claimDefId, claimsReq)
     prover.processClaim(claimDefId, claims)
 

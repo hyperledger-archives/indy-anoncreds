@@ -1,0 +1,45 @@
+@startuml
+
+package  anoncreds.repo {
+
+interface PublicRepo
+interface AttributesRepo
+
+}
+
+
+
+package  anoncreds {
+
+class Issuer
+class Prover
+class Verifier
+
+
+}
+
+package  sovrin.anoncreds {
+
+Issuer <|-- SovrinIssuer
+Prover <|-- SovrinProver
+Verifier <|-- SovrinVerifier
+
+PublicRepo <|-- SovrinPublicRepo
+}
+
+package  sovrin.agent #DDDDDD {
+
+AgentIssuer o--SovrinIssuer
+AgentProver o--SovrinProver
+AgentVerifier o--SovrinVerifier
+
+AgentIssuer <|-- Walleted
+AgentProver <|-- Walleted
+AgentVerifier <|-- Walleted
+Walleted <|-- WalletedAgent
+Agent <|-- WalletedAgent
+
+}
+
+
+@enduml

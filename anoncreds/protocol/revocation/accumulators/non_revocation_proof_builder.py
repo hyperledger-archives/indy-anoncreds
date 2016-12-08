@@ -4,7 +4,7 @@ from anoncreds.protocol.revocation.accumulators.non_revocation_common import cre
 from anoncreds.protocol.types import NonRevocationClaim, NonRevocInitProof, \
     NonRevocProofXList, NonRevocProofCList, NonRevocProof, \
     ID, ClaimInitDataType
-from anoncreds.protocol.utils import bytes_to_ZR
+from anoncreds.protocol.utils import int_to_ZR
 from anoncreds.protocol.wallet.prover_wallet import ProverWallet
 from config.config import cmod
 
@@ -113,7 +113,7 @@ class NonRevocationProofBuilder:
             return None
 
         group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
-        chNum_z = bytes_to_ZR(cH, group)
+        chNum_z = int_to_ZR(cH, group)
         XList = NonRevocProofXList.fromList(
             [x - chNum_z * y for x, y in zip(initProof.TauListParams.asList(), initProof.CListParams.asList())]
         )

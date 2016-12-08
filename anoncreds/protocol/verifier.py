@@ -4,7 +4,7 @@ from anoncreds.protocol.globals import LARGE_NONCE
 from anoncreds.protocol.primary.primary_proof_verifier import PrimaryProofVerifier
 from anoncreds.protocol.revocation.accumulators.non_revocation_proof_verifier import NonRevocationProofVerifier
 from anoncreds.protocol.types import FullProof, ProofInput
-from anoncreds.protocol.utils import get_hash
+from anoncreds.protocol.utils import get_hash_as_int
 from anoncreds.protocol.wallet.wallet import Wallet
 from config.config import cmod
 
@@ -37,4 +37,4 @@ class Verifier:
         return CHver == proof.cHash
 
     def _get_hash(self, CList, TauList, nonce):
-        return get_hash(nonce, *reduce(lambda x, y: x + y, [TauList, CList]))
+        return get_hash_as_int(nonce, *reduce(lambda x, y: x + y, [TauList, CList]))

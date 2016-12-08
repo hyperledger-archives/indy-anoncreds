@@ -20,7 +20,7 @@ def randomQR(n):
     return cmod.random(n) ** 2
 
 
-def get_hash(*args, group: cmod.PairingGroup = None):
+def get_hash_as_int(*args, group: cmod.PairingGroup = None):
     """
     Enumerate over the input tuple and generate a hash using the tuple values
 
@@ -37,7 +37,7 @@ def get_hash(*args, group: cmod.PairingGroup = None):
 
     for arg in sorted(serialedArgs):
         h_challenge.update(arg)
-    return h_challenge.digest()
+    return bytes_to_int(h_challenge.digest())
 
 
 CRYPTO_INT_PREFIX = 'CryptoInt_'
@@ -140,9 +140,8 @@ def bytes_to_int(bytesHash):
     return int.from_bytes(bytesHash, byteorder=byteorder)
 
 
-def bytes_to_ZR(bytesHash, group):
-    cHNum = bytes_to_int(bytesHash)
-    return group.init(cmod.ZR, cHNum)
+def int_to_ZR(intHash, group):
+    return group.init(cmod.ZR, intHash)
 
 
 def groupIdentityG1():

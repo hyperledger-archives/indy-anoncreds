@@ -6,7 +6,7 @@ from anoncreds.protocol.repo.attributes_repo import AttributeRepo
 from anoncreds.protocol.revocation.accumulators.non_revocation_claim_issuer import NonRevocationClaimIssuer
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, \
     ClaimDefinition, ID, Claims, ClaimRequest
-from anoncreds.protocol.utils import get_hash, bytes_to_int, strToInt
+from anoncreds.protocol.utils import strToInt, get_hash_as_int
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
 from config.config import cmod
 
@@ -67,7 +67,7 @@ class Issuer:
         iA = strToInt(str(iA))
         userId = strToInt(str(userId))
         S = iA | userId
-        H = bytes_to_int(get_hash(S))
+        H = get_hash_as_int(S)
         m2 = cmod.integer(H % (2 ** LARGE_MASTER_SECRET))
         self.wallet.submitContextAttr(id, m2)
         return m2

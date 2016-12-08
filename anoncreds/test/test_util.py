@@ -1,8 +1,8 @@
 from collections import OrderedDict
 
 from anoncreds.protocol.globals import PAIRING_GROUP
-from anoncreds.protocol.utils import get_hash, toDictWithStrValues, \
-    deserializeFromStr, serializeToStr, fromDictWithStrValues
+from anoncreds.protocol.utils import toDictWithStrValues, \
+    deserializeFromStr, serializeToStr, fromDictWithStrValues, get_hash_as_int
 from anoncreds.test.conftest import primes
 from config.config import cmod
 
@@ -185,6 +185,6 @@ def testGetHashMixed():
 
 
 def _checkHashEqual(input):
-    h1 = get_hash(*input)
-    h2 = get_hash(*reversed(input))
+    h1 = get_hash_as_int(*input)
+    h2 = get_hash_as_int(*reversed(input))
     assert h1 == h2

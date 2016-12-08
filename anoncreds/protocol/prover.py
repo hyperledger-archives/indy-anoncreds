@@ -8,7 +8,7 @@ from anoncreds.protocol.revocation.accumulators.non_revocation_proof_builder imp
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, Proof, InitProof, ProofInput, ProofClaims, \
     FullProof, \
     ClaimDefinition, ID, ClaimDefinitionKey, ClaimRequest, Claims
-from anoncreds.protocol.utils import get_hash
+from anoncreds.protocol.utils import get_hash_as_int
 from anoncreds.protocol.wallet.prover_wallet import ProverWallet
 from config.config import cmod
 
@@ -175,4 +175,4 @@ class Prover:
         return TauList
 
     def _get_hash(self, CList, TauList, nonce):
-        return get_hash(nonce, *reduce(lambda x, y: x + y, [TauList, CList]))
+        return get_hash_as_int(nonce, *reduce(lambda x, y: x + y, [TauList, CList]))

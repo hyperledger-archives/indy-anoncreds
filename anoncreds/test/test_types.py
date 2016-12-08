@@ -34,6 +34,11 @@ def testClaimsFromToDict(claimsProver1Gvt):
     assert claimsProver1Gvt == Claims.fromStrDict(claimsProver1Gvt.toStrDict())
 
 
+def testClaimsFromToDictPrimaryOnly(claimsProver1Gvt):
+    claims = Claims(primaryClaim=claimsProver1Gvt.primaryClaim)
+    assert claims == Claims.fromStrDict(claims.toStrDict())
+
+
 def testClaimProofFromToDict(prover1, nonce, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
     proof = prover1.presentProof(proofInput, nonce)[0]

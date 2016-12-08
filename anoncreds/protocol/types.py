@@ -260,7 +260,9 @@ class Claims(namedtuple('Claims', 'primaryClaim nonRevocClaim'), NamedTupleStrSe
     @classmethod
     def fromStrDict(cls, d):
         primary = PrimaryClaim.fromStrDict(d['primaryClaim'])
-        nonRevoc = NonRevocationClaim.fromStrDict(d['nonRevocClaim'])
+        nonRevoc = None
+        if 'nonRevocClaim' in d:
+            nonRevoc = NonRevocationClaim.fromStrDict(d['nonRevocClaim'])
         return Claims(primaryClaim=primary, nonRevocClaim=nonRevoc)
 
 

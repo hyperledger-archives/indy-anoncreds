@@ -422,7 +422,9 @@ class Proof(namedtuple('Proof', 'primaryProof nonRevocProof'), NamedTupleStrSeri
     @classmethod
     def fromStrDict(cls, d):
         primaryProof = PrimaryProof.fromStrDict(d['primaryProof'])
-        nonRevocProof = NonRevocProof.fromStrDict(d['nonRevocProof'])
+        nonRevocProof = None
+        if 'nonRevocProof' in d:
+            nonRevocProof = NonRevocProof.fromStrDict(d['nonRevocProof'])
         return Proof(primaryProof=primaryProof, nonRevocProof=nonRevocProof)
 
 

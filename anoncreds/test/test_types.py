@@ -1,5 +1,5 @@
 from anoncreds.protocol.types import PublicKey, ClaimDefinition, Claims, ProofInput, PredicateGE, FullProof, \
-    ClaimDefinitionKey, ClaimRequest
+    ClaimDefinitionKey, ClaimRequest, Proof
 from anoncreds.protocol.utils import toDictWithStrValues, fromDictWithStrValues
 from config.config import cmod
 
@@ -45,12 +45,21 @@ def testClaimProofFromToDict(prover1, nonce, claimsProver1Gvt):
     assert proof == FullProof.fromStrDict(proof.toStrDict())
 
 
+def testClaimProofFromToDictPrimaryOnly(prover1, nonce, claimsProver1Gvt):
+    proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
+    proof = prover1.presentProof(proofInput, nonce)[0]
+
+    proofs = [Proof(primaryProof=proof.proofs[0].primaryProof)]
+    proof = proof._replace(proofs=proofs)
+    assert proof == FullProof.fromStrDict(proof.toStrDict())
+
+
 def testProofInputFromToDict():
     proofInput = ProofInput(['name', 'age'], [PredicateGE('age', 18), PredicateGE('age', 25)])
     assert proofInput == ProofInput.fromStrDict(proofInput.toStrDict())
 
 
-def testRevealedAttrsFromToDict(attrRepo, prover1, claimsProver1Gvt):
+def testRevealedAttrsFromToDict(prover1, nonce, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
-    revealedAttrs = attrRepo.getRevealedAttributesForProver(prover1, proofInput.revealedAttrs).encoded()
+    revealedAttrs = prover1.presentProof(proofInput, nonce)[1]
     assert revealedAttrs == fromDictWithStrValues(toDictWithStrValues(revealedAttrs))

@@ -4,35 +4,42 @@ package  anoncreds.repo {
 
 interface PublicRepo
 interface AttributesRepo
+interface LocalRepo
+interface IssuerLocalRepo
+interface ProverLocalRepo
 
 class PublicRepoInMemory
+class LocalRepoInMemory
+class IssuerLocalRepoInMemory
+class ProverLocalRepoInMemory
 class AttributesRepoInMemory
 
 AttributesRepo <|-- AttributesRepoInMemory
 PublicRepo <|-- PublicRepoInMemory
+
+LocalRepo <|-- IssuerLocalRepo
+LocalRepo <|-- ProverLocalRepo
+
+LocalRepo <|-- LocalRepoInMemory
+LocalRepoInMemory <|-- IssuerLocalRepoInMemory
+LocalRepoInMemory <|-- ProverLocalRepoInMemory
+
+IssuerLocalRepo <|-- IssuerLocalRepoInMemory
+ProverLocalRepo <|-- ProverLocalRepoInMemory
 }
 
 
 package  anoncreds.wallet {
 
-interface Wallet
-interface IssuerWallet
-interface ProverWallet
-
-class WalletInMemory
-class IssuerWalletInMemory
-class ProverWalletInMemory
+class Wallet
+class Wallet <|-- IssuerWallet
+class Wallet <|-- ProverWallet
 
 Wallet o-- PublicRepo
-Wallet <|-- IssuerWallet
-Wallet <|-- ProverWallet
-Wallet <|-- WalletInMemory
+Wallet o-- LocalRepo
 
-IssuerWallet <|-- IssuerWalletInMemory
-WalletInMemory <|-- IssuerWalletInMemory
-
-IssuerWallet <|-- ProverWalletInMemory
-WalletInMemory <|-- ProverWalletInMemory
+IssuerWallet o-- IssuerLocalRepo
+ProverWallet o-- ProverLocalRepo
 }
 
 

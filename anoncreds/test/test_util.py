@@ -10,7 +10,3 @@ def testGetHash():
     h2 = get_hash(*reversed(sorted(mathInput)))
 
     assert h1 == h2
-
-
-def testPipeline():
-	  assert False

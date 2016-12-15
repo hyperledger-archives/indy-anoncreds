@@ -16,7 +16,7 @@ else
   PACKAGE_MANAGER=apt-get
   PKG_SSL=libssl-dev
   PKG_GMP=libgmp-dev
-  PKG_PYTHON=pytddhon3-dev
+  PKG_PYTHON=python3-dev
 fi
 
 [[ ! -z $PKG_FLEX ]] && sudo $PACKAGE_MANAGER -y install $PKG_FLEX

@@ -6,10 +6,10 @@ PKG_BISON=bison
 
 if [ -f /etc/redhat-release ]
 then
+  # assumes this is a RedHat-based system.
   PACKAGE_MANAGER=yum
   PKG_SSL=openssl-devel
   PKG_GMP=gmp-devel
-  PKG_PYTHON=python34-devel
 else
   # assumes `apt-get` if not a RedHat-based system, which is
   # probably not a good assumption.
@@ -19,11 +19,11 @@ else
   PKG_PYTHON=python3-dev
 fi
 
-sudo $PACKAGE_MANAGER -y install $PKG_FLEX
-sudo $PACKAGE_MANAGER -y install $PKG_BISON
-sudo $PACKAGE_MANAGER -y install $PKG_SSL
-sudo $PACKAGE_MANAGER -y install $PKG_GMP
-sudo $PACKAGE_MANAGER -y install $PKG_PYTHON
+[[ ! -z $PKG_FLEX ]] && sudo $PACKAGE_MANAGER -y install $PKG_FLEX
+[[ ! -z $PKG_BISON ]] && sudo $PACKAGE_MANAGER -y install $PKG_BISON
+[[ ! -z $PKG_SSL ]] && sudo $PACKAGE_MANAGER -y install $PKG_SSL
+[[ ! -z $PKG_GMP ]] && sudo $PACKAGE_MANAGER -y install $PKG_GMP
+[[ ! -z $PKG_PYTHON ]] && sudo $PACKAGE_MANAGER -y install $PKG_PYTHON
 
 # PBC
 # Cleanup any old data

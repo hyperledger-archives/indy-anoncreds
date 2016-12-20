@@ -11,25 +11,25 @@ from config.config import cmod
 
 class Verifier:
     def __init__(self, wallet: Wallet):
-        self._wallet = wallet
+        self.wallet = wallet
         self._primaryVerifier = PrimaryProofVerifier(wallet)
         self._nonRevocVerifier = NonRevocationProofVerifier(wallet)
 
     @property
     def id(self):
-        return self._wallet.id
+        return self.wallet.id
 
     def generateNonce(self):
         return cmod.integer(cmod.randomBits(LARGE_NONCE))
 
-    def verify(self, proofInput: ProofInput, proof: FullProof, allRevealedAttrs, nonce):
+    async def verify(self, proofInput: ProofInput, proof: FullProof, allRevealedAttrs, nonce):
         TauList = []
         for claimDefKey, proofItem in zip(proof.claimDefKeys, proof.proofs):
             if proofItem.nonRevocProof:
-                TauList += self._nonRevocVerifier.verifyNonRevocation(proofInput, claimDefKey, proof.cHash,
+                TauList += await self._nonRevocVerifier.verifyNonRevocation(proofInput, claimDefKey, proof.cHash,
                                                                       proofItem.nonRevocProof)
             if proofItem.primaryProof:
-                TauList += self._primaryVerifier.verify(proofInput, claimDefKey, proof.cHash, proofItem.primaryProof,
+                TauList += await self._primaryVerifier.verify(proofInput, claimDefKey, proof.cHash, proofItem.primaryProof,
                                                         allRevealedAttrs)
 
         CHver = self._get_hash(proof.CList, TauList, nonce)

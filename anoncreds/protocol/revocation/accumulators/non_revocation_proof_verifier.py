@@ -17,14 +17,14 @@ class NonRevocationProofVerifier:
     def nonce(self):
         return self._nonce
 
-    def verifyNonRevocation(self, proofInput: ProofInput, claimDefKey, cHash, nonRevocProof: NonRevocProof) \
+    async def verifyNonRevocation(self, proofInput: ProofInput, claimDefKey, cHash, nonRevocProof: NonRevocProof) \
             -> Sequence[T]:
-        if self._wallet.shouldUpdateAccumulator(id=ID(claimDefKey), ts=proofInput.ts, seqNo=proofInput.seqNo):
-            self._wallet.updateAccumulator(id=ID(claimDefKey), ts=proofInput.ts, seqNo=proofInput.seqNo)
+        if await self._wallet.shouldUpdateAccumulator(id=ID(claimDefKey), ts=proofInput.ts, seqNo=proofInput.seqNo):
+            await self._wallet.updateAccumulator(id=ID(claimDefKey), ts=proofInput.ts, seqNo=proofInput.seqNo)
 
-        pkR = self._wallet.getPublicKeyRevocation(ID(claimDefKey))
-        accum = self._wallet.getAccumulator(ID(claimDefKey))
-        accumPk = self._wallet.getPublicKeyAccumulator(ID(claimDefKey))
+        pkR = await self._wallet.getPublicKeyRevocation(ID(claimDefKey))
+        accum = await self._wallet.getAccumulator(ID(claimDefKey))
+        accumPk = await self._wallet.getPublicKeyAccumulator(ID(claimDefKey))
 
         CProof = nonRevocProof.CProof
         XList = nonRevocProof.XList

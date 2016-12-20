@@ -10,7 +10,7 @@ class NonRevocationClaimIssuer:
     def __init__(self, wallet: IssuerWallet):
         self._wallet = wallet
 
-    def genRevocationKeys(self) -> (RevocationPublicKey, RevocationSecretKey):
+    async def genRevocationKeys(self) -> (RevocationPublicKey, RevocationSecretKey):
         group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
 
         h = group.random(cmod.G1)  # random element of the group G
@@ -32,9 +32,9 @@ class NonRevocationClaimIssuer:
         return (RevocationPublicKey(qr, g, h, h0, h1, h2, htilde, u, pk, y, x),
                 RevocationSecretKey(x, sk))
 
-    def issueAccumulator(self, id, iA, L) \
+    async def issueAccumulator(self, id, iA, L) \
             -> (Accumulator, TailsType, AccumulatorPublicKey, AccumulatorSecretKey):
-        pkR = self._wallet.getPublicKeyRevocation(id)
+        pkR = await self._wallet.getPublicKeyRevocation(id)
         group = cmod.PairingGroup(PAIRING_GROUP)
         gamma = group.random(cmod.ZR)
 
@@ -53,13 +53,13 @@ class NonRevocationClaimIssuer:
         accum = Accumulator(iA, acc, V, L)
         return (accum, g, accPK, accSK)
 
-    def issueNonRevocationClaim(self, id: ID, Ur, iA, i) -> (NonRevocationClaim, Accumulator, TimestampType):
-        accum = self._wallet.getAccumulator(id)
-        pkR = self._wallet.getPublicKeyRevocation(id)
-        skR = self._wallet.getSecretKeyRevocation(id)
-        g = self._wallet.getTails(id)
-        skAccum = self._wallet.getSecretKeyAccumulator(id)
-        m2 = self._wallet.getContextAttr(id)
+    async def issueNonRevocationClaim(self, id: ID, Ur, iA, i) -> (NonRevocationClaim, Accumulator, TimestampType):
+        accum = await self._wallet.getAccumulator(id)
+        pkR = await self._wallet.getPublicKeyRevocation(id)
+        skR = await self._wallet.getSecretKeyRevocation(id)
+        g = await self._wallet.getTails(id)
+        skAccum = await self._wallet.getSecretKeyAccumulator(id)
+        m2 = await self._wallet.getContextAttr(id)
 
         if accum.isFull():
             raise ValueError("Accumulator is full. New one must be issued.")
@@ -89,9 +89,9 @@ class NonRevocationClaimIssuer:
         ts = currentTimestampMillisec()
         return (NonRevocationClaim(accum.iA, sigma, c, vrPrimeprime, witness, g[i], i, m2), accum, ts)
 
-    def revoke(self, id: ID, i) -> (Accumulator, TimestampType):
-        accum = self._wallet.getAccumulator(id)
-        tails = self._wallet.getTails(id)
+    async def revoke(self, id: ID, i) -> (Accumulator, TimestampType):
+        accum = await self._wallet.getAccumulator(id)
+        tails = await self._wallet.getTails(id)
 
         accum.V.discard(i)
         accum.acc /= tails[accum.L + 1 - i]

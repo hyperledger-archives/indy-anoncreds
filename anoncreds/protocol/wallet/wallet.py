@@ -14,39 +14,39 @@ class Wallet():
     # GET
 
     @abstractmethod
-    def getClaimDef(self, id: ID) -> ClaimDefinition:
+    async def getClaimDef(self, id: ID) -> ClaimDefinition:
         raise NotImplementedError
 
     @abstractmethod
-    def getAllClaimDef(self) -> Sequence[ClaimDefinition]:
+    async def getAllClaimDef(self) -> Sequence[ClaimDefinition]:
         raise NotImplementedError
 
     @abstractmethod
-    def getPublicKey(self, id: ID) -> PublicKey:
+    async def getPublicKey(self, id: ID) -> PublicKey:
         raise NotImplementedError
 
     @abstractmethod
-    def getPublicKeyRevocation(self, id: ID) -> RevocationPublicKey:
+    async def getPublicKeyRevocation(self, id: ID) -> RevocationPublicKey:
         raise NotImplementedError
 
     @abstractmethod
-    def getPublicKeyAccumulator(self, id: ID) -> AccumulatorPublicKey:
+    async def getPublicKeyAccumulator(self, id: ID) -> AccumulatorPublicKey:
         raise NotImplementedError
 
     @abstractmethod
-    def getAccumulator(self, id: ID) -> Accumulator:
+    async def getAccumulator(self, id: ID) -> Accumulator:
         raise NotImplementedError
 
     @abstractmethod
-    def updateAccumulator(self, id: ID, ts=None, seqNo=None):
+    async def updateAccumulator(self, id: ID, ts=None, seqNo=None):
         raise NotImplementedError
 
     @abstractmethod
-    def shouldUpdateAccumulator(self, id: ID, ts=None, seqNo=None):
+    async def shouldUpdateAccumulator(self, id: ID, ts=None, seqNo=None):
         raise NotImplementedError
 
     @abstractmethod
-    def getTails(self, id: ID) -> TailsType:
+    async def getTails(self, id: ID) -> TailsType:
         raise NotImplementedError
 
 
@@ -67,13 +67,13 @@ class WalletInMemory(Wallet):
 
     # GET
 
-    def getClaimDef(self, id: ID) -> ClaimDefinition:
+    async def getClaimDef(self, id: ID) -> ClaimDefinition:
         if id.claimDefKey and id.claimDefKey in self._claimDefsByKey:
             return self._claimDefsByKey[id.claimDefKey]
         if id.claimDefId and id.claimDefId in self._claimDefsById:
             return self._claimDefsById[id.claimDefId]
 
-        claimDef = self._repo.getClaimDef(id)
+        claimDef = await self._repo.getClaimDef(id)
         if not claimDef:
             raise ValueError('No claim definition with ID={} and key={}'.format(id.claimDefId, id.claimDefKey))
 
@@ -81,37 +81,36 @@ class WalletInMemory(Wallet):
 
         return claimDef
 
-    @abstractmethod
-    def getAllClaimDef(self) -> Sequence[ClaimDefinition]:
+    async def getAllClaimDef(self) -> Sequence[ClaimDefinition]:
         return self._claimDefsByKey.values()
 
-    def getPublicKey(self, id: ID) -> PublicKey:
-        return self._getValueForId(self._pks, id, self._repo.getPublicKey)
+    async def getPublicKey(self, id: ID) -> PublicKey:
+        return await self._getValueForId(self._pks, id, self._repo.getPublicKey)
 
-    def getPublicKeyRevocation(self, id: ID) -> RevocationPublicKey:
-        return self._getValueForId(self._pkRs, id, self._repo.getPublicKeyRevocation)
+    async def getPublicKeyRevocation(self, id: ID) -> RevocationPublicKey:
+        return await self._getValueForId(self._pkRs, id, self._repo.getPublicKeyRevocation)
 
-    def getPublicKeyAccumulator(self, id: ID) -> AccumulatorPublicKey:
-        return self._getValueForId(self._accumPks, id, self._repo.getPublicKeyAccumulator)
+    async def getPublicKeyAccumulator(self, id: ID) -> AccumulatorPublicKey:
+        return await self._getValueForId(self._accumPks, id, self._repo.getPublicKeyAccumulator)
 
-    def getAccumulator(self, id: ID) -> Accumulator:
-        return self._getValueForId(self._accums, id, self._repo.getAccumulator)
+    async def getAccumulator(self, id: ID) -> Accumulator:
+        return await self._getValueForId(self._accums, id, self._repo.getAccumulator)
 
-    def getTails(self, id: ID) -> TailsType:
-        return self._getValueForId(self._tails, id, self._repo.getTails)
+    async def getTails(self, id: ID) -> TailsType:
+        return await self._getValueForId(self._tails, id, self._repo.getTails)
 
-    def updateAccumulator(self, id: ID, ts=None, seqNo=None):
-        acc = self._repo.getAccumulator(id)
-        self._cacheValueForId(self._accums, id, acc)
+    async def updateAccumulator(self, id: ID, ts=None, seqNo=None):
+        acc = await self._repo.getAccumulator(id)
+        await self._cacheValueForId(self._accums, id, acc)
 
-    def shouldUpdateAccumulator(self, id: ID, ts=None, seqNo=None):
+    async def shouldUpdateAccumulator(self, id: ID, ts=None, seqNo=None):
         # TODO
         return True
 
     # HELPER
 
-    def _getValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID, getFromRepo=None) -> Any:
-        claimDef = self.getClaimDef(id)
+    async def _getValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID, getFromRepo=None) -> Any:
+        claimDef = await self.getClaimDef(id)
         claimDefKey = claimDef.getKey()
 
         if claimDefKey in dict:
@@ -121,7 +120,7 @@ class WalletInMemory(Wallet):
         if getFromRepo:
             id.claimDefKey = claimDefKey
             id.claimDefId = claimDef.id
-            value = getFromRepo(id)
+            value = await getFromRepo(id)
 
         if not value:
             raise ValueError(
@@ -130,8 +129,9 @@ class WalletInMemory(Wallet):
         dict[claimDefKey] = value
         return value
 
-    def _cacheValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID, value: Any):
-        claimDefKey = self.getClaimDef(id).getKey()
+    async def _cacheValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID, value: Any):
+        claimDef = await self.getClaimDef(id)
+        claimDefKey = claimDef.getKey()
         dict[claimDefKey] = value
 
     def _cacheClaimDef(self, claimDef: ClaimDefinition):

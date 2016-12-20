@@ -15,9 +15,9 @@ class PrimaryClaimInitializer:
     def __init__(self, wallet: ProverWallet):
         self._wallet = wallet
 
-    def genClaimInitData(self, id: ID) -> ClaimInitDataType:
-        pk = self._wallet.getPublicKey(id)
-        ms = self._wallet.getMasterSecret(id)
+    async def genClaimInitData(self, id: ID) -> ClaimInitDataType:
+        pk = await self._wallet.getPublicKey(id)
+        ms = await self._wallet.getMasterSecret(id)
         vprime = cmod.randomBits(LARGE_VPRIME)
         N = pk.N
         Rms = pk.Rms
@@ -26,8 +26,8 @@ class PrimaryClaimInitializer:
 
         return ClaimInitDataType(U=U, vPrime=vprime)
 
-    def preparePrimaryClaim(self, id: ID, claim: PrimaryClaim):
-        claimInitDat = self._wallet.getPrimaryClaimInitData(id)
+    async def preparePrimaryClaim(self, id: ID, claim: PrimaryClaim):
+        claimInitDat = await self._wallet.getPrimaryClaimInitData(id)
         newV = claim.v + claimInitDat.vPrime
         claim = claim._replace(v=newV)
         return claim
@@ -37,38 +37,38 @@ class PrimaryProofBuilder:
     def __init__(self, wallet: ProverWallet):
         self._wallet = wallet
 
-    def initProof(self, claimDefKey, c1: PrimaryClaim, revealedAttrs: Sequence[str], predicates: Sequence[Predicate],
+    async def initProof(self, claimDefKey, c1: PrimaryClaim, revealedAttrs: Sequence[str], predicates: Sequence[Predicate],
                   m1Tilde, m2Tilde) -> PrimaryInitProof:
         if not c1:
             return None
 
-        eqProof = self._initEqProof(claimDefKey, c1, revealedAttrs, m1Tilde, m2Tilde)
+        eqProof = await self._initEqProof(claimDefKey, c1, revealedAttrs, m1Tilde, m2Tilde)
         geProofs = []
         for predicate in predicates:
-            geProof = self._initGeProof(claimDefKey, eqProof, c1, predicate)
+            geProof = await self._initGeProof(claimDefKey, eqProof, c1, predicate)
             geProofs.append(geProof)
         return PrimaryInitProof(eqProof, geProofs)
 
-    def finalizeProof(self, claimDefKey, cH, initProof: PrimaryInitProof) -> PrimaryProof:
+    async def finalizeProof(self, claimDefKey, cH, initProof: PrimaryInitProof) -> PrimaryProof:
         if not initProof:
             return None
 
         cH = cmod.integer(cH)
-        eqProof = self._finalizeEqProof(claimDefKey, cH, initProof.eqProof)
+        eqProof = await self._finalizeEqProof(claimDefKey, cH, initProof.eqProof)
         geProofs = []
         for initGeProof in initProof.geProofs:
-            geProof = self._finalizeGeProof(claimDefKey, cH, initGeProof, eqProof)
+            geProof = await self._finalizeGeProof(claimDefKey, cH, initGeProof, eqProof)
             geProofs.append(geProof)
         return PrimaryProof(eqProof, geProofs)
 
-    def _initEqProof(self, claimDefKey, c1: PrimaryClaim, revealedAttrs: Sequence[str], m1Tilde, m2Tilde) \
+    async def _initEqProof(self, claimDefKey, c1: PrimaryClaim, revealedAttrs: Sequence[str], m1Tilde, m2Tilde) \
             -> PrimaryEqualInitProof:
         m2Tilde = m2Tilde if m2Tilde else cmod.integer(cmod.randomBits(LARGE_MVECT))
         unrevealedAttrs = getUnrevealedAttrs(c1.attrs, revealedAttrs)
         mtilde = self._getMTilde(unrevealedAttrs)
 
         Ra = cmod.integer(cmod.randomBits(LARGE_VPRIME))
-        pk = self._wallet.getPublicKey(ID(claimDefKey))
+        pk = await self._wallet.getPublicKey(ID(claimDefKey))
 
         A, e, v = c1.A, c1.e, c1.v
         Aprime = A * (pk.S ** Ra) % pk.N
@@ -91,10 +91,10 @@ class PrimaryProofBuilder:
         return PrimaryEqualInitProof(c1, Aprime, T, etilde, eprime, vtilde, vprime, mtilde, m1Tilde, m2Tilde,
                                      unrevealedAttrs.keys(), revealedAttrs)
 
-    def _initGeProof(self, claimDefKey, eqProof: PrimaryEqualInitProof, c1: PrimaryClaim, predicate: Predicate) \
+    async def _initGeProof(self, claimDefKey, eqProof: PrimaryEqualInitProof, c1: PrimaryClaim, predicate: Predicate) \
             -> PrimaryPrecicateGEInitProof:
         # gen U for Delta
-        pk = self._wallet.getPublicKey(ID(claimDefKey))
+        pk = await self._wallet.getPublicKey(ID(claimDefKey))
         k, value = predicate.attrName, predicate.value
         delta = c1.attrs[k] - value
         if delta < 0:
@@ -126,20 +126,20 @@ class PrimaryProofBuilder:
         TauList = calcTge(pk, utilde, rtilde, eqProof.mTilde[k], alphatilde, T)
         return PrimaryPrecicateGEInitProof(CList, TauList, u, utilde, r, rtilde, alphatilde, predicate, T)
 
-    def _finalizeEqProof(self, claimDefKey, cH, initProof: PrimaryEqualInitProof) -> PrimaryEqualProof:
+    async def _finalizeEqProof(self, claimDefKey, cH, initProof: PrimaryEqualInitProof) -> PrimaryEqualProof:
         e = initProof.eTilde + (cH * initProof.ePrime)
         v = initProof.vTilde + (cH * initProof.vPrime)
 
         m = {}
         for k in initProof.unrevealedAttrs:
             m[str(k)] = initProof.mTilde[str(k)] + (cH * initProof.c1.attrs[str(k)])
-        ms = self._wallet.getMasterSecret(ID(claimDefKey))
+        ms = await self._wallet.getMasterSecret(ID(claimDefKey))
         m1 = initProof.m1Tilde + (cH * ms)
         m2 = initProof.m2Tilde + (cH * initProof.c1.m2)
 
         return PrimaryEqualProof(e, v, m, m1, m2, initProof.Aprime, initProof.revealedAttrs)
 
-    def _finalizeGeProof(self, claimDefKey, cH, initProof: PrimaryPrecicateGEInitProof, eqProof: PrimaryEqualProof) \
+    async def _finalizeGeProof(self, claimDefKey, cH, initProof: PrimaryPrecicateGEInitProof, eqProof: PrimaryEqualProof) \
             -> PrimaryPredicateGEProof:
         u = {}
         r = {}

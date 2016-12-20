@@ -13,27 +13,27 @@ class NonRevocationClaimInitializer:
     def __init__(self, wallet: ProverWallet):
         self._wallet = wallet
 
-    def genClaimInitData(self, id: ID) -> ClaimInitDataType:
+    async def genClaimInitData(self, id: ID) -> ClaimInitDataType:
         group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
-        pkR = self._wallet.getPublicKeyRevocation(id)
+        pkR = await self._wallet.getPublicKeyRevocation(id)
 
         vrPrime = group.random(cmod.ZR)
         Ur = (pkR.h2 ** vrPrime)
 
         return ClaimInitDataType(U=Ur, vPrime=vrPrime)
 
-    def initNonRevocationClaim(self, id: ID, claim: NonRevocationClaim):
-        vrPrime = self._wallet.getNonRevocClaimInitData(id).vPrime
+    async def initNonRevocationClaim(self, id: ID, claim: NonRevocationClaim):
+        vrPrime = (await self._wallet.getNonRevocClaimInitData(id)).vPrime
         newV = claim.v + vrPrime
         claim = claim._replace(v=newV)
-        self._testWitnessCredential(id, claim)
+        await self._testWitnessCredential(id, claim)
         return claim
 
-    def _testWitnessCredential(self, id: ID, claim: NonRevocationClaim):
-        pkR = self._wallet.getPublicKeyRevocation(id)
-        acc = self._wallet.getAccumulator(id)
-        accPk = self._wallet.getPublicKeyAccumulator(id)
-        m2 = int(self._wallet.getContextAttr(id))
+    async def _testWitnessCredential(self, id: ID, claim: NonRevocationClaim):
+        pkR = await self._wallet.getPublicKeyRevocation(id)
+        acc = await self._wallet.getAccumulator(id)
+        accPk = await self._wallet.getPublicKeyAccumulator(id)
+        m2 = int(await self._wallet.getContextAttr(id))
 
         zCalc = cmod.pair(claim.gi, acc.acc) / cmod.pair(pkR.g, claim.witness.omega)
         if zCalc != accPk.z:
@@ -56,14 +56,14 @@ class NonRevocationProofBuilder:
     def __init__(self, wallet: ProverWallet):
         self._wallet = wallet
 
-    def updateNonRevocationClaim(self, claimDefKey, c2: NonRevocationClaim, ts=None, seqNo=None):
-        if self._wallet.shouldUpdateAccumulator(id=ID(claimDefKey), ts=ts, seqNo=seqNo):
-            self._wallet.updateAccumulator(id=ID(claimDefKey), ts=ts, seqNo=seqNo)
+    async def updateNonRevocationClaim(self, claimDefKey, c2: NonRevocationClaim, ts=None, seqNo=None):
+        if await self._wallet.shouldUpdateAccumulator(id=ID(claimDefKey), ts=ts, seqNo=seqNo):
+            await self._wallet.updateAccumulator(id=ID(claimDefKey), ts=ts, seqNo=seqNo)
 
         oldV = c2.witness.V
-        newAccum = self._wallet.getAccumulator(ID(claimDefKey=claimDefKey))
+        newAccum = await self._wallet.getAccumulator(ID(claimDefKey=claimDefKey))
         newV = newAccum.V
-        tails = self._wallet.getTails(ID(claimDefKey=claimDefKey))
+        tails = await self._wallet.getTails(ID(claimDefKey=claimDefKey))
 
         if c2.i not in newV:
             raise ValueError("Can not update Witness. I'm revoced.")
@@ -83,23 +83,23 @@ class NonRevocationProofBuilder:
             newWitness = c2.witness._replace(V=newV, omega=newOmega)
             c2 = c2._replace(witness=newWitness)
 
-            self._wallet.submitNonRevocClaim(id=ID(claimDefKey), claim=c2)
+            await self._wallet.submitNonRevocClaim(id=ID(claimDefKey), claim=c2)
 
         return c2
 
-    def initProof(self, claimDefKey, c2: NonRevocationClaim) -> NonRevocInitProof:
+    async def initProof(self, claimDefKey, c2: NonRevocationClaim) -> NonRevocInitProof:
         if not c2:
             return None
 
-        c2 = self.updateNonRevocationClaim(claimDefKey, c2)
+        c2 = await self.updateNonRevocationClaim(claimDefKey, c2)
 
-        pkR = self._wallet.getPublicKeyRevocation(ID(claimDefKey))
-        accum = self._wallet.getAccumulator(ID(claimDefKey=claimDefKey))
+        pkR = await self._wallet.getPublicKeyRevocation(ID(claimDefKey))
+        accum = await self._wallet.getAccumulator(ID(claimDefKey=claimDefKey))
         CList = []
         TauList = []
 
         cListParams = self._genCListParams(claimDefKey, c2)
-        proofCList = self._createCListValues(claimDefKey, c2, cListParams)
+        proofCList = self._createCListValues(claimDefKey, c2, cListParams, pkR)
         CList.extend(proofCList.asList())
 
         tauListParams = self._genTauListParams(claimDefKey)
@@ -108,7 +108,7 @@ class NonRevocationProofBuilder:
 
         return NonRevocInitProof(proofCList, proofTauList, cListParams, tauListParams)
 
-    def finalizeProof(self, claimDefKey, cH, initProof: NonRevocInitProof) -> NonRevocProof:
+    async def finalizeProof(self, claimDefKey, cH, initProof: NonRevocInitProof) -> NonRevocProof:
         if not initProof:
             return None
 
@@ -138,8 +138,7 @@ class NonRevocationProofBuilder:
                                   o=o, oPrime=oPrime, m=m, mPrime=mPrime, t=t, tPrime=tPrime, m2=m2, s=c2.v, c=c2.c)
 
     def _createCListValues(self, claimDefKey, c2: NonRevocationClaim,
-                           params: NonRevocProofXList) -> NonRevocProofCList:
-        pkR = self._wallet.getPublicKeyRevocation(ID(claimDefKey))
+                           params: NonRevocProofXList, pkR) -> NonRevocProofCList:
         E = (pkR.h ** params.rho) * (pkR.htilde ** params.o)
         D = (pkR.g ** params.r) * (pkR.htilde ** params.oPrime)
         A = c2.sigma * (pkR.htilde ** params.rho)
@@ -153,13 +152,13 @@ class NonRevocationProofBuilder:
         group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
         return NonRevocProofXList(group=group)
 
-    def testProof(self, claimDefKey, c2: NonRevocationClaim):
-        pkR = self._wallet.getPublicKeyRevocation(ID(claimDefKey))
-        accum = self._wallet.getAccumulator(ID(claimDefKey=claimDefKey))
-        accumPk = self._wallet.getPublicKeyAccumulator(ID(claimDefKey=claimDefKey))
+    async def testProof(self, claimDefKey, c2: NonRevocationClaim):
+        pkR = await self._wallet.getPublicKeyRevocation(ID(claimDefKey))
+        accum = await self._wallet.getAccumulator(ID(claimDefKey=claimDefKey))
+        accumPk = await self._wallet.getPublicKeyAccumulator(ID(claimDefKey=claimDefKey))
 
         cListParams = self._genCListParams(claimDefKey, c2)
-        proofCList = self._createCListValues(claimDefKey, c2, cListParams)
+        proofCList = self._createCListValues(claimDefKey, c2, cListParams, pkR)
         proofTauList = createTauListValues(pkR, accum, cListParams, proofCList)
 
         proofTauListCalc = createTauListExpectedValues(pkR, accum, accumPk, proofCList)

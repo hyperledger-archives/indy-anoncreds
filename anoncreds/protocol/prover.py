@@ -31,60 +31,67 @@ class Prover:
     def id(self):
         return self.wallet.id
 
-    def createClaimRequest(self, id: ID, proverId=None, reqNonRevoc=True) -> ClaimRequest:
-        self._genMasterSecret(id)
-        U = self._genU(id)
-        Ur = None if not reqNonRevoc else self._genUr(id)
+    async def createClaimRequest(self, id: ID, proverId=None, reqNonRevoc=True) -> ClaimRequest:
+        await self._genMasterSecret(id)
+        U = await self._genU(id)
+        Ur = None if not reqNonRevoc else await self._genUr(id)
         proverId = proverId if proverId else self.id
         return ClaimRequest(userId=proverId, U=U, Ur=Ur)
 
-    def createClaimRequests(self, ids: Sequence[ID], proverId=None, reqNonRevoc=True) -> Dict[ID, ClaimRequest]:
-        return {id: self.createClaimRequest(id, proverId, reqNonRevoc) for id in ids}
+    async def createClaimRequests(self, ids: Sequence[ID], proverId=None, reqNonRevoc=True) -> Dict[ID, ClaimRequest]:
+        res = {}
+        for id in ids:
+            res[id] = await self.createClaimRequest(id, proverId, reqNonRevoc)
+        return res
 
-    def processClaim(self, id: ID, claims: Claims):
-        self.wallet.submitContextAttr(id, claims.primaryClaim.m2)
-        self._initPrimaryClaim(id, claims.primaryClaim)
+    async def processClaim(self, id: ID, claims: Claims):
+        await self.wallet.submitContextAttr(id, claims.primaryClaim.m2)
+        await self._initPrimaryClaim(id, claims.primaryClaim)
         if claims.nonRevocClaim:
-            self._initNonRevocationClaim(id, claims.nonRevocClaim)
+            await self._initNonRevocationClaim(id, claims.nonRevocClaim)
 
-    def processClaims(self, allClaims: Dict[ID, Claims]):
-        return [self.processClaim(id, claims) for id, claims in allClaims.items()]
+    async def processClaims(self, allClaims: Dict[ID, Claims]):
+        res = []
+        for id, claims in allClaims.items():
+            res.append(await self.processClaim(id, claims))
+        return res
 
-    def presentProof(self, proofInput: ProofInput, nonce) -> (FullProof, Dict[str, Any]):
-        claims, revealedAttrsWithValues = self._findClaims(proofInput)
-        return (self._prepareProof(claims, nonce), revealedAttrsWithValues)
+    async def presentProof(self, proofInput: ProofInput, nonce) -> (FullProof, Dict[str, Any]):
+        claims, revealedAttrsWithValues = await self._findClaims(proofInput)
+        proof = await self._prepareProof(claims, nonce)
+        return (proof, revealedAttrsWithValues)
 
     #
     # REQUEST CLAIMS
     #
 
-    def _genMasterSecret(self, id: ID):
+    async def _genMasterSecret(self, id: ID):
         ms = cmod.integer(cmod.randomBits(LARGE_MASTER_SECRET))
-        self.wallet.submitMasterSecret(id=id, ms=ms)
+        await self.wallet.submitMasterSecret(id=id, ms=ms)
 
-    def _genU(self, id: ID):
-        claimInitData = self._primaryClaimInitializer.genClaimInitData(id)
-        self.wallet.submitPrimaryClaimInitData(id=id, claimInitData=claimInitData)
+    async def _genU(self, id: ID):
+        claimInitData = await self._primaryClaimInitializer.genClaimInitData(id)
+        await self.wallet.submitPrimaryClaimInitData(id=id, claimInitData=claimInitData)
         return claimInitData.U
 
-    def _genUr(self, id: ID):
-        claimInitData = self._nonRevocClaimInitializer.genClaimInitData(id)
-        self.wallet.submitNonRevocClaimInitData(id=id, claimInitData=claimInitData)
+    async def _genUr(self, id: ID):
+        claimInitData = await self._nonRevocClaimInitializer.genClaimInitData(id)
+        await self.wallet.submitNonRevocClaimInitData(id=id, claimInitData=claimInitData)
         return claimInitData.U
 
-    def _initPrimaryClaim(self, id: ID, claim: PrimaryClaim):
-        claim = self._primaryClaimInitializer.preparePrimaryClaim(id, claim)
-        self.wallet.submitPrimaryClaim(id=id, claim=claim)
+    async def _initPrimaryClaim(self, id: ID, claim: PrimaryClaim):
+        claim = await self._primaryClaimInitializer.preparePrimaryClaim(id, claim)
+        await self.wallet.submitPrimaryClaim(id=id, claim=claim)
 
-    def _initNonRevocationClaim(self, id: ID, claim: NonRevocationClaim):
-        claim = self._nonRevocClaimInitializer.initNonRevocationClaim(id, claim)
-        self.wallet.submitNonRevocClaim(id=id, claim=claim)
+    async def _initNonRevocationClaim(self, id: ID, claim: NonRevocationClaim):
+        claim = await self._nonRevocClaimInitializer.initNonRevocationClaim(id, claim)
+        await self.wallet.submitNonRevocClaim(id=id, claim=claim)
 
     #
     # PRESENT PROOF
     #
 
-    def _findClaims(self, proofInput: ProofInput) -> (Dict[ClaimDefinitionKey, ProofClaims], Dict[str, Any]):
+    async def _findClaims(self, proofInput: ProofInput) -> (Dict[ClaimDefinitionKey, ProofClaims], Dict[str, Any]):
         revealedAttrs, predicates = set(proofInput.revealedAttrs), set(proofInput.predicates)
 
         proofClaims = {}
@@ -92,7 +99,8 @@ class Prover:
         foundPredicates = set()
         revealedAttrsWithValues = {}
 
-        for credDefKey, claim in self.wallet.getAllClaims().items():
+        allClaims = await self.wallet.getAllClaims()
+        for credDefKey, claim in allClaims.items():
             revealedAttrsForClaim = []
             predicatesForClaim = []
 
@@ -117,7 +125,7 @@ class Prover:
 
         return (proofClaims, revealedAttrsWithValues)
 
-    def _prepareProof(self, claims: Dict[ClaimDefinitionKey, ProofClaims], nonce) -> FullProof:
+    async def _prepareProof(self, claims: Dict[ClaimDefinitionKey, ProofClaims], nonce) -> FullProof:
         m1Tilde = cmod.integer(cmod.randomBits(LARGE_M2_TILDE))
         initProofs = {}
         CList = []
@@ -129,14 +137,14 @@ class Prover:
 
             nonRevocInitProof = None
             if c2:
-                nonRevocInitProof = self._nonRevocProofBuilder.initProof(claimDefKey, c2)
+                nonRevocInitProof = await self._nonRevocProofBuilder.initProof(claimDefKey, c2)
                 CList += nonRevocInitProof.asCList()
                 TauList += nonRevocInitProof.asTauList()
 
             primaryInitProof = None
             if c1:
                 m2Tilde = cmod.integer(int(nonRevocInitProof.TauListParams.m2)) if nonRevocInitProof else None
-                primaryInitProof = self._primaryProofBuilder.initProof(claimDefKey, c1, revealedAttrs, predicates,
+                primaryInitProof = await self._primaryProofBuilder.initProof(claimDefKey, c1, revealedAttrs, predicates,
                                                                        m1Tilde, m2Tilde)
                 CList += primaryInitProof.asCList()
                 TauList += primaryInitProof.asTauList()
@@ -154,24 +162,24 @@ class Prover:
             claimDefKeys.append(claimDefKey)
             nonRevocProof = None
             if initProof.nonRevocInitProof:
-                nonRevocProof = self._nonRevocProofBuilder.finalizeProof(claimDefKey, cH, initProof.nonRevocInitProof)
-            primaryProof = self._primaryProofBuilder.finalizeProof(claimDefKey, cH, initProof.primaryInitProof)
+                nonRevocProof = await self._nonRevocProofBuilder.finalizeProof(claimDefKey, cH, initProof.nonRevocInitProof)
+            primaryProof = await self._primaryProofBuilder.finalizeProof(claimDefKey, cH, initProof.primaryInitProof)
             proofs.append(Proof(primaryProof, nonRevocProof))
 
         return FullProof(cH, claimDefKeys, proofs, CList)
 
-    def _getCList(self, initProofs: Dict[ClaimDefinition, InitProof]):
+    async def _getCList(self, initProofs: Dict[ClaimDefinition, InitProof]):
         CList = []
         for initProof in initProofs.values():
-            CList += initProof.nonRevocInitProof.asCList()
-            CList += initProof.primaryInitProof.asCList()
+            CList += await initProof.nonRevocInitProof.asCList()
+            CList += await initProof.primaryInitProof.asCList()
             return CList
 
-    def _getTauList(self, initProofs: Dict[ClaimDefinition, InitProof]):
+    async def _getTauList(self, initProofs: Dict[ClaimDefinition, InitProof]):
         TauList = []
         for initProof in initProofs.values():
-            TauList += initProof.nonRevocInitProof.asTauList()
-            TauList += initProof.primaryInitProof.asTauList()
+            TauList += await initProof.nonRevocInitProof.asTauList()
+            TauList += await initProof.primaryInitProof.asTauList()
         return TauList
 
     def _get_hash(self, CList, TauList, nonce):

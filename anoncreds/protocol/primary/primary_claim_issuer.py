@@ -9,8 +9,8 @@ class PrimaryClaimIssuer:
     def __init__(self, wallet: IssuerWallet):
         self._wallet = wallet
 
-    def genKeys(self, id: ID, p_prime=None, q_prime=None) -> (PublicKey, SecretKey):
-        claimDef = self._wallet.getClaimDef(id)
+    async def genKeys(self, id: ID, p_prime=None, q_prime=None) -> (PublicKey, SecretKey):
+        claimDef = await self._wallet.getClaimDef(id)
         if not claimDef.attrNames and isinstance(claimDef.attrNames, list):
             raise ValueError("List of attribute names is required to "
                              "setup credential definition")
@@ -68,7 +68,7 @@ class PrimaryClaimIssuer:
         print("In {} iterations, found prime {}".format(i, prime))
         return prime
 
-    def issuePrimaryClaim(self, id: ID, attributes, U) -> PrimaryClaim:
+    async def issuePrimaryClaim(self, id: ID, attributes, U) -> PrimaryClaim:
         """
         Issue the credential for the defined attributes
 
@@ -90,15 +90,15 @@ class PrimaryClaimIssuer:
         estart = 2 ** LARGE_E_START
         eend = (estart + 2 ** LARGE_E_END_RANGE)
         e = get_prime_in_range(estart, eend)
-        A = self._sign(id, attributes, vprimeprime, u, e)
+        A = await self._sign(id, attributes, vprimeprime, u, e)
 
-        m2 = self._wallet.getContextAttr(id)
+        m2 = await self._wallet.getContextAttr(id)
         return PrimaryClaim(attributes, m2, A, e, vprimeprime)
 
-    def _sign(self, id: ID, attrs, v, u, e):
-        pk = self._wallet.getPublicKey(id)
-        sk = self._wallet.getSecretKey(id)
-        m2 = self._wallet.getContextAttr(id)
+    async def _sign(self, id: ID, attrs, v, u, e):
+        pk = await self._wallet.getPublicKey(id)
+        sk = await self._wallet.getSecretKey(id)
+        m2 = await self._wallet.getContextAttr(id)
 
         Rx = 1 % pk.N
         # Get the product sequence for the (R[i] and attrs[i]) combination

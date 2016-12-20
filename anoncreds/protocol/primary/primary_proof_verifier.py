@@ -10,15 +10,15 @@ class PrimaryProofVerifier:
     def __init__(self, wallet: Wallet):
         self._wallet = wallet
 
-    def verify(self, proofInput: ProofInput, claimDefKey, cHash, primaryProof: PrimaryProof, allRevealedAttrs):
+    async def verify(self, proofInput: ProofInput, claimDefKey, cHash, primaryProof: PrimaryProof, allRevealedAttrs):
         cH = cmod.integer(cHash)
-        THat = self._verifyEquality(claimDefKey, cH, primaryProof.eqProof, allRevealedAttrs)
+        THat = await self._verifyEquality(claimDefKey, cH, primaryProof.eqProof, allRevealedAttrs)
         for geProof in primaryProof.geProofs:
-            THat += self._verifyGEPredicate(claimDefKey, cH, geProof)
+            THat += await self._verifyGEPredicate(claimDefKey, cH, geProof)
 
         return THat
 
-    def _verifyEquality(self, claimDefKey, cH, proof: PrimaryEqualProof, allRevealedAttrs):
+    async def _verifyEquality(self, claimDefKey, cH, proof: PrimaryEqualProof, allRevealedAttrs):
         """
         Verify the proof
         :param attrs: The encoded attributes dictionary
@@ -27,8 +27,8 @@ class PrimaryProofVerifier:
         :return: A boolean with the verification status for the proof
         """
         THat = []
-        pk = self._wallet.getPublicKey(ID(claimDefKey))
-        attrNames = self._wallet.getClaimDef(ID(claimDefKey)).attrNames
+        pk = await self._wallet.getPublicKey(ID(claimDefKey))
+        attrNames = (await self._wallet.getClaimDef(ID(claimDefKey))).attrNames
         unrevealedAttrNames = set(attrNames) - set(proof.revealedAttrNames)
 
         T1 = calcTeq(pk, proof.Aprime, proof.e, proof.v,
@@ -45,8 +45,8 @@ class PrimaryProofVerifier:
         THat.append(T)
         return THat
 
-    def _verifyGEPredicate(self, claimDefKey, cH, proof: PrimaryPredicateGEProof):
-        pk = self._wallet.getPublicKey(ID(claimDefKey))
+    async def _verifyGEPredicate(self, claimDefKey, cH, proof: PrimaryPredicateGEProof):
+        pk = await self._wallet.getPublicKey(ID(claimDefKey))
         k, v = proof.predicate.attrName, proof.predicate.value
 
         TauList = calcTge(pk, proof.u, proof.r, proof.mj, proof.alpha, proof.T)

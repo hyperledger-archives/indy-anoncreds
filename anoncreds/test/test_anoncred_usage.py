@@ -1,3 +1,5 @@
+import pytest
+
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
 from anoncreds.protocol.repo.attributes_repo import AttributeRepoInMemory
@@ -10,22 +12,22 @@ from anoncreds.protocol.wallet.prover_wallet import ProverWalletInMemory
 from anoncreds.protocol.wallet.wallet import WalletInMemory
 from anoncreds.test.conftest import GVT, XYZCorp
 
-
-def testSingleIssuerSingleProver(primes1):
+@pytest.mark.asyncio
+async def testSingleIssuerSingleProver(primes1):
     # 1. Init entities
     publicRepo = PublicRepoInMemory()
     attrRepo = AttributeRepoInMemory()
     issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
 
     # 2. Create a Claim Def
-    claimDef = issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
+    claimDef = await issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
     claimDefId = ID(claimDef.getKey())
 
     # 3. Create keys for the Claim Def
-    issuer.genKeys(claimDefId, **primes1)
+    await issuer.genKeys(claimDefId, **primes1)
 
     # 4. Issue accumulator
-    issuer.issueAccumulator(id=claimDefId, iA='110', L=5)
+    await issuer.issueAccumulator(id=claimDefId, iA='110', L=5)
 
     # 4. set attributes for user1
     userId = '111'
@@ -34,9 +36,9 @@ def testSingleIssuerSingleProver(primes1):
 
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
-    claimsReq = prover.createClaimRequest(claimDefId)
-    claims = issuer.issueClaim(claimDefId, claimsReq)
-    prover.processClaim(claimDefId, claims)
+    claimsReq = await prover.createClaimRequest(claimDefId)
+    claims = await issuer.issueClaim(claimDefId, claimsReq)
+    await prover.processClaim(claimDefId, claims)
 
     # 6. proof Claims
     proofInput = ProofInput(
@@ -45,11 +47,11 @@ def testSingleIssuerSingleProver(primes1):
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
-    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
-    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
+    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
-
-def testMultiplIssuersSingleProver(primes1, primes2):
+@pytest.mark.asyncio
+async def testMultiplIssuersSingleProver(primes1, primes2):
     # 1. Init entities
     publicRepo = PublicRepoInMemory()
     attrRepo = AttributeRepoInMemory()
@@ -57,18 +59,18 @@ def testMultiplIssuersSingleProver(primes1, primes2):
     issuer2 = Issuer(IssuerWalletInMemory('issuer2', publicRepo), attrRepo)
 
     # 2. Create a Claim Def
-    claimDef1 = issuer1.genClaimDef('GVT', '1.0', GVT.attribNames())
+    claimDef1 = await issuer1.genClaimDef('GVT', '1.0', GVT.attribNames())
     claimDefId1 = ID(claimDef1.getKey())
-    claimDef2 = issuer2.genClaimDef('XYZCorp', '1.0', XYZCorp.attribNames())
+    claimDef2 = await issuer2.genClaimDef('XYZCorp', '1.0', XYZCorp.attribNames())
     claimDefId2 = ID(claimDef2.getKey())
 
     # 3. Create keys for the Claim Def
-    issuer1.genKeys(claimDefId1, **primes1)
-    issuer2.genKeys(claimDefId2, **primes2)
+    await issuer1.genKeys(claimDefId1, **primes1)
+    await issuer2.genKeys(claimDefId2, **primes2)
 
     # 4. Issue accumulator
-    issuer1.issueAccumulator(id=claimDefId1, iA='110', L=5)
-    issuer2.issueAccumulator(id=claimDefId2, iA=9999999, L=5)
+    await issuer1.issueAccumulator(id=claimDefId1, iA='110', L=5)
+    await issuer2.issueAccumulator(id=claimDefId2, iA=9999999, L=5)
 
     # 4. set attributes for user1
     userId = '111'
@@ -79,12 +81,12 @@ def testMultiplIssuersSingleProver(primes1, primes2):
 
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
-    claimsReq1 = prover.createClaimRequest(claimDefId1)
-    claimsReq2 = prover.createClaimRequest(claimDefId2)
-    claims1 = issuer1.issueClaim(claimDefId1, claimsReq1)
-    claims2 = issuer2.issueClaim(claimDefId2, claimsReq2)
-    prover.processClaim(claimDefId1, claims1)
-    prover.processClaim(claimDefId2, claims2)
+    claimsReq1 = await prover.createClaimRequest(claimDefId1)
+    claimsReq2 = await prover.createClaimRequest(claimDefId2)
+    claims1 = await issuer1.issueClaim(claimDefId1, claimsReq1)
+    claims2 = await issuer2.issueClaim(claimDefId2, claimsReq2)
+    await prover.processClaim(claimDefId1, claims1)
+    await prover.processClaim(claimDefId2, claims2)
 
     # 6. proof Claims
     proofInput = ProofInput(['name', 'status'],
@@ -92,29 +94,29 @@ def testMultiplIssuersSingleProver(primes1, primes2):
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
-    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
-    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
+    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
-
-def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
+@pytest.mark.asyncio
+async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     # 1. Init entities
     publicRepo = PublicRepoInMemory()
     attrRepo = AttributeRepoInMemory()
     issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
 
     # 2. Create a Claim Def
-    claimDef1 = issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
+    claimDef1 = await issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
     claimDefId1 = ID(claimDef1.getKey())
-    claimDef2 = issuer.genClaimDef('XYZCorp', '1.0', XYZCorp.attribNames())
+    claimDef2 = await issuer.genClaimDef('XYZCorp', '1.0', XYZCorp.attribNames())
     claimDefId2 = ID(claimDef2.getKey())
 
     # 3. Create keys for the Claim Def
-    issuer.genKeys(claimDefId1, **primes1)
-    issuer.genKeys(claimDefId2, **primes2)
+    await issuer.genKeys(claimDefId1, **primes1)
+    await issuer.genKeys(claimDefId2, **primes2)
 
     # 4. Issue accumulator
-    issuer.issueAccumulator(id=claimDefId1, iA='110', L=5)
-    issuer.issueAccumulator(id=claimDefId2, iA=9999999, L=5)
+    await issuer.issueAccumulator(id=claimDefId1, iA='110', L=5)
+    await issuer.issueAccumulator(id=claimDefId2, iA=9999999, L=5)
 
     # 4. set attributes for user1
     userId = '111'
@@ -125,9 +127,9 @@ def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
 
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
-    claimsReqs = prover.createClaimRequests([claimDefId1, claimDefId2])
-    claims = issuer.issueClaims(claimsReqs)
-    prover.processClaims(claims)
+    claimsReqs = await prover.createClaimRequests([claimDefId1, claimDefId2])
+    claims = await issuer.issueClaims(claimsReqs)
+    await prover.processClaims(claims)
 
     # 6. proof Claims
     proofInput = ProofInput(
@@ -136,25 +138,25 @@ def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
-    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
-    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
+    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
-
-def testSingleIssuerSingleProverPrimaryOnly(primes1):
+@pytest.mark.asyncio
+async def testSingleIssuerSingleProverPrimaryOnly(primes1):
     # 1. Init entities
     publicRepo = PublicRepoInMemory()
     attrRepo = AttributeRepoInMemory()
     issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
 
     # 2. Create a Claim Def
-    claimDef = issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
+    claimDef = await issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
     claimDefId = ID(claimDef.getKey())
 
     # 3. Create keys for the Claim Def
-    issuer.genKeys(claimDefId, **primes1)
+    await issuer.genKeys(claimDefId, **primes1)
 
     # 4. Issue accumulator
-    issuer.issueAccumulator(id=claimDefId, iA='110', L=5)
+    await issuer.issueAccumulator(id=claimDefId, iA='110', L=5)
 
     # 4. set attributes for user1
     userId = '111'
@@ -163,9 +165,9 @@ def testSingleIssuerSingleProverPrimaryOnly(primes1):
 
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
-    claimsReq = prover.createClaimRequest(claimDefId, None, False)
-    claims = issuer.issueClaim(claimDefId, claimsReq)
-    prover.processClaim(claimDefId, claims)
+    claimsReq = await prover.createClaimRequest(claimDefId, None, False)
+    claims = await issuer.issueClaim(claimDefId, claimsReq)
+    await prover.processClaim(claimDefId, claims)
 
     # 6. proof Claims
     proofInput = ProofInput(
@@ -174,5 +176,5 @@ def testSingleIssuerSingleProverPrimaryOnly(primes1):
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
-    proof, revealedAttrs = prover.presentProof(proofInput, nonce)
-    assert verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
+    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)

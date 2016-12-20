@@ -9,45 +9,45 @@ class PublicRepo():
     # GET
 
     @abstractmethod
-    def getClaimDef(self, id: ID) -> ClaimDefinition:
+    async def getClaimDef(self, id: ID) -> ClaimDefinition:
         raise NotImplementedError
 
     @abstractmethod
-    def getPublicKey(self, id: ID) -> PublicKey:
+    async def getPublicKey(self, id: ID) -> PublicKey:
         raise NotImplementedError
 
     @abstractmethod
-    def getPublicKeyRevocation(self, id: ID) -> RevocationPublicKey:
+    async def getPublicKeyRevocation(self, id: ID) -> RevocationPublicKey:
         raise NotImplementedError
 
     @abstractmethod
-    def getPublicKeyAccumulator(self, id: ID) -> AccumulatorPublicKey:
+    async def getPublicKeyAccumulator(self, id: ID) -> AccumulatorPublicKey:
         raise NotImplementedError
 
     @abstractmethod
-    def getAccumulator(self, id: ID) -> Accumulator:
+    async def getAccumulator(self, id: ID) -> Accumulator:
         raise NotImplementedError
 
     @abstractmethod
-    def getTails(self, id: ID) -> TailsType:
+    async def getTails(self, id: ID) -> TailsType:
         raise NotImplementedError
 
     # SUBMIT
 
     @abstractmethod
-    def submitClaimDef(self, claimDef: ClaimDefinition) -> ClaimDefinition:
+    async def submitClaimDef(self, claimDef: ClaimDefinition) -> ClaimDefinition:
         raise NotImplementedError
 
     @abstractmethod
-    def submitPublicKeys(self, id: ID, pk: PublicKey, pkR: RevocationPublicKey = None):
+    async def submitPublicKeys(self, id: ID, pk: PublicKey, pkR: RevocationPublicKey = None):
         raise NotImplementedError
 
     @abstractmethod
-    def submitAccumulator(self, id: ID, accumPK: AccumulatorPublicKey, accum: Accumulator, tails: TailsType):
+    async def submitAccumulator(self, id: ID, accumPK: AccumulatorPublicKey, accum: Accumulator, tails: TailsType):
         raise NotImplementedError
 
     @abstractmethod
-    def submitAccumUpdate(self, id: ID, accum: Accumulator, timestampMs: TimestampType):
+    async def submitAccumUpdate(self, id: ID, accum: Accumulator, timestampMs: TimestampType):
         raise NotImplementedError
 
 
@@ -64,7 +64,7 @@ class PublicRepoInMemory(PublicRepo):
 
     # GET
 
-    def getClaimDef(self, id: ID) -> ClaimDefinition:
+    async def getClaimDef(self, id: ID) -> ClaimDefinition:
         if id.claimDefKey and id.claimDefKey in self._claimDefsByKey:
             return self._claimDefsByKey[id.claimDefKey]
 
@@ -73,24 +73,24 @@ class PublicRepoInMemory(PublicRepo):
 
         raise ValueError('No claim definition with ID={} and key={}'.format(id.claimDefId, id.claimDefKey))
 
-    def getPublicKey(self, id: ID) -> PublicKey:
-        return self._getValueForId(self._pks, id)
+    async def getPublicKey(self, id: ID) -> PublicKey:
+        return await self._getValueForId(self._pks, id)
 
-    def getPublicKeyRevocation(self, id: ID) -> RevocationPublicKey:
-        return self._getValueForId(self._pkRs, id)
+    async def getPublicKeyRevocation(self, id: ID) -> RevocationPublicKey:
+        return await self._getValueForId(self._pkRs, id)
 
-    def getPublicKeyAccumulator(self, id: ID) -> AccumulatorPublicKey:
-        return self._getValueForId(self._accumPks, id)
+    async def getPublicKeyAccumulator(self, id: ID) -> AccumulatorPublicKey:
+        return await self._getValueForId(self._accumPks, id)
 
-    def getAccumulator(self, id: ID) -> Accumulator:
-        return self._getValueForId(self._accums, id)
+    async def getAccumulator(self, id: ID) -> Accumulator:
+        return await self._getValueForId(self._accums, id)
 
-    def getTails(self, id: ID) -> TailsType:
-        return self._getValueForId(self._tails, id)
+    async def getTails(self, id: ID) -> TailsType:
+        return await self._getValueForId(self._tails, id)
 
     # SUBMIT
 
-    def submitClaimDef(self, claimDef: ClaimDefinition):
+    async def submitClaimDef(self, claimDef: ClaimDefinition):
         newClaimDef = ClaimDefinition(name=claimDef.name,
                                       version=claimDef.version,
                                       type=claimDef.type,
@@ -102,26 +102,28 @@ class PublicRepoInMemory(PublicRepo):
         self._claimDefsById[newClaimDef.id] = newClaimDef
         return newClaimDef
 
-    def submitPublicKeys(self, id: ID, pk: PublicKey, pkR: RevocationPublicKey = None):
-        self._cacheValueForId(self._pks, id, pk)
+    async def submitPublicKeys(self, id: ID, pk: PublicKey, pkR: RevocationPublicKey = None):
+        await self._cacheValueForId(self._pks, id, pk)
         if pkR:
-            self._cacheValueForId(self._pkRs, id, pkR)
+            await self._cacheValueForId(self._pkRs, id, pkR)
 
-    def submitAccumulator(self, id: ID, accumPK: AccumulatorPublicKey, accum: Accumulator, tails: TailsType):
-        self._cacheValueForId(self._accums, id, accum)
-        self._cacheValueForId(self._accumPks, id, accumPK)
-        self._cacheValueForId(self._tails, id, tails)
+    async def submitAccumulator(self, id: ID, accumPK: AccumulatorPublicKey, accum: Accumulator, tails: TailsType):
+        await self._cacheValueForId(self._accums, id, accum)
+        await self._cacheValueForId(self._accumPks, id, accumPK)
+        await self._cacheValueForId(self._tails, id, tails)
 
-    def submitAccumUpdate(self, id: ID, accum: Accumulator, timestampMs: TimestampType):
-        self._cacheValueForId(self._accums, id, accum)
+    async def submitAccumUpdate(self, id: ID, accum: Accumulator, timestampMs: TimestampType):
+        await self._cacheValueForId(self._accums, id, accum)
 
-    def _getValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID) -> Any:
-        claimDefKey = self.getClaimDef(id).getKey()
+    async def _getValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID) -> Any:
+        claimDef = await self.getClaimDef(id)
+        claimDefKey = claimDef.getKey()
         if not claimDefKey in dict:
             raise ValueError(
                 'No value for claim definition with ID={} and key={}'.format(id.claimDefId, id.claimDefKey))
         return dict[claimDefKey]
 
-    def _cacheValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID, value: Any):
-        claimDefKey = self.getClaimDef(id).getKey()
+    async def _cacheValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID, value: Any):
+        claimDef = await self.getClaimDef(id)
+        claimDefKey = claimDef.getKey()
         dict[claimDefKey] = value

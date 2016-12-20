@@ -45,5 +45,5 @@ setup(
              '*.css', '*.ico', '*.png', 'LICENSE', 'LEGAL']},
     install_requires=['Charm-Crypto==0.43', 'lazy-object-proxy', 'pytest==3.0.2'],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest==3.0.2']
+    tests_require=['pytest==3.0.2', 'pytest-asyncio']
 )

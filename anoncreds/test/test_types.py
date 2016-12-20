@@ -1,3 +1,5 @@
+import pytest
+
 from anoncreds.protocol.types import PublicKey, ClaimDefinition, Claims, ProofInput, PredicateGE, FullProof, \
     ClaimDefinitionKey, ClaimRequest, Proof
 from anoncreds.protocol.utils import toDictWithStrValues, fromDictWithStrValues
@@ -39,15 +41,17 @@ def testClaimsFromToDictPrimaryOnly(claimsProver1Gvt):
     assert claims == Claims.fromStrDict(claims.toStrDict())
 
 
-def testClaimProofFromToDict(prover1, nonce, claimsProver1Gvt):
+@pytest.mark.asyncio
+async def testClaimProofFromToDict(prover1, nonce, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
-    proof = prover1.presentProof(proofInput, nonce)[0]
+    proof, _ = await prover1.presentProof(proofInput, nonce)
     assert proof == FullProof.fromStrDict(proof.toStrDict())
 
 
-def testClaimProofFromToDictPrimaryOnly(prover1, nonce, claimsProver1Gvt):
+@pytest.mark.asyncio
+async def testClaimProofFromToDictPrimaryOnly(prover1, nonce, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
-    proof = prover1.presentProof(proofInput, nonce)[0]
+    proof, _ = await prover1.presentProof(proofInput, nonce)
 
     proofs = [Proof(primaryProof=proof.proofs[0].primaryProof)]
     proof = proof._replace(proofs=proofs)
@@ -59,7 +63,8 @@ def testProofInputFromToDict():
     assert proofInput == ProofInput.fromStrDict(proofInput.toStrDict())
 
 
-def testRevealedAttrsFromToDict(prover1, nonce, claimsProver1Gvt):
+@pytest.mark.asyncio
+async def testRevealedAttrsFromToDict(prover1, nonce, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
-    revealedAttrs = prover1.presentProof(proofInput, nonce)[1]
+    _, revealedAttrs = await prover1.presentProof(proofInput, nonce)
     assert revealedAttrs == fromDictWithStrValues(toDictWithStrValues(revealedAttrs))

@@ -100,6 +100,16 @@ async def testNonceShouldBeSame(prover1, verifier, claimsProver1Gvt, nonce, genN
     assert not await verifier.verify(proofInput, proof, revealedAttrs, genNonce)
 
 
+def testAttrsInClaims(claimsProver1Gvt, attrsProver1Gvt):
+    attrs = claimsProver1Gvt.primaryClaim.attrs
+    encodedAttrs = claimsProver1Gvt.primaryClaim.encodedAttrs
+
+    assert attrs
+    assert encodedAttrs
+    assert attrs == attrsProver1Gvt._vals
+    assert encodedAttrs.keys() == attrsProver1Gvt.keys()
+
+
 @pytest.mark.asyncio
 async def testUParamShouldBeSame(prover1, verifier, issuerGvt, claimDefGvtId, attrsProver1Gvt, keysGvt,
                                  issueAccumulatorGvt):

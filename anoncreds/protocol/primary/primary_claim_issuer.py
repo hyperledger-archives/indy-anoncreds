@@ -94,7 +94,7 @@ class PrimaryClaimIssuer:
         A = await self._sign(id, encodedAttrs, vprimeprime, u, e)
 
         m2 = await self._wallet.getContextAttr(id)
-        return PrimaryClaim(attributes.values(), encodedAttrs, m2, A, e, vprimeprime)
+        return PrimaryClaim(attributes._vals, encodedAttrs, m2, A, e, vprimeprime)
 
     async def _sign(self, id: ID, attrs, v, u, e):
         pk = await self._wallet.getPublicKey(id)

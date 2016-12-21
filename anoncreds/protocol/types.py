@@ -236,7 +236,7 @@ class ClaimRequest(namedtuple('ClaimRequest', 'userId U Ur'), NamedTupleStrSeria
 
 # Accumulator = namedtuple('Accumulator', ['iA', 'acc', 'V', 'L'])
 
-class PrimaryClaim(namedtuple('PrimaryClaim', 'attrs m2 A e v'), NamedTupleStrSerializer):
+class PrimaryClaim(namedtuple('PrimaryClaim', 'attrs encodedAttrs m2 A e v'), NamedTupleStrSerializer):
     pass
 
 

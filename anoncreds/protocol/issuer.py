@@ -5,7 +5,7 @@ from anoncreds.protocol.primary.primary_claim_issuer import PrimaryClaimIssuer
 from anoncreds.protocol.repo.attributes_repo import AttributeRepo
 from anoncreds.protocol.revocation.accumulators.non_revocation_claim_issuer import NonRevocationClaimIssuer
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, \
-    ClaimDefinition, ID, Claims, ClaimRequest
+    ClaimDefinition, ID, Claims, ClaimRequest, Attribs
 from anoncreds.protocol.utils import strToInt, get_hash_as_int
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
 from config.config import cmod
@@ -47,7 +47,7 @@ class Issuer:
 
     async def issueClaim(self, id: ID, claimRequest: ClaimRequest, iA=None, i=None) -> Claims:
         claimDefKey = (await self.wallet.getClaimDef(id)).getKey()
-        attributes = self._attrRepo.getAttributes(claimDefKey, claimRequest.userId).encoded()
+        attributes = self._attrRepo.getAttributes(claimDefKey, claimRequest.userId)
         iA = iA if iA else (await self.wallet.getAccumulator(id)).iA
 
         await self._genContxt(id, iA, claimRequest.userId)
@@ -75,7 +75,7 @@ class Issuer:
         await self.wallet.submitContextAttr(id, m2)
         return m2
 
-    async def _issuePrimaryClaim(self, id: ID, attributes, U) -> PrimaryClaim:
+    async def _issuePrimaryClaim(self, id: ID, attributes: Attribs, U) -> PrimaryClaim:
         return await self._primaryIssuer.issuePrimaryClaim(id, attributes, U)
 
     async def _issueNonRevocationClaim(self, id: ID, Ur, iA=None, i=None) -> NonRevocationClaim:

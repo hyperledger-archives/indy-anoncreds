@@ -105,13 +105,13 @@ class Prover:
             predicatesForClaim = []
 
             for revealedAttr in revealedAttrs:
-                if revealedAttr in claim.primaryClaim.attrs:
+                if revealedAttr in claim.primaryClaim.encodedAttrs:
                     revealedAttrsForClaim.append(revealedAttr)
                     foundRevealedAttrs.add(revealedAttr)
-                    revealedAttrsWithValues[revealedAttr] = claim.primaryClaim.attrs[revealedAttr]
+                    revealedAttrsWithValues[revealedAttr] = claim.primaryClaim.encodedAttrs[revealedAttr]
 
             for predicate in predicates:
-                if predicate.attrName in claim.primaryClaim.attrs:
+                if predicate.attrName in claim.primaryClaim.encodedAttrs:
                     predicatesForClaim.append(predicate)
                     foundPredicates.add(predicate)
 

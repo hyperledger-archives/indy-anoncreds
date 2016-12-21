@@ -64,7 +64,7 @@ class PrimaryProofBuilder:
     async def _initEqProof(self, claimDefKey, c1: PrimaryClaim, revealedAttrs: Sequence[str], m1Tilde, m2Tilde) \
             -> PrimaryEqualInitProof:
         m2Tilde = m2Tilde if m2Tilde else cmod.integer(cmod.randomBits(LARGE_MVECT))
-        unrevealedAttrs = getUnrevealedAttrs(c1.attrs, revealedAttrs)
+        unrevealedAttrs = getUnrevealedAttrs(c1.encodedAttrs, revealedAttrs)
         mtilde = self._getMTilde(unrevealedAttrs)
 
         Ra = cmod.integer(cmod.randomBits(LARGE_VPRIME))
@@ -80,7 +80,7 @@ class PrimaryProofBuilder:
 
         Rur = 1 % pk.N
         for k, value in unrevealedAttrs.items():
-            if k in c1.attrs:
+            if k in c1.encodedAttrs:
                 Rur = Rur * (pk.R[k] ** mtilde[k])
         Rur *= pk.Rms ** m1Tilde
         Rur *= pk.Rctxt ** m2Tilde
@@ -96,7 +96,7 @@ class PrimaryProofBuilder:
         # gen U for Delta
         pk = await self._wallet.getPublicKey(ID(claimDefKey))
         k, value = predicate.attrName, predicate.value
-        delta = c1.attrs[k] - value
+        delta = c1.encodedAttrs[k] - value
         if delta < 0:
             raise ValueError("Predicate is not satisfied")
 
@@ -132,7 +132,7 @@ class PrimaryProofBuilder:
 
         m = {}
         for k in initProof.unrevealedAttrs:
-            m[str(k)] = initProof.mTilde[str(k)] + (cH * initProof.c1.attrs[str(k)])
+            m[str(k)] = initProof.mTilde[str(k)] + (cH * initProof.c1.encodedAttrs[str(k)])
         ms = await self._wallet.getMasterSecret(ID(claimDefKey))
         m1 = initProof.m1Tilde + (cH * ms)
         m2 = initProof.m2Tilde + (cH * initProof.c1.m2)

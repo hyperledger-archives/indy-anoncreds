@@ -41,9 +41,9 @@ setup(
     keywords='Anonymous credentials',
     packages=find_packages(exclude=['docs', 'docs*']),
     package_data={
-        '': ['*.txt', '*.md', '*.rst', '*.json', '*.conf', '*.html',
-             '*.css', '*.ico', '*.png', 'LICENSE', 'LEGAL']},
-    install_requires=['Charm-Crypto==0.43', 'lazy-object-proxy', 'pytest==3.0.2'],
+        '':       ['*.txt',  '*.md', '*.rst', '*.json', '*.conf', '*.html',
+                   '*.css', '*.ico', '*.png', 'LICENSE', 'LEGAL']},
+    install_requires=['Charm-Crypto', 'lazy-object-proxy', 'base58'],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest==3.0.2', 'pytest-asyncio']
+    tests_require=['pytest', 'pytest-asyncio']
 )

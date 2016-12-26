@@ -1,6 +1,7 @@
 import pytest
 
-from anoncreds.protocol.types import ProofInput, PredicateGE, Claims, ProofClaims
+from anoncreds.protocol.types import ProofInput, PredicateGE, Claims, \
+    ProofClaims
 from anoncreds.test.conftest import presentProofAndVerify
 
 
@@ -8,32 +9,39 @@ from anoncreds.test.conftest import presentProofAndVerify
 async def testPrimaryClaimOnlyEmpty(prover1, verifier, claimsProver1Gvt, nonce):
     proofInput = ProofInput([])
     claims, revealedAttrs = await prover1._findClaims(proofInput)
-    claims = {claimDefKey: ProofClaims(Claims(primaryClaim=proofClaim.claims.primaryClaim))
+    claims = {claimDefKey: ProofClaims(
+        Claims(primaryClaim=proofClaim.claims.primaryClaim))
               for claimDefKey, proofClaim in claims.items()}
     proof = await prover1._prepareProof(claims, nonce)
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
 @pytest.mark.asyncio
-async def testPrimaryClaimNoPredicates(prover1, verifier, claimsProver1Gvt, nonce, claimDefGvtId,
+async def testPrimaryClaimNoPredicates(prover1, verifier, claimsProver1Gvt,
+                                       nonce, claimDefGvtId,
                                        attrRepo):
     revealledAttrs = ['name']
     proofInput = ProofInput(revealledAttrs)
     claims, revealedAttrs = await prover1._findClaims(proofInput)
     claims = {
-        claimDefKey: ProofClaims(Claims(primaryClaim=proofClaim.claims.primaryClaim), revealedAttrs=revealledAttrs)
+        claimDefKey: ProofClaims(
+            Claims(primaryClaim=proofClaim.claims.primaryClaim),
+            revealedAttrs=revealledAttrs)
         for claimDefKey, proofClaim in claims.items()}
     proof = await prover1._prepareProof(claims, nonce)
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
 @pytest.mark.asyncio
-async def testPrimaryClaimPredicatesOnly(prover1, verifier, claimsProver1Gvt, nonce, claimDefGvtId,
+async def testPrimaryClaimPredicatesOnly(prover1, verifier, claimsProver1Gvt,
+                                         nonce, claimDefGvtId,
                                          attrRepo):
     predicates = [PredicateGE('age', 18)]
     proofInput = ProofInput(predicates=predicates)
     claims, revealedAttrs = await prover1._findClaims(proofInput)
-    claims = {claimDefKey: ProofClaims(Claims(primaryClaim=proofClaim.claims.primaryClaim), predicates=predicates)
+    claims = {claimDefKey: ProofClaims(
+        Claims(primaryClaim=proofClaim.claims.primaryClaim),
+        predicates=predicates)
               for claimDefKey, proofClaim in claims.items()}
     proof = await prover1._prepareProof(claims, nonce)
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
@@ -93,7 +101,8 @@ async def testMultipleGePredicateNegative(prover1, verifier, claimsProver1Gvt):
 
 
 @pytest.mark.asyncio
-async def testNonceShouldBeSame(prover1, verifier, claimsProver1Gvt, nonce, genNonce):
+async def testNonceShouldBeSame(prover1, verifier, claimsProver1Gvt, nonce,
+                                genNonce):
     revealedAttrs = ['name']
     proofInput = ProofInput(revealedAttrs, [])
     proof, revealedAttrs = await prover1.presentProof(proofInput, nonce)
@@ -111,7 +120,8 @@ def testAttrsInClaims(claimsProver1Gvt, attrsProver1Gvt):
 
 
 @pytest.mark.asyncio
-async def testUParamShouldBeSame(prover1, verifier, issuerGvt, claimDefGvtId, attrsProver1Gvt, keysGvt,
+async def testUParamShouldBeSame(prover1, verifier, issuerGvt, claimDefGvtId,
+                                 attrsProver1Gvt, keysGvt,
                                  issueAccumulatorGvt):
     claimsReq = await prover1.createClaimRequest(claimDefGvtId)
 
@@ -124,7 +134,9 @@ async def testUParamShouldBeSame(prover1, verifier, issuerGvt, claimDefGvtId, at
 
 
 @pytest.mark.asyncio
-async def testUrParamShouldBeSame(prover1, issuerGvt, claimDefGvtId, attrsProver1Gvt, keysGvt, issueAccumulatorGvt):
+async def testUrParamShouldBeSame(prover1, issuerGvt, claimDefGvtId,
+                                  attrsProver1Gvt, keysGvt,
+                                  issueAccumulatorGvt):
     claimsReq = await prover1.createClaimRequest(claimDefGvtId)
 
     claimsReq = claimsReq._replace(Ur=claimsReq.Ur ** 2)

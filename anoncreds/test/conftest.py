@@ -123,12 +123,14 @@ def verifier(publicRepo):
 
 @pytest.fixture(scope="function")
 def claimDefGvt(issuerGvt, event_loop):
-    return event_loop.run_until_complete(issuerGvt.genClaimDef("GVT", "1.0", GVT.attribNames()))
+    return event_loop.run_until_complete(
+        issuerGvt.genClaimDef("GVT", "1.0", GVT.attribNames()))
 
 
 @pytest.fixture(scope="function")
 def claimDefXyz(issuerXyz, event_loop):
-    return event_loop.run_until_complete(issuerXyz.genClaimDef("XYZCorp", "1.0", XYZCorp.attribNames()))
+    return event_loop.run_until_complete(
+        issuerXyz.genClaimDef("XYZCorp", "1.0", XYZCorp.attribNames()))
 
 
 @pytest.fixture(scope="function")
@@ -143,27 +145,26 @@ def claimDefXyzId(claimDefXyz):
 
 @pytest.fixture(scope="function")
 def keysGvt(primes1, issuerGvt, claimDefGvtId, event_loop):
-    event_loop.run_until_complete(issuerGvt.genKeys(claimDefGvtId, **primes1))
-
-
-@pytest.fixture(scope="function")
-def pkGvt(keysGvt, issuerWallet1, claimDefGvtId, event_loop):
-    return event_loop.run_until_complete(issuerWallet1.getPublicKey(claimDefGvtId))
+    return event_loop.run_until_complete(issuerGvt.genKeys(claimDefGvtId,
+                                                           **primes1))
 
 
 @pytest.fixture(scope="function")
 def keysXyz(primes2, issuerXyz, claimDefXyzId, event_loop):
-    event_loop.run_until_complete(issuerXyz.genKeys(claimDefXyzId, **primes2))
+    return event_loop.run_until_complete(issuerXyz.genKeys(claimDefXyzId,
+                                                           **primes2))
 
 
 @pytest.fixture(scope="function")
 def issueAccumulatorGvt(claimDefGvtId, issuerGvt, keysGvt, event_loop):
-    event_loop.run_until_complete(issuerGvt.issueAccumulator(id=claimDefGvtId, iA=iA1, L=L))
+    event_loop.run_until_complete(
+        issuerGvt.issueAccumulator(id=claimDefGvtId, iA=iA1, L=L))
 
 
 @pytest.fixture(scope="function")
 def issueAccumulatorXyz(claimDefXyzId, issuerXyz, keysXyz, event_loop):
-    event_loop.run_until_complete(issuerXyz.issueAccumulator(id=claimDefXyzId, iA=iA2, L=L))
+    event_loop.run_until_complete(
+        issuerXyz.issueAccumulator(id=claimDefXyzId, iA=iA2, L=L))
 
 
 @pytest.fixture(scope="function")
@@ -195,39 +196,56 @@ def attrsProver2Xyz(attrRepo, claimDefXyz):
 
 
 @pytest.fixture(scope="function")
-def claimsRequestProver1Gvt(prover1, claimDefGvtId, keysGvt, issueAccumulatorGvt, event_loop):
-    return event_loop.run_until_complete(prover1.createClaimRequest(claimDefGvtId))
+def claimsRequestProver1Gvt(prover1, claimDefGvtId, keysGvt,
+                            issueAccumulatorGvt, event_loop):
+    return event_loop.run_until_complete(
+        prover1.createClaimRequest(claimDefGvtId))
 
 
 @pytest.fixture(scope="function")
-def claimsProver1Gvt(prover1, issuerGvt, claimsRequestProver1Gvt, claimDefGvtId, attrsProver1Gvt, event_loop):
-    claims = event_loop.run_until_complete(issuerGvt.issueClaim(claimDefGvtId, claimsRequestProver1Gvt))
+def claimsProver1Gvt(prover1, issuerGvt, claimsRequestProver1Gvt, claimDefGvtId,
+                     attrsProver1Gvt, event_loop):
+    claims = event_loop.run_until_complete(
+        issuerGvt.issueClaim(claimDefGvtId, claimsRequestProver1Gvt))
     event_loop.run_until_complete(prover1.processClaim(claimDefGvtId, claims))
-    return event_loop.run_until_complete(prover1.wallet.getClaims(claimDefGvtId))
+    return event_loop.run_until_complete(
+        prover1.wallet.getClaims(claimDefGvtId))
 
 
 @pytest.fixture(scope="function")
-def claimsProver2Gvt(prover2, issuerGvt, claimDefGvtId, attrsProver2Gvt, keysGvt, issueAccumulatorGvt, event_loop):
-    claimsReq = event_loop.run_until_complete(prover2.createClaimRequest(claimDefGvtId))
-    claims = event_loop.run_until_complete(issuerGvt.issueClaim(claimDefGvtId, claimsReq))
+def claimsProver2Gvt(prover2, issuerGvt, claimDefGvtId, attrsProver2Gvt,
+                     keysGvt, issueAccumulatorGvt, event_loop):
+    claimsReq = event_loop.run_until_complete(
+        prover2.createClaimRequest(claimDefGvtId))
+    claims = event_loop.run_until_complete(
+        issuerGvt.issueClaim(claimDefGvtId, claimsReq))
     event_loop.run_until_complete(prover2.processClaim(claimDefGvtId, claims))
-    return event_loop.run_until_complete(prover2.wallet.getClaims(claimDefGvtId))
+    return event_loop.run_until_complete(
+        prover2.wallet.getClaims(claimDefGvtId))
 
 
 @pytest.fixture(scope="function")
-def claimsProver1Xyz(prover1, issuerXyz, claimDefXyzId, attrsProver1Xyz, keysXyz, issueAccumulatorXyz, event_loop):
-    claimsReq = event_loop.run_until_complete(prover1.createClaimRequest(claimDefXyzId))
-    claims = event_loop.run_until_complete(issuerXyz.issueClaim(claimDefXyzId, claimsReq))
+def claimsProver1Xyz(prover1, issuerXyz, claimDefXyzId, attrsProver1Xyz,
+                     keysXyz, issueAccumulatorXyz, event_loop):
+    claimsReq = event_loop.run_until_complete(
+        prover1.createClaimRequest(claimDefXyzId))
+    claims = event_loop.run_until_complete(
+        issuerXyz.issueClaim(claimDefXyzId, claimsReq))
     event_loop.run_until_complete(prover1.processClaim(claimDefXyzId, claims))
-    return event_loop.run_until_complete(prover1.wallet.getClaims(claimDefXyzId))
+    return event_loop.run_until_complete(
+        prover1.wallet.getClaims(claimDefXyzId))
 
 
 @pytest.fixture(scope="function")
-def claimsProver2Xyz(prover2, issuerXyz, claimDefXyzId, attrsProver2Xyz, keysXyz, issueAccumulatorXyz, event_loop):
-    claimsReq = event_loop.run_until_complete(prover2.createClaimRequest(claimDefXyzId))
-    claims = event_loop.run_until_complete(issuerXyz.issueClaim(claimDefXyzId, claimsReq))
+def claimsProver2Xyz(prover2, issuerXyz, claimDefXyzId, attrsProver2Xyz,
+                     keysXyz, issueAccumulatorXyz, event_loop):
+    claimsReq = event_loop.run_until_complete(
+        prover2.createClaimRequest(claimDefXyzId))
+    claims = event_loop.run_until_complete(
+        issuerXyz.issueClaim(claimDefXyzId, claimsReq))
     event_loop.run_until_complete(prover2.processClaim(claimDefXyzId, claims))
-    return event_loop.run_until_complete(prover2.wallet.getClaims(claimDefXyzId))
+    return event_loop.run_until_complete(
+        prover2.wallet.getClaims(claimDefXyzId))
 
 
 @pytest.fixture(scope="function")

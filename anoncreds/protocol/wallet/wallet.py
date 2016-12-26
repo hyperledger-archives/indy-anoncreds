@@ -2,7 +2,8 @@ from abc import abstractmethod
 from typing import Any, Dict, Sequence
 
 from anoncreds.protocol.repo.public_repo import PublicRepo
-from anoncreds.protocol.types import ClaimDefinition, ClaimDefinitionKey, PublicKey, ID, \
+from anoncreds.protocol.types import ClaimDefinition, ClaimDefinitionKey, \
+    PublicKey, ID, \
     RevocationPublicKey, AccumulatorPublicKey, Accumulator, TailsType
 
 
@@ -75,7 +76,8 @@ class WalletInMemory(Wallet):
 
         claimDef = await self._repo.getClaimDef(id)
         if not claimDef:
-            raise ValueError('No claim definition with ID={} and key={}'.format(id.claimDefId, id.claimDefKey))
+            raise ValueError('No claim definition with ID={} and key={}'.format(
+                id.claimDefId, id.claimDefKey))
 
         self._cacheClaimDef(claimDef)
 
@@ -88,13 +90,16 @@ class WalletInMemory(Wallet):
         return await self._getValueForId(self._pks, id, self._repo.getPublicKey)
 
     async def getPublicKeyRevocation(self, id: ID) -> RevocationPublicKey:
-        return await self._getValueForId(self._pkRs, id, self._repo.getPublicKeyRevocation)
+        return await self._getValueForId(self._pkRs, id,
+                                         self._repo.getPublicKeyRevocation)
 
     async def getPublicKeyAccumulator(self, id: ID) -> AccumulatorPublicKey:
-        return await self._getValueForId(self._accumPks, id, self._repo.getPublicKeyAccumulator)
+        return await self._getValueForId(self._accumPks, id,
+                                         self._repo.getPublicKeyAccumulator)
 
     async def getAccumulator(self, id: ID) -> Accumulator:
-        return await self._getValueForId(self._accums, id, self._repo.getAccumulator)
+        return await self._getValueForId(self._accums, id,
+                                         self._repo.getAccumulator)
 
     async def getTails(self, id: ID) -> TailsType:
         return await self._getValueForId(self._tails, id, self._repo.getTails)
@@ -109,7 +114,8 @@ class WalletInMemory(Wallet):
 
     # HELPER
 
-    async def _getValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID, getFromRepo=None) -> Any:
+    async def _getValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID,
+                             getFromRepo=None) -> Any:
         claimDef = await self.getClaimDef(id)
         claimDefKey = claimDef.getKey()
 
@@ -124,12 +130,14 @@ class WalletInMemory(Wallet):
 
         if not value:
             raise ValueError(
-                'No value for claim definition with ID={} and key={}'.format(id.claimDefId, id.claimDefKey))
+                'No value for claim definition with ID={} and key={}'.format(
+                    id.claimDefId, id.claimDefKey))
 
         dict[claimDefKey] = value
         return value
 
-    async def _cacheValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID, value: Any):
+    async def _cacheValueForId(self, dict: Dict[ClaimDefinitionKey, Any],
+                               id: ID, value: Any):
         claimDef = await self.getClaimDef(id)
         claimDefKey = claimDef.getKey()
         dict[claimDefKey] = value

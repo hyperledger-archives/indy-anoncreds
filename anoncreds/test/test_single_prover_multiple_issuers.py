@@ -38,7 +38,8 @@ async def testMultipleGePredicate(prover1, verifier, claimsProver1):
 
 
 @pytest.mark.asyncio
-async def testMultipleGePredicateMultipleRevealed(prover1, verifier, claimsProver1):
+async def testMultipleGePredicateMultipleRevealed(prover1, verifier,
+                                                  claimsProver1):
     proofInput = ProofInput(['name', 'status'],
                             [PredicateGE('age', 18),
                              PredicateGE('period', 5)])

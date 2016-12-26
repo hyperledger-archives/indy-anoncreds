@@ -27,11 +27,13 @@ class ProverWallet(Wallet):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitPrimaryClaimInitData(self, id: ID, claimInitData: ClaimInitDataType):
+    async def submitPrimaryClaimInitData(self, id: ID,
+                                         claimInitData: ClaimInitDataType):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitNonRevocClaimInitData(self, id: ID, claimInitData: ClaimInitDataType):
+    async def submitNonRevocClaimInitData(self, id: ID,
+                                          claimInitData: ClaimInitDataType):
         raise NotImplementedError
 
     @abstractmethod
@@ -90,10 +92,12 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
     async def submitMasterSecret(self, ms, id: ID):
         await self._cacheValueForId(self._m1s, id, ms)
 
-    async def submitPrimaryClaimInitData(self, id: ID, claimInitData: ClaimInitDataType):
+    async def submitPrimaryClaimInitData(self, id: ID,
+                                         claimInitData: ClaimInitDataType):
         await self._cacheValueForId(self._primaryInitData, id, claimInitData)
 
-    async def submitNonRevocClaimInitData(self, id: ID, claimInitData: ClaimInitDataType):
+    async def submitNonRevocClaimInitData(self, id: ID,
+                                          claimInitData: ClaimInitDataType):
         await self._cacheValueForId(self._nonRevocInitData, id, claimInitData)
 
     async def submitContextAttr(self, id: ID, m2):

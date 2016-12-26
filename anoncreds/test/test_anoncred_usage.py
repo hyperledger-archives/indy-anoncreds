@@ -12,6 +12,7 @@ from anoncreds.protocol.wallet.prover_wallet import ProverWalletInMemory
 from anoncreds.protocol.wallet.wallet import WalletInMemory
 from anoncreds.test.conftest import GVT, XYZCorp
 
+
 @pytest.mark.asyncio
 async def testSingleIssuerSingleProver(primes1):
     # 1. Init entities
@@ -50,6 +51,7 @@ async def testSingleIssuerSingleProver(primes1):
     proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
+
 @pytest.mark.asyncio
 async def testMultiplIssuersSingleProver(primes1, primes2):
     # 1. Init entities
@@ -61,7 +63,8 @@ async def testMultiplIssuersSingleProver(primes1, primes2):
     # 2. Create a Claim Def
     claimDef1 = await issuer1.genClaimDef('GVT', '1.0', GVT.attribNames())
     claimDefId1 = ID(claimDef1.getKey())
-    claimDef2 = await issuer2.genClaimDef('XYZCorp', '1.0', XYZCorp.attribNames())
+    claimDef2 = await issuer2.genClaimDef('XYZCorp', '1.0',
+                                          XYZCorp.attribNames())
     claimDefId2 = ID(claimDef2.getKey())
 
     # 3. Create keys for the Claim Def
@@ -97,6 +100,7 @@ async def testMultiplIssuersSingleProver(primes1, primes2):
     proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
+
 @pytest.mark.asyncio
 async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     # 1. Init entities
@@ -107,7 +111,8 @@ async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     # 2. Create a Claim Def
     claimDef1 = await issuer.genClaimDef('GVT', '1.0', GVT.attribNames())
     claimDefId1 = ID(claimDef1.getKey())
-    claimDef2 = await issuer.genClaimDef('XYZCorp', '1.0', XYZCorp.attribNames())
+    claimDef2 = await issuer.genClaimDef('XYZCorp', '1.0',
+                                         XYZCorp.attribNames())
     claimDefId2 = ID(claimDef2.getKey())
 
     # 3. Create keys for the Claim Def
@@ -140,6 +145,7 @@ async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     nonce = verifier.generateNonce()
     proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
+
 
 @pytest.mark.asyncio
 async def testSingleIssuerSingleProverPrimaryOnly(primes1):

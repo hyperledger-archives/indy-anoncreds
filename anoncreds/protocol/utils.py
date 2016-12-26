@@ -12,7 +12,8 @@ from typing import Dict, List, Set
 import base58
 
 from anoncreds.protocol.globals import KEYS, PK_R
-from anoncreds.protocol.globals import LARGE_PRIME, LARGE_MASTER_SECRET, LARGE_VPRIME, PAIRING_GROUP
+from anoncreds.protocol.globals import LARGE_PRIME, LARGE_MASTER_SECRET, \
+    LARGE_VPRIME, PAIRING_GROUP
 from config.config import cmod
 
 
@@ -52,7 +53,8 @@ def serializeToStr(n):
     if isInteger(n):
         return INT_PREFIX + str(n)
     if isGroupElement(n):
-        return GROUP_PREFIX + cmod.PairingGroup(PAIRING_GROUP).serialize(n).decode()
+        return GROUP_PREFIX + cmod.PairingGroup(PAIRING_GROUP).serialize(
+            n).decode()
     return n
 
 
@@ -110,9 +112,11 @@ def toDictWithStrValues(d):
         elif isNamedTuple(value):
             result[serializeToStr(key)] = toDictWithStrValues(value._asdict())
         elif isinstance(value, Set):
-            result[serializeToStr(key)] = {toDictWithStrValues(v) for v in value}
+            result[serializeToStr(key)] = {toDictWithStrValues(v) for v in
+                                           value}
         elif isinstance(value, List):
-            result[serializeToStr(key)] = [toDictWithStrValues(v) for v in value]
+            result[serializeToStr(key)] = [toDictWithStrValues(v) for v in
+                                           value]
         elif value:
             result[serializeToStr(key)] = serializeToStr(value)
     return result
@@ -128,9 +132,11 @@ def fromDictWithStrValues(d):
         elif isinstance(value, str):
             result[deserializeFromStr(key)] = deserializeFromStr(value)
         elif isinstance(value, Set):
-            result[deserializeFromStr(key)] = {fromDictWithStrValues(v) for v in value}
+            result[deserializeFromStr(key)] = {fromDictWithStrValues(v) for v in
+                                               value}
         elif isinstance(value, List):
-            result[deserializeFromStr(key)] = [fromDictWithStrValues(v) for v in value]
+            result[deserializeFromStr(key)] = [fromDictWithStrValues(v) for v in
+                                               value]
         elif value:
             result[deserializeFromStr(key)] = deserializeFromStr(value)
     return result
@@ -198,7 +204,8 @@ def randomString(size: int = 20,
 
 
 def getUnrevealedAttrs(encodedAttrs, revealedAttrsList):
-    revealedAttrs, unrevealedAttrs = splitRevealedAttrs(encodedAttrs, revealedAttrsList)
+    revealedAttrs, unrevealedAttrs = splitRevealedAttrs(encodedAttrs,
+                                                        revealedAttrsList)
     return unrevealedAttrs
 
 
@@ -220,7 +227,8 @@ def fourSquares(delta: int):
     if (u1 ** 2) + (u2 ** 2) + (u3 ** 2) + (u4 ** 2) == delta:
         return {'0': u1, '1': u2, '2': u3, '3': u4}
     else:
-        raise Exception("Cannot get the four squares for delta {0}".format(delta))
+        raise Exception(
+            "Cannot get the four squares for delta {0}".format(delta))
 
 
 def strToCryptoInteger(n):

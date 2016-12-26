@@ -67,8 +67,10 @@ def testToFromDictWithStrValuesLists():
     group = cmod.PairingGroup(PAIRING_GROUP)
     dict = OrderedDict((
         ('47', []),
-        ('7', [cmod.integer(111) % 11, cmod.integer(222), cmod.integer(333) % 45]),
-        ('6', [group.init(cmod.ZR, 555), group.random(cmod.G1), group.random(cmod.G1)])
+        ('7',
+         [cmod.integer(111) % 11, cmod.integer(222), cmod.integer(333) % 45]),
+        ('6', [group.init(cmod.ZR, 555), group.random(cmod.G1),
+               group.random(cmod.G1)])
     ))
     assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
 
@@ -115,8 +117,10 @@ def testToFromDictWithStrValuesMixed():
         ('1', {}),
         ('3', 3),
         ('5', cmod.integer(111) % 11),
-        ('7', [cmod.integer(111) % 11, cmod.integer(222), cmod.integer(333) % 45]),
-        ('6', [group.init(cmod.ZR, 555), group.random(cmod.G1), group.random(cmod.G1)]),
+        ('7',
+         [cmod.integer(111) % 11, cmod.integer(222), cmod.integer(333) % 45]),
+        ('6', [group.init(cmod.ZR, 555), group.random(cmod.G1),
+               group.random(cmod.G1)]),
         ('10', group.random(cmod.G1))
     ))
     assert dict == fromDictWithStrValues(toDictWithStrValues(dict))

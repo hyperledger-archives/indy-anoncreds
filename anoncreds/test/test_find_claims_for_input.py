@@ -16,7 +16,8 @@ async def testOneRevealedOnly(prover1, allClaims, claimDefGvtId, attrRepo):
     proofClaims = {claimDefGvtId.claimDefKey:
                        ProofClaims(claimsGvt, ['name'], [])}
     revealedAttrs = {'name':
-                         attrRepo.getAttributes(claimDefGvtId.claimDefKey, prover1.id).encoded()['name']}
+                         attrRepo.getAttributes(claimDefGvtId.claimDefKey,
+                                                prover1.id).encoded()['name']}
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
@@ -27,7 +28,8 @@ async def testPredicatesEmpty(prover1, allClaims, claimDefGvtId, attrRepo):
     proofClaims = {claimDefGvtId.claimDefKey:
                        ProofClaims(claimsGvt, ['name'], [])}
     revealedAttrs = {'name':
-                         attrRepo.getAttributes(claimDefGvtId.claimDefKey, prover1.id).encoded()['name']}
+                         attrRepo.getAttributes(claimDefGvtId.claimDefKey,
+                                                prover1.id).encoded()['name']}
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
@@ -52,18 +54,23 @@ async def testRevealedEmpty(prover1, allClaims, claimDefGvtId):
 
 
 @pytest.mark.asyncio
-async def testRevealedAndPredicateSameIssuer(prover1, allClaims, claimDefGvtId, attrRepo):
+async def testRevealedAndPredicateSameIssuer(prover1, allClaims, claimDefGvtId,
+                                             attrRepo):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
     claimsGvt = await prover1.wallet.getClaims(claimDefGvtId)
     proofClaims = {claimDefGvtId.claimDefKey:
-                       ProofClaims(claimsGvt, ['name'], [PredicateGE('age', 18)])}
+                       ProofClaims(claimsGvt, ['name'],
+                                   [PredicateGE('age', 18)])}
     revealedAttrs = {'name':
-                         attrRepo.getAttributes(claimDefGvtId.claimDefKey, prover1.id).encoded()['name']}
+                         attrRepo.getAttributes(claimDefGvtId.claimDefKey,
+                                                prover1.id).encoded()['name']}
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.asyncio
-async def testRevealedAndPredicateDifferentIssuers(prover1, allClaims, claimDefGvtId, claimDefXyzId, attrRepo):
+async def testRevealedAndPredicateDifferentIssuers(prover1, allClaims,
+                                                   claimDefGvtId, claimDefXyzId,
+                                                   attrRepo):
     proofInput = ProofInput(['status'], [PredicateGE('age', 18)])
     claimsGvt = await prover1.wallet.getClaims(claimDefGvtId)
     claimsXyz = await prover1.wallet.getClaims(claimDefXyzId)
@@ -72,12 +79,14 @@ async def testRevealedAndPredicateDifferentIssuers(prover1, allClaims, claimDefG
                    claimDefXyzId.claimDefKey:
                        ProofClaims(claimsXyz, ['status'], [])}
     revealedAttrs = {'status':
-                         attrRepo.getAttributes(claimDefXyzId.claimDefKey, prover1.id).encoded()['status']}
+                         attrRepo.getAttributes(claimDefXyzId.claimDefKey,
+                                                prover1.id).encoded()['status']}
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.asyncio
-async def testMultipledRevealed(prover1, allClaims, claimDefGvtId, claimDefXyzId, attrRepo):
+async def testMultipledRevealed(prover1, allClaims, claimDefGvtId,
+                                claimDefXyzId, attrRepo):
     proofInput = ProofInput(['status', 'name'], [])
     claimsGvt = await prover1.wallet.getClaims(claimDefGvtId)
     claimsXyz = await prover1.wallet.getClaims(claimDefXyzId)
@@ -86,16 +95,20 @@ async def testMultipledRevealed(prover1, allClaims, claimDefGvtId, claimDefXyzId
                    claimDefXyzId.claimDefKey:
                        ProofClaims(claimsXyz, ['status'], [])}
     revealedAttrs = {'name':
-                         attrRepo.getAttributes(claimDefGvtId.claimDefKey, prover1.id).encoded()['name'],
+                         attrRepo.getAttributes(claimDefGvtId.claimDefKey,
+                                                prover1.id).encoded()['name'],
                      'status':
-                         attrRepo.getAttributes(claimDefXyzId.claimDefKey, prover1.id).encoded()['status'],
+                         attrRepo.getAttributes(claimDefXyzId.claimDefKey,
+                                                prover1.id).encoded()['status'],
                      }
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.asyncio
-async def testMultipledPredicates(prover1, allClaims, claimDefGvtId, claimDefXyzId):
-    proofInput = ProofInput([], [PredicateGE('age', 18), PredicateGE('period', 8)])
+async def testMultipledPredicates(prover1, allClaims, claimDefGvtId,
+                                  claimDefXyzId):
+    proofInput = ProofInput([],
+                            [PredicateGE('age', 18), PredicateGE('period', 8)])
     claimsGvt = await prover1.wallet.getClaims(claimDefGvtId)
     claimsXyz = await prover1.wallet.getClaims(claimDefXyzId)
     proofClaims = {claimDefGvtId.claimDefKey:
@@ -107,18 +120,24 @@ async def testMultipledPredicates(prover1, allClaims, claimDefGvtId, claimDefXyz
 
 
 @pytest.mark.asyncio
-async def testMultipleAll(prover1, allClaims, claimDefGvtId, claimDefXyzId, attrRepo):
-    proofInput = ProofInput(['status', 'name'], [PredicateGE('age', 18), PredicateGE('period', 8)])
+async def testMultipleAll(prover1, allClaims, claimDefGvtId, claimDefXyzId,
+                          attrRepo):
+    proofInput = ProofInput(['status', 'name'],
+                            [PredicateGE('age', 18), PredicateGE('period', 8)])
     claimsGvt = await prover1.wallet.getClaims(claimDefGvtId)
     claimsXyz = await prover1.wallet.getClaims(claimDefXyzId)
     proofClaims = {claimDefGvtId.claimDefKey:
-                       ProofClaims(claimsGvt, ['name'], [PredicateGE('age', 18)]),
+                       ProofClaims(claimsGvt, ['name'],
+                                   [PredicateGE('age', 18)]),
                    claimDefXyzId.claimDefKey:
-                       ProofClaims(claimsXyz, ['status'], [PredicateGE('period', 8)])}
+                       ProofClaims(claimsXyz, ['status'],
+                                   [PredicateGE('period', 8)])}
     revealedAttrs = {'name':
-                         attrRepo.getAttributes(claimDefGvtId.claimDefKey, prover1.id).encoded()['name'],
+                         attrRepo.getAttributes(claimDefGvtId.claimDefKey,
+                                                prover1.id).encoded()['name'],
                      'status':
-                         attrRepo.getAttributes(claimDefXyzId.claimDefKey, prover1.id).encoded()['status'],
+                         attrRepo.getAttributes(claimDefXyzId.claimDefKey,
+                                                prover1.id).encoded()['status'],
                      }
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
@@ -132,6 +151,7 @@ async def testAttrNotFound(prover1, allClaims):
 
 @pytest.mark.asyncio
 async def testPredicateNotFound(prover1, allClaims):
-    proofInput = ProofInput([], [PredicateGE('age', 18), PredicateGE('aaaa', 8)])
+    proofInput = ProofInput([],
+                            [PredicateGE('age', 18), PredicateGE('aaaa', 8)])
     with pytest.raises(ValueError):
         await prover1._findClaims(proofInput)

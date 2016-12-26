@@ -1,6 +1,8 @@
 from anoncreds.protocol.globals import PAIRING_GROUP
-from anoncreds.protocol.types import NonRevocationClaim, RevocationPublicKey, RevocationSecretKey, \
-    Accumulator, TailsType, AccumulatorPublicKey, AccumulatorSecretKey, Witness, ID, TimestampType
+from anoncreds.protocol.types import NonRevocationClaim, RevocationPublicKey, \
+    RevocationSecretKey, \
+    Accumulator, TailsType, AccumulatorPublicKey, AccumulatorSecretKey, Witness, \
+    ID, TimestampType
 from anoncreds.protocol.utils import currentTimestampMillisec, groupIdentityG1
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
 from config.config import cmod
@@ -10,8 +12,10 @@ class NonRevocationClaimIssuer:
     def __init__(self, wallet: IssuerWallet):
         self._wallet = wallet
 
-    async def genRevocationKeys(self) -> (RevocationPublicKey, RevocationSecretKey):
-        group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
+    async def genRevocationKeys(self) -> (
+    RevocationPublicKey, RevocationSecretKey):
+        group = cmod.PairingGroup(
+            PAIRING_GROUP)  # super singular curve, 1024 bits
 
         h = group.random(cmod.G1)  # random element of the group G
         h0 = group.random(cmod.G1)
@@ -33,7 +37,8 @@ class NonRevocationClaimIssuer:
                 RevocationSecretKey(x, sk))
 
     async def issueAccumulator(self, id, iA, L) \
-            -> (Accumulator, TailsType, AccumulatorPublicKey, AccumulatorSecretKey):
+            -> (
+            Accumulator, TailsType, AccumulatorPublicKey, AccumulatorSecretKey):
         pkR = await self._wallet.getPublicKeyRevocation(id)
         group = cmod.PairingGroup(PAIRING_GROUP)
         gamma = group.random(cmod.ZR)
@@ -53,7 +58,8 @@ class NonRevocationClaimIssuer:
         accum = Accumulator(iA, acc, V, L)
         return (accum, g, accPK, accSK)
 
-    async def issueNonRevocationClaim(self, id: ID, Ur, iA, i) -> (NonRevocationClaim, Accumulator, TimestampType):
+    async def issueNonRevocationClaim(self, id: ID, Ur, iA, i) -> (
+    NonRevocationClaim, Accumulator, TimestampType):
         accum = await self._wallet.getAccumulator(id)
         pkR = await self._wallet.getPublicKeyRevocation(id)
         skR = await self._wallet.getSecretKeyRevocation(id)
@@ -65,7 +71,8 @@ class NonRevocationClaimIssuer:
             raise ValueError("Accumulator is full. New one must be issued.")
 
         # TODO: currently all revo creds are issued sequentially
-        group = cmod.PairingGroup(PAIRING_GROUP)  # super singular curve, 1024 bits
+        group = cmod.PairingGroup(
+            PAIRING_GROUP)  # super singular curve, 1024 bits
 
         i = i if i else accum.currentI
         accum.currentI += 1
@@ -73,7 +80,8 @@ class NonRevocationClaimIssuer:
         c = group.random(cmod.ZR)
 
         m2 = group.init(cmod.ZR, int(m2))
-        sigma = (pkR.h0 * (pkR.h1 ** m2) * Ur * g[i] * (pkR.h2 ** vrPrimeprime)) ** (1 / (skR.x + c))
+        sigma = (pkR.h0 * (pkR.h1 ** m2) * Ur * g[i] * (
+        pkR.h2 ** vrPrimeprime)) ** (1 / (skR.x + c))
         omega = groupIdentityG1()
         for j in accum.V:
             omega *= g[accum.L + 1 - j + i]
@@ -87,7 +95,9 @@ class NonRevocationClaimIssuer:
         witness = Witness(sigmai, ui, g[i], omega, accum.V.copy())
 
         ts = currentTimestampMillisec()
-        return (NonRevocationClaim(accum.iA, sigma, c, vrPrimeprime, witness, g[i], i, m2), accum, ts)
+        return (
+        NonRevocationClaim(accum.iA, sigma, c, vrPrimeprime, witness, g[i], i,
+                           m2), accum, ts)
 
     async def revoke(self, id: ID, i) -> (Accumulator, TimestampType):
         accum = await self._wallet.getAccumulator(id)

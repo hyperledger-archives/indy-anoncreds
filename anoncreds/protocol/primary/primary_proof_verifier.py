@@ -10,15 +10,18 @@ class PrimaryProofVerifier:
     def __init__(self, wallet: Wallet):
         self._wallet = wallet
 
-    async def verify(self, proofInput: ProofInput, claimDefKey, cHash, primaryProof: PrimaryProof, allRevealedAttrs):
+    async def verify(self, proofInput: ProofInput, claimDefKey, cHash,
+                     primaryProof: PrimaryProof, allRevealedAttrs):
         cH = cmod.integer(cHash)
-        THat = await self._verifyEquality(claimDefKey, cH, primaryProof.eqProof, allRevealedAttrs)
+        THat = await self._verifyEquality(claimDefKey, cH, primaryProof.eqProof,
+                                          allRevealedAttrs)
         for geProof in primaryProof.geProofs:
             THat += await self._verifyGEPredicate(claimDefKey, cH, geProof)
 
         return THat
 
-    async def _verifyEquality(self, claimDefKey, cH, proof: PrimaryEqualProof, allRevealedAttrs):
+    async def _verifyEquality(self, claimDefKey, cH, proof: PrimaryEqualProof,
+                              allRevealedAttrs):
         """
         Verify the proof
         :param attrs: The encoded attributes dictionary
@@ -45,7 +48,8 @@ class PrimaryProofVerifier:
         THat.append(T)
         return THat
 
-    async def _verifyGEPredicate(self, claimDefKey, cH, proof: PrimaryPredicateGEProof):
+    async def _verifyGEPredicate(self, claimDefKey, cH,
+                                 proof: PrimaryPredicateGEProof):
         pk = await self._wallet.getPublicKey(ID(claimDefKey))
         k, v = proof.predicate.attrName, proof.predicate.value
 
@@ -54,7 +58,9 @@ class PrimaryProofVerifier:
         for i in range(0, ITERATIONS):
             TT = proof.T[str(i)] ** (-1 * cH) % pk.N
             TauList[i] = TauList[i] * TT % pk.N
-        TauList[ITERATIONS] = TauList[ITERATIONS] * ((proof.T[DELTA] * (pk.Z ** v)) ** (-1 * cH)) % pk.N
-        TauList[ITERATIONS + 1] = (TauList[ITERATIONS + 1] * (proof.T[DELTA] ** (-1 * cH))) % pk.N
+        TauList[ITERATIONS] = TauList[ITERATIONS] * (
+        (proof.T[DELTA] * (pk.Z ** v)) ** (-1 * cH)) % pk.N
+        TauList[ITERATIONS + 1] = (TauList[ITERATIONS + 1] * (
+        proof.T[DELTA] ** (-1 * cH))) % pk.N
 
         return TauList

@@ -1,6 +1,9 @@
-from anoncreds.protocol.globals import LARGE_VPRIME_PRIME, LARGE_E_START, LARGE_E_END_RANGE, LARGE_PRIME
-from anoncreds.protocol.types import PublicKey, SecretKey, PrimaryClaim, ID, Attribs
-from anoncreds.protocol.utils import get_prime_in_range, strToCryptoInteger, randomQR
+from anoncreds.protocol.globals import LARGE_VPRIME_PRIME, LARGE_E_START, \
+    LARGE_E_END_RANGE, LARGE_PRIME
+from anoncreds.protocol.types import PublicKey, SecretKey, PrimaryClaim, ID, \
+    Attribs
+from anoncreds.protocol.utils import get_prime_in_range, strToCryptoInteger, \
+    randomQR
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
 from config.config import cmod
 
@@ -9,7 +12,8 @@ class PrimaryClaimIssuer:
     def __init__(self, wallet: IssuerWallet):
         self._wallet = wallet
 
-    async def genKeys(self, id: ID, p_prime=None, q_prime=None) -> (PublicKey, SecretKey):
+    async def genKeys(self, id: ID, p_prime=None, q_prime=None) -> (
+    PublicKey, SecretKey):
         claimDef = await self._wallet.getClaimDef(id)
         if not claimDef.attrNames and isinstance(claimDef.attrNames, list):
             raise ValueError("List of attribute names is required to "
@@ -68,7 +72,8 @@ class PrimaryClaimIssuer:
         print("In {} iterations, found prime {}".format(i, prime))
         return prime
 
-    async def issuePrimaryClaim(self, id: ID, attributes: Attribs, U) -> PrimaryClaim:
+    async def issuePrimaryClaim(self, id: ID, attributes: Attribs,
+                                U) -> PrimaryClaim:
         """
         Issue the credential for the defined attributes
 
@@ -94,7 +99,8 @@ class PrimaryClaimIssuer:
         A = await self._sign(id, encodedAttrs, vprimeprime, u, e)
 
         m2 = await self._wallet.getContextAttr(id)
-        return PrimaryClaim(attributes._vals, encodedAttrs, m2, A, e, vprimeprime)
+        return PrimaryClaim(attributes._vals, encodedAttrs, m2, A, e,
+                            vprimeprime)
 
     async def _sign(self, id: ID, attrs, v, u, e):
         pk = await self._wallet.getPublicKey(id)

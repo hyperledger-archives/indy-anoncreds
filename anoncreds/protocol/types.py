@@ -152,52 +152,66 @@ class StrSerializer:
         return cls(**d)
 
 
-class ClaimDefinitionKey(namedtuple('ClaimDefinitionKey', 'name, version, issuerId'),
-                         NamedTupleStrSerializer):
+class ClaimDefinitionKey(
+    namedtuple('ClaimDefinitionKey', 'name, version, issuerId'),
+    NamedTupleStrSerializer):
     def __hash__(self):
         keys = (self.name, self.version, self.issuerId)
         return hash(keys)
 
 
 class ID:
-    def __init__(self, claimDefKey: ClaimDefinitionKey = None, claimDefId=None, id=None):
+    def __init__(self, claimDefKey: ClaimDefinitionKey = None, claimDefId=None,
+                 id=None):
         self.id = id
         self.claimDefId = claimDefId
         self.claimDefKey = claimDefKey
 
 
-class ClaimDefinition(namedtuple('CredentialDefinition', 'name, version, attrNames, type, issuerId, id'),
+class ClaimDefinition(namedtuple('CredentialDefinition',
+                                 'name, version, attrNames, type, issuerId, id'),
                       NamedTupleStrSerializer):
     def __new__(cls, name, version, attrNames, type, issuerId, id=None):
-        return super(ClaimDefinition, cls).__new__(cls, name, version, attrNames, type, issuerId, id)
+        return super(ClaimDefinition, cls).__new__(cls, name, version,
+                                                   attrNames, type, issuerId,
+                                                   id)
 
     def getKey(self):
         return ClaimDefinitionKey(self.name, self.version, self.issuerId)
 
 
-class PublicKey(namedtuple('PublicKey', 'N Rms Rctxt R S Z'), NamedTupleStrSerializer):
-    pass
+class PublicKey(namedtuple('PublicKey', 'N Rms Rctxt R S Z id'),
+                NamedTupleStrSerializer):
+    def __new__(cls, N, Rms, Rctxt, R, S, Z, id=None):
+        return super(PublicKey, cls).__new__(cls, N, Rms, Rctxt, R, S, Z, id)
 
 
 SecretKey = namedtuple('SecretKey', 'pPrime qPrime')
 
 
 class RevocationPublicKey(namedtuple('RevocationPublicKey',
-                                     'qr g h h0 h1 h2 htilde u pk y x'), NamedTupleStrSerializer):
-    pass
+                                     'qr g h h0 h1 h2 htilde u pk y x id'),
+                          NamedTupleStrSerializer):
+    def __new__(cls, qr, g, h, h0, h1, h2, htilde, u, pk, y, x, id=None):
+        return super(RevocationPublicKey, cls).__new__(cls, qr, g, h, h0, h1,
+                                                       h2, htilde, u, pk, y, x,
+                                                       id)
 
 
 RevocationSecretKey = namedtuple('RevocationSecretKey', 'x sk')
 
 
-class AccumulatorPublicKey(namedtuple('AccumulatorPublicKey', 'z'), NamedTupleStrSerializer):
-    pass
+class AccumulatorPublicKey(namedtuple('AccumulatorPublicKey', 'z id'),
+                           NamedTupleStrSerializer):
+    def __new__(cls, z, id=None):
+        return super(AccumulatorPublicKey, cls).__new__(cls, z, id)
 
 
 AccumulatorSecretKey = namedtuple('AccumulatorSecretKey', 'gamma')
 
 
-class Predicate(namedtuple('Predicate', 'attrName, value, type'), NamedTupleStrSerializer):
+class Predicate(namedtuple('Predicate', 'attrName, value, type'),
+                NamedTupleStrSerializer):
     def __key(self):
         return (self.attrName, self.value, self.type)
 
@@ -229,22 +243,27 @@ class Accumulator:
 ClaimInitDataType = namedtuple('ClaimInitDataType', 'U vPrime')
 
 
-class ClaimRequest(namedtuple('ClaimRequest', 'userId U Ur'), NamedTupleStrSerializer):
+class ClaimRequest(namedtuple('ClaimRequest', 'userId U Ur'),
+                   NamedTupleStrSerializer):
     def __new__(cls, userId, U, Ur=None):
         return super(ClaimRequest, cls).__new__(cls, userId, U, Ur)
 
 
 # Accumulator = namedtuple('Accumulator', ['iA', 'acc', 'V', 'L'])
 
-class PrimaryClaim(namedtuple('PrimaryClaim', 'attrs encodedAttrs m2 A e v'), NamedTupleStrSerializer):
+class PrimaryClaim(namedtuple('PrimaryClaim', 'attrs encodedAttrs m2 A e v'),
+                   NamedTupleStrSerializer):
     pass
 
 
-class Witness(namedtuple('Witness', 'sigmai ui gi omega V'), NamedTupleStrSerializer):
+class Witness(namedtuple('Witness', 'sigmai ui gi omega V'),
+              NamedTupleStrSerializer):
     pass
 
 
-class NonRevocationClaim(namedtuple('NonRevocationClaim', 'iA sigma c v witness gi i m2'), NamedTupleStrSerializer):
+class NonRevocationClaim(
+    namedtuple('NonRevocationClaim', 'iA sigma c v witness gi i m2'),
+    NamedTupleStrSerializer):
     @classmethod
     def fromStrDict(cls, d):
         d = fromDictWithStrValues(d)
@@ -253,7 +272,8 @@ class NonRevocationClaim(namedtuple('NonRevocationClaim', 'iA sigma c v witness 
         return result._replace(witness=witness)
 
 
-class Claims(namedtuple('Claims', 'primaryClaim nonRevocClaim'), NamedTupleStrSerializer):
+class Claims(namedtuple('Claims', 'primaryClaim nonRevocClaim'),
+             NamedTupleStrSerializer):
     def __new__(cls, primaryClaim, nonRevocClaim=None):
         return super(Claims, cls).__new__(cls, primaryClaim, nonRevocClaim)
 
@@ -266,9 +286,11 @@ class Claims(namedtuple('Claims', 'primaryClaim nonRevocClaim'), NamedTupleStrSe
         return Claims(primaryClaim=primary, nonRevocClaim=nonRevoc)
 
 
-class ProofInput(namedtuple('ProofInput', 'revealedAttrs predicates ts seqNo'), NamedTupleStrSerializer):
+class ProofInput(namedtuple('ProofInput', 'revealedAttrs predicates ts seqNo'),
+                 NamedTupleStrSerializer):
     def __new__(cls, revealedAttrs=[], predicates=[], ts=None, seqNo=None):
-        return super(ProofInput, cls).__new__(cls, revealedAttrs, predicates, ts, seqNo)
+        return super(ProofInput, cls).__new__(cls, revealedAttrs, predicates,
+                                              ts, seqNo)
 
     @classmethod
     def fromStrDict(cls, d):
@@ -280,27 +302,39 @@ class ProofInput(namedtuple('ProofInput', 'revealedAttrs predicates ts seqNo'), 
 
 class ProofClaims(namedtuple('ProofClaims', 'claims revealedAttrs predicates')):
     def __new__(cls, claims=None, revealedAttrs=[], predicates=[]):
-        return super(ProofClaims, cls).__new__(cls, claims, revealedAttrs, predicates)
+        return super(ProofClaims, cls).__new__(cls, claims, revealedAttrs,
+                                               predicates)
 
 
 class NonRevocProofXList(namedtuple('NonRevocProofXList', 'rho, r, rPrime, rPrimePrime, rPrimePrimePrime, o, oPrime, \
                  m, mPrime, t, tPrime, m2, s, c'),
                          NamedTupleStrSerializer):
-    def __new__(cls, rho=None, r=None, rPrime=None, rPrimePrime=None, rPrimePrimePrime=None, o=None, oPrime=None,
-                m=None, mPrime=None, t=None, tPrime=None, m2=None, s=None, c=None, group=None):
+    def __new__(cls, rho=None, r=None, rPrime=None, rPrimePrime=None,
+                rPrimePrimePrime=None, o=None, oPrime=None,
+                m=None, mPrime=None, t=None, tPrime=None, m2=None, s=None,
+                c=None, group=None):
         return super(NonRevocProofXList, cls).__new__(cls,
-                                                      rho=cls._setValue(rho, group),
+                                                      rho=cls._setValue(rho,
+                                                                        group),
                                                       r=cls._setValue(r, group),
-                                                      rPrime=cls._setValue(rPrime, group),
-                                                      rPrimePrime=cls._setValue(rPrimePrime, group),
-                                                      rPrimePrimePrime=cls._setValue(rPrimePrimePrime, group),
+                                                      rPrime=cls._setValue(
+                                                          rPrime, group),
+                                                      rPrimePrime=cls._setValue(
+                                                          rPrimePrime, group),
+                                                      rPrimePrimePrime=cls._setValue(
+                                                          rPrimePrimePrime,
+                                                          group),
                                                       o=cls._setValue(o, group),
-                                                      oPrime=cls._setValue(oPrime, group),
+                                                      oPrime=cls._setValue(
+                                                          oPrime, group),
                                                       m=cls._setValue(m, group),
-                                                      mPrime=cls._setValue(mPrime, group),
+                                                      mPrime=cls._setValue(
+                                                          mPrime, group),
                                                       t=cls._setValue(t, group),
-                                                      tPrime=cls._setValue(tPrime, group),
-                                                      m2=cls._setValue(m2, group),
+                                                      tPrime=cls._setValue(
+                                                          tPrime, group),
+                                                      m2=cls._setValue(m2,
+                                                                       group),
                                                       s=cls._setValue(s, group),
                                                       c=cls._setValue(c, group))
 
@@ -309,30 +343,39 @@ class NonRevocProofXList(namedtuple('NonRevocProofXList', 'rho, r, rPrime, rPrim
         return v if v else group.random(cmod.ZR) if group else None
 
     def asList(self):
-        return [self.rho, self.o, self.c, self.oPrime, self.m, self.mPrime, self.t, self.tPrime,
-                self.m2, self.s, self.r, self.rPrime, self.rPrimePrime, self.rPrimePrimePrime]
+        return [self.rho, self.o, self.c, self.oPrime, self.m, self.mPrime,
+                self.t, self.tPrime,
+                self.m2, self.s, self.r, self.rPrime, self.rPrimePrime,
+                self.rPrimePrimePrime]
 
     @staticmethod
     def fromList(values: Sequence):
-        rho, o, c, oPrime, m, mPrime, t, tPrime, m2, s, r, rPrime, rPrimePrime, rPrimePrimePrime = tuple(values)
-        return NonRevocProofXList(rho=rho, o=o, c=c, oPrime=oPrime, m=m, mPrime=mPrime, t=t, tPrime=tPrime,
-                                  m2=m2, s=s, r=r, rPrime=rPrime, rPrimePrime=rPrimePrime,
+        rho, o, c, oPrime, m, mPrime, t, tPrime, m2, s, r, rPrime, rPrimePrime, rPrimePrimePrime = tuple(
+            values)
+        return NonRevocProofXList(rho=rho, o=o, c=c, oPrime=oPrime, m=m,
+                                  mPrime=mPrime, t=t, tPrime=tPrime,
+                                  m2=m2, s=s, r=r, rPrime=rPrime,
+                                  rPrimePrime=rPrimePrime,
                                   rPrimePrimePrime=rPrimePrimePrime)
 
 
-class NonRevocProofCList(namedtuple('NonRevocProofCList', 'E, D, A, G, W, S, U'),
-                         NamedTupleStrSerializer):
+class NonRevocProofCList(
+    namedtuple('NonRevocProofCList', 'E, D, A, G, W, S, U'),
+    NamedTupleStrSerializer):
     def asList(self):
         return [self.E, self.D, self.A, self.G, self.W, self.S, self.U]
 
 
-class NonRevocProofTauList(namedtuple('NonRevocProofTauList', 'T1, T2, T3, T4, T5, T6, T7, T8'),
-                           NamedTupleStrSerializer):
+class NonRevocProofTauList(
+    namedtuple('NonRevocProofTauList', 'T1, T2, T3, T4, T5, T6, T7, T8'),
+    NamedTupleStrSerializer):
     def asList(self):
-        return [self.T1, self.T2, self.T3, self.T4, self.T5, self.T6, self.T7, self.T8]
+        return [self.T1, self.T2, self.T3, self.T4, self.T5, self.T6, self.T7,
+                self.T8]
 
 
-class NonRevocInitProof(namedtuple('NonRevocInitProof', 'CList, TauList, CListParams, TauListParams'),
+class NonRevocInitProof(namedtuple('NonRevocInitProof',
+                                   'CList, TauList, CListParams, TauListParams'),
                         NamedTupleStrSerializer):
     def asCList(self):
         return self.CList.asList()
@@ -353,7 +396,8 @@ class PrimaryEqualInitProof(namedtuple('PrimaryEqualInitProof',
 
 
 class PrimaryPrecicateGEInitProof(
-    namedtuple('PrimaryPrecicateGEInitProof', 'CList, TauList, u, uTilde, r, rTilde, alphaTilde, predicate, T'),
+    namedtuple('PrimaryPrecicateGEInitProof',
+               'CList, TauList, u, uTilde, r, rTilde, alphaTilde, predicate, T'),
     NamedTupleStrSerializer):
     def asCList(self):
         return self.CList
@@ -362,7 +406,8 @@ class PrimaryPrecicateGEInitProof(
         return self.TauList
 
 
-class PrimaryInitProof(namedtuple('PrimaryInitProof', 'eqProof geProofs'), NamedTupleStrSerializer):
+class PrimaryInitProof(namedtuple('PrimaryInitProof', 'eqProof geProofs'),
+                       NamedTupleStrSerializer):
     def asCList(self):
         CList = self.eqProof.asCList()
         for geProof in self.geProofs:
@@ -376,18 +421,23 @@ class PrimaryInitProof(namedtuple('PrimaryInitProof', 'eqProof geProofs'), Named
         return TauList
 
 
-class InitProof(namedtuple('InitProof', 'nonRevocInitProof primaryInitProof'), NamedTupleStrSerializer):
-    def __new__(cls, nonRevocInitProof: NonRevocInitProof = None, primaryInitProof: PrimaryInitProof = None):
-        return super(InitProof, cls).__new__(cls, nonRevocInitProof, primaryInitProof)
+class InitProof(namedtuple('InitProof', 'nonRevocInitProof primaryInitProof'),
+                NamedTupleStrSerializer):
+    def __new__(cls, nonRevocInitProof: NonRevocInitProof = None,
+                primaryInitProof: PrimaryInitProof = None):
+        return super(InitProof, cls).__new__(cls, nonRevocInitProof,
+                                             primaryInitProof)
 
 
-class PrimaryEqualProof(namedtuple('PrimaryEqualProof', 'e, v, m, m1, m2, Aprime, revealedAttrNames'),
+class PrimaryEqualProof(namedtuple('PrimaryEqualProof',
+                                   'e, v, m, m1, m2, Aprime, revealedAttrNames'),
                         NamedTupleStrSerializer):
     pass
 
 
-class PrimaryPredicateGEProof(namedtuple('PrimaryPredicateGEProof', 'u, r, alpha, mj, T, predicate'),
-                              NamedTupleStrSerializer):
+class PrimaryPredicateGEProof(
+    namedtuple('PrimaryPredicateGEProof', 'u, r, alpha, mj, T, predicate'),
+    NamedTupleStrSerializer):
     @classmethod
     def fromStrDict(cls, d):
         d = fromDictWithStrValues(d)
@@ -396,7 +446,8 @@ class PrimaryPredicateGEProof(namedtuple('PrimaryPredicateGEProof', 'u, r, alpha
         return result._replace(predicate=predicate)
 
 
-class NonRevocProof(namedtuple('NonRevocProof', 'XList CProof'), NamedTupleStrSerializer):
+class NonRevocProof(namedtuple('NonRevocProof', 'XList CProof'),
+                    NamedTupleStrSerializer):
     @classmethod
     def fromStrDict(cls, d):
         XList = NonRevocProofXList.fromStrDict(d['XList'])
@@ -404,19 +455,24 @@ class NonRevocProof(namedtuple('NonRevocProof', 'XList CProof'), NamedTupleStrSe
         return NonRevocProof(XList=XList, CProof=CProof)
 
 
-class PrimaryProof(namedtuple('PrimaryProof', 'eqProof geProofs'), NamedTupleStrSerializer):
-    def __new__(cls, eqProof: PrimaryEqualProof, geProofs: Sequence[PrimaryPredicateGEProof]):
+class PrimaryProof(namedtuple('PrimaryProof', 'eqProof geProofs'),
+                   NamedTupleStrSerializer):
+    def __new__(cls, eqProof: PrimaryEqualProof,
+                geProofs: Sequence[PrimaryPredicateGEProof]):
         return super(PrimaryProof, cls).__new__(cls, eqProof, geProofs)
 
     @classmethod
     def fromStrDict(cls, d):
         eqProof = PrimaryEqualProof.fromStrDict(d['eqProof'])
-        geProofs = [PrimaryPredicateGEProof.fromStrDict(v) for v in d['geProofs']]
+        geProofs = [PrimaryPredicateGEProof.fromStrDict(v) for v in
+                    d['geProofs']]
         return PrimaryProof(eqProof=eqProof, geProofs=geProofs)
 
 
-class Proof(namedtuple('Proof', 'primaryProof nonRevocProof'), NamedTupleStrSerializer):
-    def __new__(cls, primaryProof: PrimaryProof, nonRevocProof: NonRevocProof = None):
+class Proof(namedtuple('Proof', 'primaryProof nonRevocProof'),
+            NamedTupleStrSerializer):
+    def __new__(cls, primaryProof: PrimaryProof,
+                nonRevocProof: NonRevocProof = None):
         return super(Proof, cls).__new__(cls, primaryProof, nonRevocProof)
 
     @classmethod
@@ -428,14 +484,17 @@ class Proof(namedtuple('Proof', 'primaryProof nonRevocProof'), NamedTupleStrSeri
         return Proof(primaryProof=primaryProof, nonRevocProof=nonRevocProof)
 
 
-class FullProof(namedtuple('FullProof', 'cHash claimDefKeys proofs CList'), NamedTupleStrSerializer):
+class FullProof(namedtuple('FullProof', 'cHash claimDefKeys proofs CList'),
+                NamedTupleStrSerializer):
     def getCredDefs(self):
         return self.proofs.keys()
 
     @classmethod
     def fromStrDict(cls, d):
         cHash = deserializeFromStr(d['cHash'])
-        claimDefKeys = [ClaimDefinitionKey.fromStrDict(v) for v in d['claimDefKeys']]
+        claimDefKeys = [ClaimDefinitionKey.fromStrDict(v) for v in
+                        d['claimDefKeys']]
         proofs = [Proof.fromStrDict(v) for v in d['proofs']]
         CList = [deserializeFromStr(v) for v in d['CList']]
-        return FullProof(cHash=cHash, claimDefKeys=claimDefKeys, proofs=proofs, CList=CList)
+        return FullProof(cHash=cHash, claimDefKeys=claimDefKeys, proofs=proofs,
+                         CList=CList)

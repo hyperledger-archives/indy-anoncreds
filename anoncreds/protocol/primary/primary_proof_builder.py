@@ -1,10 +1,13 @@
 from typing import Sequence
 
-from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, LARGE_E_START, LARGE_ETILDE, \
-    LARGE_VTILDE, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, DELTA
+from anoncreds.protocol.globals import LARGE_VPRIME, LARGE_MVECT, LARGE_E_START, \
+    LARGE_ETILDE, \
+    LARGE_VTILDE, LARGE_UTILDE, LARGE_RTILDE, LARGE_ALPHATILDE, ITERATIONS, \
+    DELTA
 from anoncreds.protocol.primary.primary_proof_common import calcTge, calcTeq
 from anoncreds.protocol.types import PrimaryClaim, Predicate, PrimaryInitProof, \
-    PrimaryEqualInitProof, PrimaryPrecicateGEInitProof, PrimaryProof, PrimaryEqualProof, PrimaryPredicateGEProof, \
+    PrimaryEqualInitProof, PrimaryPrecicateGEInitProof, PrimaryProof, \
+    PrimaryEqualProof, PrimaryPredicateGEProof, \
     ID, ClaimInitDataType
 from anoncreds.protocol.utils import getUnrevealedAttrs, fourSquares
 from anoncreds.protocol.wallet.prover_wallet import ProverWallet
@@ -37,33 +40,42 @@ class PrimaryProofBuilder:
     def __init__(self, wallet: ProverWallet):
         self._wallet = wallet
 
-    async def initProof(self, claimDefKey, c1: PrimaryClaim, revealedAttrs: Sequence[str], predicates: Sequence[Predicate],
-                  m1Tilde, m2Tilde) -> PrimaryInitProof:
+    async def initProof(self, claimDefKey, c1: PrimaryClaim,
+                        revealedAttrs: Sequence[str],
+                        predicates: Sequence[Predicate],
+                        m1Tilde, m2Tilde) -> PrimaryInitProof:
         if not c1:
             return None
 
-        eqProof = await self._initEqProof(claimDefKey, c1, revealedAttrs, m1Tilde, m2Tilde)
+        eqProof = await self._initEqProof(claimDefKey, c1, revealedAttrs,
+                                          m1Tilde, m2Tilde)
         geProofs = []
         for predicate in predicates:
-            geProof = await self._initGeProof(claimDefKey, eqProof, c1, predicate)
+            geProof = await self._initGeProof(claimDefKey, eqProof, c1,
+                                              predicate)
             geProofs.append(geProof)
         return PrimaryInitProof(eqProof, geProofs)
 
-    async def finalizeProof(self, claimDefKey, cH, initProof: PrimaryInitProof) -> PrimaryProof:
+    async def finalizeProof(self, claimDefKey, cH,
+                            initProof: PrimaryInitProof) -> PrimaryProof:
         if not initProof:
             return None
 
         cH = cmod.integer(cH)
-        eqProof = await self._finalizeEqProof(claimDefKey, cH, initProof.eqProof)
+        eqProof = await self._finalizeEqProof(claimDefKey, cH,
+                                              initProof.eqProof)
         geProofs = []
         for initGeProof in initProof.geProofs:
-            geProof = await self._finalizeGeProof(claimDefKey, cH, initGeProof, eqProof)
+            geProof = await self._finalizeGeProof(claimDefKey, cH, initGeProof,
+                                                  eqProof)
             geProofs.append(geProof)
         return PrimaryProof(eqProof, geProofs)
 
-    async def _initEqProof(self, claimDefKey, c1: PrimaryClaim, revealedAttrs: Sequence[str], m1Tilde, m2Tilde) \
+    async def _initEqProof(self, claimDefKey, c1: PrimaryClaim,
+                           revealedAttrs: Sequence[str], m1Tilde, m2Tilde) \
             -> PrimaryEqualInitProof:
-        m2Tilde = m2Tilde if m2Tilde else cmod.integer(cmod.randomBits(LARGE_MVECT))
+        m2Tilde = m2Tilde if m2Tilde else cmod.integer(
+            cmod.randomBits(LARGE_MVECT))
         unrevealedAttrs = getUnrevealedAttrs(c1.encodedAttrs, revealedAttrs)
         mtilde = self._getMTilde(unrevealedAttrs)
 
@@ -86,12 +98,15 @@ class PrimaryProofBuilder:
         Rur *= pk.Rctxt ** m2Tilde
 
         # T = ((Aprime ** etilde) * Rur * (pk.S ** vtilde)) % pk.N
-        T = calcTeq(pk, Aprime, etilde, vtilde, mtilde, m1Tilde, m2Tilde, unrevealedAttrs.keys())
+        T = calcTeq(pk, Aprime, etilde, vtilde, mtilde, m1Tilde, m2Tilde,
+                    unrevealedAttrs.keys())
 
-        return PrimaryEqualInitProof(c1, Aprime, T, etilde, eprime, vtilde, vprime, mtilde, m1Tilde, m2Tilde,
+        return PrimaryEqualInitProof(c1, Aprime, T, etilde, eprime, vtilde,
+                                     vprime, mtilde, m1Tilde, m2Tilde,
                                      unrevealedAttrs.keys(), revealedAttrs)
 
-    async def _initGeProof(self, claimDefKey, eqProof: PrimaryEqualInitProof, c1: PrimaryClaim, predicate: Predicate) \
+    async def _initGeProof(self, claimDefKey, eqProof: PrimaryEqualInitProof,
+                           c1: PrimaryClaim, predicate: Predicate) \
             -> PrimaryPrecicateGEInitProof:
         # gen U for Delta
         pk = await self._wallet.getPublicKey(ID(claimDefKey))
@@ -124,22 +139,28 @@ class PrimaryProofBuilder:
         alphatilde = cmod.integer(cmod.randomBits(LARGE_ALPHATILDE))
 
         TauList = calcTge(pk, utilde, rtilde, eqProof.mTilde[k], alphatilde, T)
-        return PrimaryPrecicateGEInitProof(CList, TauList, u, utilde, r, rtilde, alphatilde, predicate, T)
+        return PrimaryPrecicateGEInitProof(CList, TauList, u, utilde, r, rtilde,
+                                           alphatilde, predicate, T)
 
-    async def _finalizeEqProof(self, claimDefKey, cH, initProof: PrimaryEqualInitProof) -> PrimaryEqualProof:
+    async def _finalizeEqProof(self, claimDefKey, cH,
+                               initProof: PrimaryEqualInitProof) -> PrimaryEqualProof:
         e = initProof.eTilde + (cH * initProof.ePrime)
         v = initProof.vTilde + (cH * initProof.vPrime)
 
         m = {}
         for k in initProof.unrevealedAttrs:
-            m[str(k)] = initProof.mTilde[str(k)] + (cH * initProof.c1.encodedAttrs[str(k)])
+            m[str(k)] = initProof.mTilde[str(k)] + (
+            cH * initProof.c1.encodedAttrs[str(k)])
         ms = await self._wallet.getMasterSecret(ID(claimDefKey))
         m1 = initProof.m1Tilde + (cH * ms)
         m2 = initProof.m2Tilde + (cH * initProof.c1.m2)
 
-        return PrimaryEqualProof(e, v, m, m1, m2, initProof.Aprime, initProof.revealedAttrs)
+        return PrimaryEqualProof(e, v, m, m1, m2, initProof.Aprime,
+                                 initProof.revealedAttrs)
 
-    async def _finalizeGeProof(self, claimDefKey, cH, initProof: PrimaryPrecicateGEInitProof, eqProof: PrimaryEqualProof) \
+    async def _finalizeGeProof(self, claimDefKey, cH,
+                               initProof: PrimaryPrecicateGEInitProof,
+                               eqProof: PrimaryEqualProof) \
             -> PrimaryPredicateGEProof:
         u = {}
         r = {}
@@ -153,7 +174,8 @@ class PrimaryProofBuilder:
         alpha = initProof.alphaTilde + cH * (initProof.r[DELTA] - urproduct)
 
         k, value = initProof.predicate.attrName, initProof.predicate.value
-        return PrimaryPredicateGEProof(u, r, alpha, eqProof.m[str(k)], initProof.T, initProof.predicate)
+        return PrimaryPredicateGEProof(u, r, alpha, eqProof.m[str(k)],
+                                       initProof.T, initProof.predicate)
 
     def _getMTilde(self, unrevealedAttrs):
         mtilde = {}

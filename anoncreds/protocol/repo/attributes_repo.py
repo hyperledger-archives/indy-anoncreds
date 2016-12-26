@@ -10,11 +10,13 @@ class AttributeRepo:
         raise NotImplementedError
 
     @abstractmethod
-    def getRevealedAttributes(self, claimDefKey: ClaimDefinitionKey, userId, revealedAttrs: Sequence[str]) -> Attribs:
+    def getRevealedAttributes(self, claimDefKey: ClaimDefinitionKey, userId,
+                              revealedAttrs: Sequence[str]) -> Attribs:
         raise NotImplementedError
 
     @abstractmethod
-    def addAttributes(self, claimDefKey: ClaimDefinitionKey, userId, attributes: Attribs):
+    def addAttributes(self, claimDefKey: ClaimDefinitionKey, userId,
+                      attributes: Attribs):
         raise NotImplementedError
 
 
@@ -26,10 +28,13 @@ class AttributeRepoInMemory(AttributeRepo):
         return self.attributes.get((claimDefKey, userId))
 
     @abstractmethod
-    def getRevealedAttributes(self, claimDefKey: ClaimDefinitionKey, userId, revealedAttrs: Sequence[str]) -> Attribs:
+    def getRevealedAttributes(self, claimDefKey: ClaimDefinitionKey, userId,
+                              revealedAttrs: Sequence[str]) -> Attribs:
         attrs = self.attributes.get((claimDefKey, userId))
-        revealedAttrValues = {revealedAttr: attrs[revealedAttr] for revealedAttr in revealedAttrs}
+        revealedAttrValues = {revealedAttr: attrs[revealedAttr] for revealedAttr
+                              in revealedAttrs}
         return Attribs(attrs.credType, **revealedAttrValues)
 
-    def addAttributes(self, claimDefKey: ClaimDefinitionKey, userId, attributes: Attribs):
+    def addAttributes(self, claimDefKey: ClaimDefinitionKey, userId,
+                      attributes: Attribs):
         self.attributes[(claimDefKey, userId)] = attributes

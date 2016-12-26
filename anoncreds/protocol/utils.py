@@ -25,7 +25,8 @@ def get_hash_as_int(*args, group: cmod.PairingGroup = None):
     """
     Enumerate over the input tuple and generate a hash using the tuple values
 
-    :param args:
+    :param args: sequence of either group or integer elements
+    :param group: pairing group if an element is a group element
     :return:
     """
 

@@ -9,7 +9,7 @@ def testQuadEquationLagranges():
     print("u1: {0} u2: {1} u3: {2} u4: {3}".format(u['0'], u['1'], u['2'],
                                                    u['3']))
     assert (u['0'] ** 2) + (u['1'] ** 2) + (u['2'] ** 2) + (
-    u['3'] ** 2) == delta
+        u['3'] ** 2) == delta
 
 
 def testQuadEquationLagrangesNegativeInt():

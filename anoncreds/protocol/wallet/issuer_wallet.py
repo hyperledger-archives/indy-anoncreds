@@ -9,8 +9,8 @@ from anoncreds.protocol.wallet.wallet import Wallet, WalletInMemory
 
 
 class IssuerWallet(Wallet):
-    def __init__(self, id, repo: PublicRepo):
-        Wallet.__init__(self, id, repo)
+    def __init__(self, claimDefId, repo: PublicRepo):
+        Wallet.__init__(self, claimDefId, repo)
 
     # SUBMIT
 
@@ -20,56 +20,60 @@ class IssuerWallet(Wallet):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitPublicKeys(self, id: ID, pk: PublicKey,
+    async def submitPublicKeys(self, claimDefId: ID, pk: PublicKey,
                                pkR: RevocationPublicKey = None) -> (
             PublicKey, RevocationPublicKey):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitSecretKeys(self, id: ID, sk: SecretKey,
+    async def submitSecretKeys(self, claimDefId: ID, sk: SecretKey,
                                skR: RevocationSecretKey = None):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitAccumPublic(self, id: ID, accumPK: AccumulatorPublicKey,
+    async def submitAccumPublic(self, claimDefId: ID,
+                                accumPK: AccumulatorPublicKey,
                                 accum: Accumulator, tails: TailsType):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitAccumSecret(self, id: ID, accumSK: AccumulatorSecretKey):
+    async def submitAccumSecret(self, claimDefId: ID,
+                                accumSK: AccumulatorSecretKey):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitAccumUpdate(self, id: ID, accum: Accumulator,
+    async def submitAccumUpdate(self, claimDefId: ID, accum: Accumulator,
                                 timestampMs: TimestampType):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitContextAttr(self, id: ID, m2):
+    async def submitContextAttr(self, claimDefId: ID, m2):
         raise NotImplementedError
 
     # GET
 
     @abstractmethod
-    async def getSecretKey(self, id: ID) -> SecretKey:
+    async def getSecretKey(self, claimDefId: ID) -> SecretKey:
         raise NotImplementedError
 
     @abstractmethod
-    async def getSecretKeyRevocation(self, id: ID) -> RevocationSecretKey:
+    async def getSecretKeyRevocation(self,
+                                     claimDefId: ID) -> RevocationSecretKey:
         raise NotImplementedError
 
     @abstractmethod
-    async def getSecretKeyAccumulator(self, id: ID) -> AccumulatorSecretKey:
+    async def getSecretKeyAccumulator(self,
+                                      claimDefId: ID) -> AccumulatorSecretKey:
         raise NotImplementedError
 
     @abstractmethod
-    async def getContextAttr(self, id: ID):
+    async def getContextAttr(self, claimDefId: ID):
         raise NotImplementedError
 
 
 class IssuerWalletInMemory(IssuerWallet, WalletInMemory):
-    def __init__(self, id, repo: PublicRepo):
-        WalletInMemory.__init__(self, id, repo)
+    def __init__(self, claimDefId, repo: PublicRepo):
+        WalletInMemory.__init__(self, claimDefId, repo)
 
         # other dicts with key=claimDefKey
         self._sks = {}
@@ -86,51 +90,56 @@ class IssuerWalletInMemory(IssuerWallet, WalletInMemory):
         self._cacheClaimDef(claimDef)
         return claimDef
 
-    async def submitPublicKeys(self, id: ID, pk: PublicKey,
+    async def submitPublicKeys(self, claimDefId: ID, pk: PublicKey,
                                pkR: RevocationPublicKey = None) -> (
             PublicKey, RevocationPublicKey):
-        pk, pkR = await self._repo.submitPublicKeys(id, pk, pkR)
-        await self._cacheValueForId(self._pks, id, pk)
+        pk, pkR = await self._repo.submitPublicKeys(claimDefId, pk, pkR)
+        await self._cacheValueForId(self._pks, claimDefId, pk)
         if pkR:
-            await  self._cacheValueForId(self._pkRs, id, pkR)
-        return (pk, pkR)
+            await  self._cacheValueForId(self._pkRs, claimDefId, pkR)
+        return pk, pkR
 
-    async def submitSecretKeys(self, id: ID, sk: SecretKey,
+    async def submitSecretKeys(self, claimDefId: ID, sk: SecretKey,
                                skR: RevocationSecretKey = None):
-        await  self._cacheValueForId(self._sks, id, sk)
+        await  self._cacheValueForId(self._sks, claimDefId, sk)
         if skR:
-            await  self._cacheValueForId(self._skRs, id, skR)
+            await  self._cacheValueForId(self._skRs, claimDefId, skR)
 
-    async def submitAccumPublic(self, id: ID, accumPK: AccumulatorPublicKey,
+    async def submitAccumPublic(self, claimDefId: ID,
+                                accumPK: AccumulatorPublicKey,
                                 accum: Accumulator,
                                 tails: TailsType) -> AccumulatorPublicKey:
-        accumPK = await self._repo.submitAccumulator(id, accumPK, accum, tails)
-        await self._cacheValueForId(self._accums, id, accum)
-        await self._cacheValueForId(self._accumPks, id, accumPK)
-        await self._cacheValueForId(self._tails, id, tails)
+        accumPK = await self._repo.submitAccumulator(claimDefId, accumPK, accum,
+                                                     tails)
+        await self._cacheValueForId(self._accums, claimDefId, accum)
+        await self._cacheValueForId(self._accumPks, claimDefId, accumPK)
+        await self._cacheValueForId(self._tails, claimDefId, tails)
         return accumPK
 
-    async def submitAccumSecret(self, id: ID, accumSK: AccumulatorSecretKey):
-        await self._cacheValueForId(self._accumSks, id, accumSK)
+    async def submitAccumSecret(self, claimDefId: ID,
+                                accumSK: AccumulatorSecretKey):
+        await self._cacheValueForId(self._accumSks, claimDefId, accumSK)
 
-    async def submitAccumUpdate(self, id: ID, accum: Accumulator,
+    async def submitAccumUpdate(self, claimDefId: ID, accum: Accumulator,
                                 timestampMs: TimestampType):
-        await self._repo.submitAccumUpdate(id, accum, timestampMs)
-        await self._cacheValueForId(self._accums, id, accum)
+        await self._repo.submitAccumUpdate(claimDefId, accum, timestampMs)
+        await self._cacheValueForId(self._accums, claimDefId, accum)
 
-    async def submitContextAttr(self, id: ID, m2):
-        await self._cacheValueForId(self._m2s, id, m2)
+    async def submitContextAttr(self, claimDefId: ID, m2):
+        await self._cacheValueForId(self._m2s, claimDefId, m2)
 
     # GET
 
-    async def getSecretKey(self, id: ID) -> SecretKey:
-        return await self._getValueForId(self._sks, id)
+    async def getSecretKey(self, claimDefId: ID) -> SecretKey:
+        return await self._getValueForId(self._sks, claimDefId)
 
-    async def getSecretKeyRevocation(self, id: ID) -> RevocationSecretKey:
-        return await self._getValueForId(self._skRs, id)
+    async def getSecretKeyRevocation(self,
+                                     claimDefId: ID) -> RevocationSecretKey:
+        return await self._getValueForId(self._skRs, claimDefId)
 
-    async def getSecretKeyAccumulator(self, id: ID) -> AccumulatorSecretKey:
-        return await self._getValueForId(self._accumSks, id)
+    async def getSecretKeyAccumulator(self,
+                                      claimDefId: ID) -> AccumulatorSecretKey:
+        return await self._getValueForId(self._accumSks, claimDefId)
 
-    async def getContextAttr(self, id: ID):
-        return await self._getValueForId(self._m2s, id)
+    async def getContextAttr(self, claimDefId: ID):
+        return await self._getValueForId(self._m2s, claimDefId)

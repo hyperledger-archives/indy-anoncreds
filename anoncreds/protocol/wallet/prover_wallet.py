@@ -9,45 +9,46 @@ from anoncreds.protocol.wallet.wallet import Wallet, WalletInMemory
 
 
 class ProverWallet(Wallet):
-    def __init__(self, id, repo: PublicRepo):
-        Wallet.__init__(self, id, repo)
+    def __init__(self, claimDefId, repo: PublicRepo):
+        Wallet.__init__(self, claimDefId, repo)
 
     # SUBMIT
 
     @abstractmethod
-    async def submitPrimaryClaim(self, id: ID, claim: PrimaryClaim):
+    async def submitPrimaryClaim(self, claimDefId: ID, claim: PrimaryClaim):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitNonRevocClaim(self, id: ID, claim: NonRevocationClaim):
+    async def submitNonRevocClaim(self, claimDefId: ID,
+                                  claim: NonRevocationClaim):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitMasterSecret(self, ms, id: ID):
+    async def submitMasterSecret(self, ms, claimDefId: ID):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitPrimaryClaimInitData(self, id: ID,
+    async def submitPrimaryClaimInitData(self, claimDefId: ID,
                                          claimInitData: ClaimInitDataType):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitNonRevocClaimInitData(self, id: ID,
+    async def submitNonRevocClaimInitData(self, claimDefId: ID,
                                           claimInitData: ClaimInitDataType):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitContextAttr(self, id: ID, m2):
+    async def submitContextAttr(self, claimDefId: ID, m2):
         raise NotImplementedError
 
     # GET
 
     @abstractmethod
-    async def getMasterSecret(self, id: ID):
+    async def getMasterSecret(self, claimDefId: ID):
         raise NotImplementedError
 
     @abstractmethod
-    async def getClaims(self, id: ID) -> Claims:
+    async def getClaims(self, claimDefId: ID) -> Claims:
         raise NotImplementedError
 
     @abstractmethod
@@ -55,21 +56,23 @@ class ProverWallet(Wallet):
         raise NotImplementedError
 
     @abstractmethod
-    async def getPrimaryClaimInitData(self, id: ID) -> ClaimInitDataType:
+    async def getPrimaryClaimInitData(self,
+                                      claimDefId: ID) -> ClaimInitDataType:
         raise NotImplementedError
 
     @abstractmethod
-    async def getNonRevocClaimInitData(self, id: ID) -> ClaimInitDataType:
+    async def getNonRevocClaimInitData(self,
+                                       claimDefId: ID) -> ClaimInitDataType:
         raise NotImplementedError
 
     @abstractmethod
-    async def getContextAttr(self, id: ID):
+    async def getContextAttr(self, claimDefId: ID):
         raise NotImplementedError
 
 
 class ProverWalletInMemory(ProverWallet, WalletInMemory):
-    def __init__(self, id, repo: PublicRepo):
-        WalletInMemory.__init__(self, id, repo)
+    def __init__(self, claimDefId, repo: PublicRepo):
+        WalletInMemory.__init__(self, claimDefId, repo)
 
         # other dicts with key=claimDefKey
         self._m1s = {}
@@ -83,34 +86,38 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
 
     # SUBMIT
 
-    async def submitPrimaryClaim(self, id: ID, claim: PrimaryClaim):
-        await self._cacheValueForId(self._c1s, id, claim)
+    async def submitPrimaryClaim(self, claimDefId: ID, claim: PrimaryClaim):
+        await self._cacheValueForId(self._c1s, claimDefId, claim)
 
-    async def submitNonRevocClaim(self, id: ID, claim: NonRevocationClaim):
-        await self._cacheValueForId(self._c2s, id, claim)
+    async def submitNonRevocClaim(self, claimDefId: ID,
+                                  claim: NonRevocationClaim):
+        await self._cacheValueForId(self._c2s, claimDefId, claim)
 
-    async def submitMasterSecret(self, ms, id: ID):
-        await self._cacheValueForId(self._m1s, id, ms)
+    async def submitMasterSecret(self, ms, claimDefId: ID):
+        await self._cacheValueForId(self._m1s, claimDefId, ms)
 
-    async def submitPrimaryClaimInitData(self, id: ID,
+    async def submitPrimaryClaimInitData(self, claimDefId: ID,
                                          claimInitData: ClaimInitDataType):
-        await self._cacheValueForId(self._primaryInitData, id, claimInitData)
+        await self._cacheValueForId(self._primaryInitData, claimDefId,
+                                    claimInitData)
 
-    async def submitNonRevocClaimInitData(self, id: ID,
+    async def submitNonRevocClaimInitData(self, claimDefId: ID,
                                           claimInitData: ClaimInitDataType):
-        await self._cacheValueForId(self._nonRevocInitData, id, claimInitData)
+        await self._cacheValueForId(self._nonRevocInitData, claimDefId,
+                                    claimInitData)
 
-    async def submitContextAttr(self, id: ID, m2):
-        await self._cacheValueForId(self._m2s, id, m2)
+    async def submitContextAttr(self, claimDefId: ID, m2):
+        await self._cacheValueForId(self._m2s, claimDefId, m2)
 
     # GET
 
-    async def getMasterSecret(self, id: ID):
-        return await self._getValueForId(self._m1s, id)
+    async def getMasterSecret(self, claimDefId: ID):
+        return await self._getValueForId(self._m1s, claimDefId)
 
-    async def getClaims(self, id: ID) -> Claims:
-        c1 = await self._getValueForId(self._c1s, id)
-        c2 = None if not self._c2s else await self._getValueForId(self._c2s, id)
+    async def getClaims(self, claimDefId: ID) -> Claims:
+        c1 = await self._getValueForId(self._c1s, claimDefId)
+        c2 = None if not self._c2s else await self._getValueForId(self._c2s,
+                                                                  claimDefId)
         return Claims(c1, c2)
 
     async def getAllClaims(self) -> Dict[ClaimDefinitionKey, Claims]:
@@ -119,11 +126,13 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
             res[claimDefKey] = await self.getClaims(ID(claimDefKey))
         return res
 
-    async def getPrimaryClaimInitData(self, id: ID) -> ClaimInitDataType:
-        return await self._getValueForId(self._primaryInitData, id)
+    async def getPrimaryClaimInitData(self,
+                                      claimDefId: ID) -> ClaimInitDataType:
+        return await self._getValueForId(self._primaryInitData, claimDefId)
 
-    async def getNonRevocClaimInitData(self, id: ID) -> ClaimInitDataType:
-        return await self._getValueForId(self._nonRevocInitData, id)
+    async def getNonRevocClaimInitData(self,
+                                       claimDefId: ID) -> ClaimInitDataType:
+        return await self._getValueForId(self._nonRevocInitData, claimDefId)
 
-    async def getContextAttr(self, id: ID):
-        return await self._getValueForId(self._m2s, id)
+    async def getContextAttr(self, claimDefId: ID):
+        return await self._getValueForId(self._m2s, claimDefId)

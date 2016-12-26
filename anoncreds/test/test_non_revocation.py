@@ -86,7 +86,7 @@ async def testInitNonRevocClaim(claimDefGvtId, prover1, issuerGvt,
     await prover1.processClaim(claimDefGvtId, claims)
     newC2 = (await prover1.wallet.getClaims(claimDefGvtId)).nonRevocClaim
     vrPrime = (
-    await prover1.wallet.getNonRevocClaimInitData(claimDefGvtId)).vPrime
+        await prover1.wallet.getNonRevocClaimInitData(claimDefGvtId)).vPrime
 
     assert oldV + vrPrime == newC2.v
 

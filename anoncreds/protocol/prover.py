@@ -31,79 +31,128 @@ class Prover:
     #
 
     @property
-    def id(self):
-        return self.wallet.id
+    def proverId(self):
+        return self.wallet.walletId
 
-    async def createClaimRequest(self, id: ID, proverId=None,
+    async def createClaimRequest(self, claimDefId: ID, proverId=None,
                                  reqNonRevoc=True) -> ClaimRequest:
-        await self._genMasterSecret(id)
-        U = await self._genU(id)
-        Ur = None if not reqNonRevoc else await self._genUr(id)
-        proverId = proverId if proverId else self.id
+        """
+        Creates a claim request to the issuer.
+
+        :param claimDefId: The claim definition ID (reference to claim
+        definition schema)
+        :param proverId: a prover ID request a claim for (if None then
+        the current prover default ID is used)
+        :param reqNonRevoc: whether to request non-revocation claim
+        :return: Claim Request
+        """
+        await self._genMasterSecret(claimDefId)
+        U = await self._genU(claimDefId)
+        Ur = None if not reqNonRevoc else await self._genUr(claimDefId)
+        proverId = proverId if proverId else self.proverId
         return ClaimRequest(userId=proverId, U=U, Ur=Ur)
 
-    async def createClaimRequests(self, ids: Sequence[ID], proverId=None,
+    async def createClaimRequests(self, claimDefIds: Sequence[ID],
+                                  proverId=None,
                                   reqNonRevoc=True) -> Dict[ID, ClaimRequest]:
+        """
+        Creates a claim request to the issuer.
+
+        :param claimDefIds: The claim definition IDs (references to claim
+        definition schema)
+        :param proverId: a prover ID request a claim for (if None then
+        the current prover default ID is used)
+        :param reqNonRevoc: whether to request non-revocation claim
+        :return: a dictionary of Claim Requests for each Claim Definition.
+        """
         res = {}
-        for id in ids:
-            res[id] = await self.createClaimRequest(id, proverId, reqNonRevoc)
+        for claimDefId in claimDefIds:
+            res[claimDefId] = await self.createClaimRequest(claimDefId,
+                                                            proverId,
+                                                            reqNonRevoc)
         return res
 
-    async def processClaim(self, id: ID, claims: Claims):
-        await self.wallet.submitContextAttr(id, claims.primaryClaim.m2)
-        await self._initPrimaryClaim(id, claims.primaryClaim)
+    async def processClaim(self, claimDefId: ID, claims: Claims):
+        """
+        Processes and saves a received Claim for the given Claim Definition.
+
+        :param claimDefId: The claim definition ID (reference to claim
+        definition schema)
+        :param claims: claims to be processed and saved
+        """
+        await self.wallet.submitContextAttr(claimDefId, claims.primaryClaim.m2)
+        await self._initPrimaryClaim(claimDefId, claims.primaryClaim)
         if claims.nonRevocClaim:
-            await self._initNonRevocationClaim(id, claims.nonRevocClaim)
+            await self._initNonRevocationClaim(claimDefId, claims.nonRevocClaim)
 
     async def processClaims(self, allClaims: Dict[ID, Claims]):
+        """
+        Processes and saves received Claims.
+
+        :param claims: claims to be processed and saved for each claim
+        definition.
+        """
         res = []
-        for id, claims in allClaims.items():
-            res.append(await self.processClaim(id, claims))
+        for claimDefId, claims in allClaims.items():
+            res.append(await self.processClaim(claimDefId, claims))
         return res
 
     async def presentProof(self, proofInput: ProofInput, nonce) -> (
-    FullProof, Dict[str, Any]):
+            FullProof, Dict[str, Any]):
+        """
+        Presents a proof to the verifier.
+
+        :param proofInput: description of a proof to be presented (revealed
+        attributes, predicates, timestamps for non-revocation)
+        :param nonce: verifier's nonce
+        :return: a proof (both primary and non-revocation)
+        """
         claims, revealedAttrsWithValues = await self._findClaims(proofInput)
         proof = await self._prepareProof(claims, nonce)
-        return (proof, revealedAttrsWithValues)
+        return proof, revealedAttrsWithValues
 
     #
     # REQUEST CLAIMS
     #
 
-    async def _genMasterSecret(self, id: ID):
+    async def _genMasterSecret(self, claimDefId: ID):
         ms = cmod.integer(cmod.randomBits(LARGE_MASTER_SECRET))
-        await self.wallet.submitMasterSecret(id=id, ms=ms)
+        await self.wallet.submitMasterSecret(claimDefId=claimDefId, ms=ms)
 
-    async def _genU(self, id: ID):
-        claimInitData = await self._primaryClaimInitializer.genClaimInitData(id)
-        await self.wallet.submitPrimaryClaimInitData(id=id,
+    async def _genU(self, claimDefId: ID):
+        claimInitData = await self._primaryClaimInitializer.genClaimInitData(
+            claimDefId)
+        await self.wallet.submitPrimaryClaimInitData(claimDefId=claimDefId,
                                                      claimInitData=claimInitData)
         return claimInitData.U
 
-    async def _genUr(self, id: ID):
+    async def _genUr(self, claimDefId: ID):
         claimInitData = await self._nonRevocClaimInitializer.genClaimInitData(
-            id)
-        await self.wallet.submitNonRevocClaimInitData(id=id,
+            claimDefId)
+        await self.wallet.submitNonRevocClaimInitData(claimDefId=claimDefId,
                                                       claimInitData=claimInitData)
         return claimInitData.U
 
-    async def _initPrimaryClaim(self, id: ID, claim: PrimaryClaim):
-        claim = await self._primaryClaimInitializer.preparePrimaryClaim(id,
-                                                                        claim)
-        await self.wallet.submitPrimaryClaim(id=id, claim=claim)
+    async def _initPrimaryClaim(self, claimDefId: ID, claim: PrimaryClaim):
+        claim = await self._primaryClaimInitializer.preparePrimaryClaim(
+            claimDefId,
+            claim)
+        await self.wallet.submitPrimaryClaim(claimDefId=claimDefId, claim=claim)
 
-    async def _initNonRevocationClaim(self, id: ID, claim: NonRevocationClaim):
-        claim = await self._nonRevocClaimInitializer.initNonRevocationClaim(id,
-                                                                            claim)
-        await self.wallet.submitNonRevocClaim(id=id, claim=claim)
+    async def _initNonRevocationClaim(self, claimDefId: ID,
+                                      claim: NonRevocationClaim):
+        claim = await self._nonRevocClaimInitializer.initNonRevocationClaim(
+            claimDefId,
+            claim)
+        await self.wallet.submitNonRevocClaim(claimDefId=claimDefId,
+                                              claim=claim)
 
     #
     # PRESENT PROOF
     #
 
     async def _findClaims(self, proofInput: ProofInput) -> (
-    Dict[ClaimDefinitionKey, ProofClaims], Dict[str, Any]):
+            Dict[ClaimDefinitionKey, ProofClaims], Dict[str, Any]):
         revealedAttrs, predicates = set(proofInput.revealedAttrs), set(
             proofInput.predicates)
 
@@ -122,7 +171,7 @@ class Prover:
                     revealedAttrsForClaim.append(revealedAttr)
                     foundRevealedAttrs.add(revealedAttr)
                     revealedAttrsWithValues[revealedAttr] = \
-                    claim.primaryClaim.encodedAttrs[revealedAttr]
+                        claim.primaryClaim.encodedAttrs[revealedAttr]
 
             for predicate in predicates:
                 if predicate.attrName in claim.primaryClaim.encodedAttrs:
@@ -143,7 +192,7 @@ class Prover:
                 "A claim isn't found for the following predicates: {}",
                 predicates - foundPredicates)
 
-        return (proofClaims, revealedAttrsWithValues)
+        return proofClaims, revealedAttrsWithValues
 
     async def _prepareProof(self, claims: Dict[ClaimDefinitionKey, ProofClaims],
                             nonce) -> FullProof:

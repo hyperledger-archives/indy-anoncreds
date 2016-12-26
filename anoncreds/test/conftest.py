@@ -158,13 +158,13 @@ def keysXyz(primes2, issuerXyz, claimDefXyzId, event_loop):
 @pytest.fixture(scope="function")
 def issueAccumulatorGvt(claimDefGvtId, issuerGvt, keysGvt, event_loop):
     event_loop.run_until_complete(
-        issuerGvt.issueAccumulator(id=claimDefGvtId, iA=iA1, L=L))
+        issuerGvt.issueAccumulator(claimDefId=claimDefGvtId, iA=iA1, L=L))
 
 
 @pytest.fixture(scope="function")
 def issueAccumulatorXyz(claimDefXyzId, issuerXyz, keysXyz, event_loop):
     event_loop.run_until_complete(
-        issuerXyz.issueAccumulator(id=claimDefXyzId, iA=iA2, L=L))
+        issuerXyz.issueAccumulator(claimDefId=claimDefXyzId, iA=iA2, L=L))
 
 
 @pytest.fixture(scope="function")
@@ -250,17 +250,17 @@ def claimsProver2Xyz(prover2, issuerXyz, claimDefXyzId, attrsProver2Xyz,
 
 @pytest.fixture(scope="function")
 def claimsProver1(claimsProver1Gvt, claimsProver1Xyz):
-    return (claimsProver1Gvt, claimsProver1Xyz)
+    return claimsProver1Gvt, claimsProver1Xyz
 
 
 @pytest.fixture(scope="function")
 def claimsProver2(claimsProver2Gvt, claimsProver2Xyz):
-    return (claimsProver2Gvt, claimsProver2Xyz)
+    return claimsProver2Gvt, claimsProver2Xyz
 
 
 @pytest.fixture(scope="function")
 def allClaims(claimsProver1, claimsProver2):
-    return (claimsProver1, claimsProver2)
+    return claimsProver1, claimsProver2
 
 
 @pytest.fixture(scope="function")

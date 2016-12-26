@@ -7,15 +7,15 @@ from anoncreds.protocol.types import ClaimDefinition, ClaimDefinitionKey, \
     RevocationPublicKey, AccumulatorPublicKey, Accumulator, TailsType
 
 
-class Wallet():
-    def __init__(self, id, repo: PublicRepo):
-        self.id = id
+class Wallet:
+    def __init__(self, claimDefId, repo: PublicRepo):
+        self.walletId = claimDefId
         self._repo = repo
 
     # GET
 
     @abstractmethod
-    async def getClaimDef(self, id: ID) -> ClaimDefinition:
+    async def getClaimDef(self, claimDefId: ID) -> ClaimDefinition:
         raise NotImplementedError
 
     @abstractmethod
@@ -23,37 +23,40 @@ class Wallet():
         raise NotImplementedError
 
     @abstractmethod
-    async def getPublicKey(self, id: ID) -> PublicKey:
+    async def getPublicKey(self, claimDefId: ID) -> PublicKey:
         raise NotImplementedError
 
     @abstractmethod
-    async def getPublicKeyRevocation(self, id: ID) -> RevocationPublicKey:
+    async def getPublicKeyRevocation(self,
+                                     claimDefId: ID) -> RevocationPublicKey:
         raise NotImplementedError
 
     @abstractmethod
-    async def getPublicKeyAccumulator(self, id: ID) -> AccumulatorPublicKey:
+    async def getPublicKeyAccumulator(self,
+                                      claimDefId: ID) -> AccumulatorPublicKey:
         raise NotImplementedError
 
     @abstractmethod
-    async def getAccumulator(self, id: ID) -> Accumulator:
+    async def getAccumulator(self, claimDefId: ID) -> Accumulator:
         raise NotImplementedError
 
     @abstractmethod
-    async def updateAccumulator(self, id: ID, ts=None, seqNo=None):
+    async def updateAccumulator(self, claimDefId: ID, ts=None, seqNo=None):
         raise NotImplementedError
 
     @abstractmethod
-    async def shouldUpdateAccumulator(self, id: ID, ts=None, seqNo=None):
+    async def shouldUpdateAccumulator(self, claimDefId: ID, ts=None,
+                                      seqNo=None):
         raise NotImplementedError
 
     @abstractmethod
-    async def getTails(self, id: ID) -> TailsType:
+    async def getTails(self, claimDefId: ID) -> TailsType:
         raise NotImplementedError
 
 
 class WalletInMemory(Wallet):
-    def __init__(self, id, repo: PublicRepo):
-        Wallet.__init__(self, id, repo)
+    def __init__(self, claimDefId, repo: PublicRepo):
+        Wallet.__init__(self, claimDefId, repo)
 
         # claim def dicts
         self._claimDefsByKey = {}
@@ -68,16 +71,16 @@ class WalletInMemory(Wallet):
 
     # GET
 
-    async def getClaimDef(self, id: ID) -> ClaimDefinition:
-        if id.claimDefKey and id.claimDefKey in self._claimDefsByKey:
-            return self._claimDefsByKey[id.claimDefKey]
-        if id.claimDefId and id.claimDefId in self._claimDefsById:
-            return self._claimDefsById[id.claimDefId]
+    async def getClaimDef(self, claimDefId: ID) -> ClaimDefinition:
+        if claimDefId.claimDefKey and claimDefId.claimDefKey in self._claimDefsByKey:
+            return self._claimDefsByKey[claimDefId.claimDefKey]
+        if claimDefId.claimDefId and claimDefId.claimDefId in self._claimDefsById:
+            return self._claimDefsById[claimDefId.claimDefId]
 
-        claimDef = await self._repo.getClaimDef(id)
+        claimDef = await self._repo.getClaimDef(claimDefId)
         if not claimDef:
             raise ValueError('No claim definition with ID={} and key={}'.format(
-                id.claimDefId, id.claimDefKey))
+                claimDefId.claimDefId, claimDefId.claimDefKey))
 
         self._cacheClaimDef(claimDef)
 
@@ -86,63 +89,69 @@ class WalletInMemory(Wallet):
     async def getAllClaimDef(self) -> Sequence[ClaimDefinition]:
         return self._claimDefsByKey.values()
 
-    async def getPublicKey(self, id: ID) -> PublicKey:
-        return await self._getValueForId(self._pks, id, self._repo.getPublicKey)
+    async def getPublicKey(self, claimDefId: ID) -> PublicKey:
+        return await self._getValueForId(self._pks, claimDefId,
+                                         self._repo.getPublicKey)
 
-    async def getPublicKeyRevocation(self, id: ID) -> RevocationPublicKey:
-        return await self._getValueForId(self._pkRs, id,
+    async def getPublicKeyRevocation(self,
+                                     claimDefId: ID) -> RevocationPublicKey:
+        return await self._getValueForId(self._pkRs, claimDefId,
                                          self._repo.getPublicKeyRevocation)
 
-    async def getPublicKeyAccumulator(self, id: ID) -> AccumulatorPublicKey:
-        return await self._getValueForId(self._accumPks, id,
+    async def getPublicKeyAccumulator(self,
+                                      claimDefId: ID) -> AccumulatorPublicKey:
+        return await self._getValueForId(self._accumPks, claimDefId,
                                          self._repo.getPublicKeyAccumulator)
 
-    async def getAccumulator(self, id: ID) -> Accumulator:
-        return await self._getValueForId(self._accums, id,
+    async def getAccumulator(self, claimDefId: ID) -> Accumulator:
+        return await self._getValueForId(self._accums, claimDefId,
                                          self._repo.getAccumulator)
 
-    async def getTails(self, id: ID) -> TailsType:
-        return await self._getValueForId(self._tails, id, self._repo.getTails)
+    async def getTails(self, claimDefId: ID) -> TailsType:
+        return await self._getValueForId(self._tails, claimDefId,
+                                         self._repo.getTails)
 
-    async def updateAccumulator(self, id: ID, ts=None, seqNo=None):
-        acc = await self._repo.getAccumulator(id)
-        await self._cacheValueForId(self._accums, id, acc)
+    async def updateAccumulator(self, claimDefId: ID, ts=None, seqNo=None):
+        acc = await self._repo.getAccumulator(claimDefId)
+        await self._cacheValueForId(self._accums, claimDefId, acc)
 
-    async def shouldUpdateAccumulator(self, id: ID, ts=None, seqNo=None):
+    async def shouldUpdateAccumulator(self, claimDefId: ID, ts=None,
+                                      seqNo=None):
         # TODO
         return True
 
     # HELPER
 
-    async def _getValueForId(self, dict: Dict[ClaimDefinitionKey, Any], id: ID,
+    async def _getValueForId(self, dictionary: Dict[ClaimDefinitionKey, Any],
+                             claimDefId: ID,
                              getFromRepo=None) -> Any:
-        claimDef = await self.getClaimDef(id)
+        claimDef = await self.getClaimDef(claimDefId)
         claimDefKey = claimDef.getKey()
 
-        if claimDefKey in dict:
-            return dict[claimDefKey]
+        if claimDefKey in dictionary:
+            return dictionary[claimDefKey]
 
         value = None
         if getFromRepo:
-            id.claimDefKey = claimDefKey
-            id.claimDefId = claimDef.id
-            value = await getFromRepo(id)
+            claimDefId = claimDefId._replace(claimDefKey=claimDefKey,
+                                             claimDefId=claimDef.seqId)
+            value = await getFromRepo(claimDefId)
 
         if not value:
             raise ValueError(
                 'No value for claim definition with ID={} and key={}'.format(
-                    id.claimDefId, id.claimDefKey))
+                    claimDefId.claimDefId, claimDefId.claimDefKey))
 
-        dict[claimDefKey] = value
+        dictionary[claimDefKey] = value
         return value
 
-    async def _cacheValueForId(self, dict: Dict[ClaimDefinitionKey, Any],
-                               id: ID, value: Any):
-        claimDef = await self.getClaimDef(id)
+    async def _cacheValueForId(self, dictionary: Dict[ClaimDefinitionKey, Any],
+                               claimDefId: ID, value: Any):
+        claimDef = await self.getClaimDef(claimDefId)
         claimDefKey = claimDef.getKey()
-        dict[claimDefKey] = value
+        dictionary[claimDefKey] = value
 
     def _cacheClaimDef(self, claimDef: ClaimDefinition):
         self._claimDefsByKey[claimDef.getKey()] = claimDef
-        if claimDef.id:
-            self._claimDefsById[claimDef.id] = claimDef
+        if claimDef.seqId:
+            self._claimDefsById[claimDef.seqId] = claimDef

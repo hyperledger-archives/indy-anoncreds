@@ -18,9 +18,9 @@ class PrimaryClaimInitializer:
     def __init__(self, wallet: ProverWallet):
         self._wallet = wallet
 
-    async def genClaimInitData(self, id: ID) -> ClaimInitDataType:
-        pk = await self._wallet.getPublicKey(id)
-        ms = await self._wallet.getMasterSecret(id)
+    async def genClaimInitData(self, claimDefId: ID) -> ClaimInitDataType:
+        pk = await self._wallet.getPublicKey(claimDefId)
+        ms = await self._wallet.getMasterSecret(claimDefId)
         vprime = cmod.randomBits(LARGE_VPRIME)
         N = pk.N
         Rms = pk.Rms
@@ -29,8 +29,8 @@ class PrimaryClaimInitializer:
 
         return ClaimInitDataType(U=U, vPrime=vprime)
 
-    async def preparePrimaryClaim(self, id: ID, claim: PrimaryClaim):
-        claimInitDat = await self._wallet.getPrimaryClaimInitData(id)
+    async def preparePrimaryClaim(self, claimDefId: ID, claim: PrimaryClaim):
+        claimInitDat = await self._wallet.getPrimaryClaimInitData(claimDefId)
         newV = claim.v + claimInitDat.vPrime
         claim = claim._replace(v=newV)
         return claim
@@ -150,7 +150,7 @@ class PrimaryProofBuilder:
         m = {}
         for k in initProof.unrevealedAttrs:
             m[str(k)] = initProof.mTilde[str(k)] + (
-            cH * initProof.c1.encodedAttrs[str(k)])
+                cH * initProof.c1.encodedAttrs[str(k)])
         ms = await self._wallet.getMasterSecret(ID(claimDefKey))
         m1 = initProof.m1Tilde + (cH * ms)
         m2 = initProof.m2Tilde + (cH * initProof.c1.m2)

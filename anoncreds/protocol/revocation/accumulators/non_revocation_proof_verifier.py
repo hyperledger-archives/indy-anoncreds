@@ -14,17 +14,14 @@ class NonRevocationProofVerifier:
     def __init__(self, wallet: Wallet):
         self._wallet = wallet
 
-    @property
-    def nonce(self):
-        return self._nonce
-
     async def verifyNonRevocation(self, proofInput: ProofInput, claimDefKey,
                                   cHash, nonRevocProof: NonRevocProof) \
             -> Sequence[T]:
-        if await self._wallet.shouldUpdateAccumulator(id=ID(claimDefKey),
-                                                      ts=proofInput.ts,
-                                                      seqNo=proofInput.seqNo):
-            await self._wallet.updateAccumulator(id=ID(claimDefKey),
+        if await self._wallet.shouldUpdateAccumulator(
+                claimDefId=ID(claimDefKey),
+                ts=proofInput.ts,
+                seqNo=proofInput.seqNo):
+            await self._wallet.updateAccumulator(claimDefId=ID(claimDefKey),
                                                  ts=proofInput.ts,
                                                  seqNo=proofInput.seqNo)
 

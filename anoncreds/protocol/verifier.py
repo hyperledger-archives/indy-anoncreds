@@ -18,14 +18,24 @@ class Verifier:
         self._nonRevocVerifier = NonRevocationProofVerifier(wallet)
 
     @property
-    def id(self):
-        return self.wallet.id
+    def verifierId(self):
+        return self.wallet.walletId
 
     def generateNonce(self):
         return cmod.integer(cmod.randomBits(LARGE_NONCE))
 
     async def verify(self, proofInput: ProofInput, proof: FullProof,
                      allRevealedAttrs, nonce):
+        """
+        Verifies a proof from the prover.
+
+        :param proofInput: description of a proof to be presented (revealed
+        attributes, predicates, timestamps for non-revocation)
+        :param proof: a proof
+        :param allRevealedAttrs: values of revealed attributes
+        :param nonce: verifier's nonce
+        :return: True if verified successfully and false otherwise.
+        """
         TauList = []
         for claimDefKey, proofItem in zip(proof.claimDefKeys, proof.proofs):
             if proofItem.nonRevocProof:

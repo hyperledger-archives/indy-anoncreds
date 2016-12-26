@@ -13,15 +13,15 @@ class PublicParamsBuilder:
             rho = cmod.randomPrime(LARGE_PUBLIC_RHO)
             b = cmod.randomBits(LARGE_PUBLIC_B)
             Gamma = b * rho + 1
-            if (cmod.isPrime(Gamma) and (rho % b != 0)):
-                return (rho, b, Gamma)
+            if cmod.isPrime(Gamma) and (rho % b != 0):
+                return rho, b, Gamma
 
     @classmethod
     def _genG(cls, Gamma, b):
         while True:
             gprime = cmod.random(Gamma)
             g = (gprime ** b) % Gamma
-            if (g != 1):
+            if g != 1:
                 return g
 
     @classmethod

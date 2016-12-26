@@ -10,7 +10,7 @@ def createTauListValues(pk: RevocationPublicKey, accum: Accumulator,
                         proofC: NonRevocProofCList) -> NonRevocProofTauList:
     T1 = (pk.h ** params.rho) * (pk.htilde ** params.o)
     T2 = (proofC.E ** params.c) * (pk.h ** (-params.m)) * (
-    pk.htilde ** (-params.t))
+        pk.htilde ** (-params.t))
     T3 = ((cmod.pair(proofC.A, pk.h) ** params.c) *
           (cmod.pair(pk.htilde, pk.h) ** params.r)) / \
          ((cmod.pair(pk.htilde, pk.y) ** params.rho) *
@@ -21,7 +21,7 @@ def createTauListValues(pk: RevocationPublicKey, accum: Accumulator,
          (cmod.pair(1 / pk.g, pk.htilde) ** params.rPrime)
     T5 = (pk.g ** params.r) * (pk.htilde ** params.oPrime)
     T6 = (proofC.D ** params.rPrimePrime) * (pk.g ** -params.mPrime) * (
-    pk.htilde ** -params.tPrime)
+        pk.htilde ** -params.tPrime)
     T7 = (cmod.pair(pk.pk * proofC.G, pk.htilde) ** params.rPrimePrime) * \
          (cmod.pair(pk.htilde, pk.htilde) ** -params.mPrime) * \
          (cmod.pair(pk.htilde, proofC.S) ** params.r)
@@ -37,7 +37,7 @@ def createTauListExpectedValues(pk: RevocationPublicKey, accum: Accumulator,
     T2 = groupIdentityG1()
     T3 = cmod.pair(pk.h0 * proofC.G, pk.h) / cmod.pair(proofC.A, pk.y)
     T4 = cmod.pair(proofC.G, accum.acc) / (
-    cmod.pair(pk.g, proofC.W) * accumPk.z)
+        cmod.pair(pk.g, proofC.W) * accumPk.z)
     T5 = proofC.D
     T6 = groupIdentityG1()
     T7 = cmod.pair(pk.pk * proofC.G, proofC.S) / cmod.pair(pk.g, pk.g)

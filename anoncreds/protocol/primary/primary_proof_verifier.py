@@ -22,13 +22,6 @@ class PrimaryProofVerifier:
 
     async def _verifyEquality(self, claimDefKey, cH, proof: PrimaryEqualProof,
                               allRevealedAttrs):
-        """
-        Verify the proof
-        :param attrs: The encoded attributes dictionary
-        :param revealedAttrs: The revealed attributes list
-        :param nonce: The nonce used to have a commit
-        :return: A boolean with the verification status for the proof
-        """
         THat = []
         pk = await self._wallet.getPublicKey(ID(claimDefKey))
         attrNames = (await self._wallet.getClaimDef(ID(claimDefKey))).attrNames
@@ -59,8 +52,8 @@ class PrimaryProofVerifier:
             TT = proof.T[str(i)] ** (-1 * cH) % pk.N
             TauList[i] = TauList[i] * TT % pk.N
         TauList[ITERATIONS] = TauList[ITERATIONS] * (
-        (proof.T[DELTA] * (pk.Z ** v)) ** (-1 * cH)) % pk.N
+            (proof.T[DELTA] * (pk.Z ** v)) ** (-1 * cH)) % pk.N
         TauList[ITERATIONS + 1] = (TauList[ITERATIONS + 1] * (
-        proof.T[DELTA] ** (-1 * cH))) % pk.N
+            proof.T[DELTA] ** (-1 * cH))) % pk.N
 
         return TauList

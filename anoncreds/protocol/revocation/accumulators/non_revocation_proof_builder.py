@@ -14,28 +14,31 @@ class NonRevocationClaimInitializer:
     def __init__(self, wallet: ProverWallet):
         self._wallet = wallet
 
-    async def genClaimInitData(self, id: ID) -> ClaimInitDataType:
+    async def genClaimInitData(self, claimDefId: ID) -> ClaimInitDataType:
         group = cmod.PairingGroup(
             PAIRING_GROUP)  # super singular curve, 1024 bits
-        pkR = await self._wallet.getPublicKeyRevocation(id)
+        pkR = await self._wallet.getPublicKeyRevocation(claimDefId)
 
         vrPrime = group.random(cmod.ZR)
         Ur = (pkR.h2 ** vrPrime)
 
         return ClaimInitDataType(U=Ur, vPrime=vrPrime)
 
-    async def initNonRevocationClaim(self, id: ID, claim: NonRevocationClaim):
-        vrPrime = (await self._wallet.getNonRevocClaimInitData(id)).vPrime
+    async def initNonRevocationClaim(self, claimDefId: ID,
+                                     claim: NonRevocationClaim):
+        vrPrime = (
+        await self._wallet.getNonRevocClaimInitData(claimDefId)).vPrime
         newV = claim.v + vrPrime
         claim = claim._replace(v=newV)
-        await self._testWitnessCredential(id, claim)
+        await self._testWitnessCredential(claimDefId, claim)
         return claim
 
-    async def _testWitnessCredential(self, id: ID, claim: NonRevocationClaim):
-        pkR = await self._wallet.getPublicKeyRevocation(id)
-        acc = await self._wallet.getAccumulator(id)
-        accPk = await self._wallet.getPublicKeyAccumulator(id)
-        m2 = int(await self._wallet.getContextAttr(id))
+    async def _testWitnessCredential(self, claimDefId: ID,
+                                     claim: NonRevocationClaim):
+        pkR = await self._wallet.getPublicKeyRevocation(claimDefId)
+        acc = await self._wallet.getAccumulator(claimDefId)
+        accPk = await self._wallet.getPublicKeyAccumulator(claimDefId)
+        m2 = int(await self._wallet.getContextAttr(claimDefId))
 
         zCalc = cmod.pair(claim.gi, acc.acc) / cmod.pair(pkR.g,
                                                          claim.witness.omega)
@@ -63,9 +66,11 @@ class NonRevocationProofBuilder:
     async def updateNonRevocationClaim(self, claimDefKey,
                                        c2: NonRevocationClaim, ts=None,
                                        seqNo=None):
-        if await self._wallet.shouldUpdateAccumulator(id=ID(claimDefKey), ts=ts,
-                                                      seqNo=seqNo):
-            await self._wallet.updateAccumulator(id=ID(claimDefKey), ts=ts,
+        if await self._wallet.shouldUpdateAccumulator(
+                claimDefId=ID(claimDefKey), ts=ts,
+                seqNo=seqNo):
+            await self._wallet.updateAccumulator(claimDefId=ID(claimDefKey),
+                                                 ts=ts,
                                                  seqNo=seqNo)
 
         oldV = c2.witness.V
@@ -92,7 +97,8 @@ class NonRevocationProofBuilder:
             newWitness = c2.witness._replace(V=newV, omega=newOmega)
             c2 = c2._replace(witness=newWitness)
 
-            await self._wallet.submitNonRevocClaim(id=ID(claimDefKey), claim=c2)
+            await self._wallet.submitNonRevocClaim(claimDefId=ID(claimDefKey),
+                                                   claim=c2)
 
         return c2
 

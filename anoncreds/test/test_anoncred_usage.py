@@ -28,7 +28,7 @@ async def testSingleIssuerSingleProver(primes1):
     await issuer.genKeys(claimDefId, **primes1)
 
     # 4. Issue accumulator
-    await issuer.issueAccumulator(id=claimDefId, iA='110', L=5)
+    await issuer.issueAccumulator(claimDefId=claimDefId, iA='110', L=5)
 
     # 4. set attributes for user1
     userId = '111'
@@ -72,8 +72,8 @@ async def testMultiplIssuersSingleProver(primes1, primes2):
     await issuer2.genKeys(claimDefId2, **primes2)
 
     # 4. Issue accumulator
-    await issuer1.issueAccumulator(id=claimDefId1, iA='110', L=5)
-    await issuer2.issueAccumulator(id=claimDefId2, iA=9999999, L=5)
+    await issuer1.issueAccumulator(claimDefId=claimDefId1, iA='110', L=5)
+    await issuer2.issueAccumulator(claimDefId=claimDefId2, iA=9999999, L=5)
 
     # 4. set attributes for user1
     userId = '111'
@@ -120,8 +120,8 @@ async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     await issuer.genKeys(claimDefId2, **primes2)
 
     # 4. Issue accumulator
-    await issuer.issueAccumulator(id=claimDefId1, iA='110', L=5)
-    await issuer.issueAccumulator(id=claimDefId2, iA=9999999, L=5)
+    await issuer.issueAccumulator(claimDefId=claimDefId1, iA='110', L=5)
+    await issuer.issueAccumulator(claimDefId=claimDefId2, iA=9999999, L=5)
 
     # 4. set attributes for user1
     userId = '111'
@@ -162,7 +162,7 @@ async def testSingleIssuerSingleProverPrimaryOnly(primes1):
     await issuer.genKeys(claimDefId, **primes1)
 
     # 4. Issue accumulator
-    await issuer.issueAccumulator(id=claimDefId, iA='110', L=5)
+    await issuer.issueAccumulator(claimDefId=claimDefId, iA='110', L=5)
 
     # 4. set attributes for user1
     userId = '111'

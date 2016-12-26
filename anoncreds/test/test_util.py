@@ -46,48 +46,48 @@ def testGroupElementG1IdentitySerializeToFromStr():
 
 def testToFromDictWithStrValues():
     group = cmod.PairingGroup(PAIRING_GROUP)
-    dict = OrderedDict((
+    dictionary = OrderedDict((
         ('43', '43'),
         ('3', 3),
         ('5', cmod.integer(111) % 11),
         ('10', group.random(cmod.G1))
     ))
-    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+    assert dictionary == fromDictWithStrValues(toDictWithStrValues(dictionary))
 
 
 def testToFromDictWithStrValuesInteKeys():
-    dict = OrderedDict((
+    dictionary = OrderedDict((
         (11, '43'),
         (12, 3)
     ))
-    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+    assert dictionary == fromDictWithStrValues(toDictWithStrValues(dictionary))
 
 
 def testToFromDictWithStrValuesLists():
     group = cmod.PairingGroup(PAIRING_GROUP)
-    dict = OrderedDict((
+    dictionary = OrderedDict((
         ('47', []),
         ('7',
          [cmod.integer(111) % 11, cmod.integer(222), cmod.integer(333) % 45]),
         ('6', [group.init(cmod.ZR, 555), group.random(cmod.G1),
                group.random(cmod.G1)])
     ))
-    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+    assert dictionary == fromDictWithStrValues(toDictWithStrValues(dictionary))
 
 
 def testToFromDictWithStrValuesSets():
-    dict = OrderedDict((
+    dictionary = OrderedDict((
         ('44', {'aaa', 'bbb'}),
         ('4', {111, 2222}),
         ('1', {}),
         ('3', 3),
     ))
-    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+    assert dictionary == fromDictWithStrValues(toDictWithStrValues(dictionary))
 
 
 def testToFromDictWithStrValuesSubDicts():
     group = cmod.PairingGroup(PAIRING_GROUP)
-    dict = OrderedDict((
+    dictionary = OrderedDict((
         ('4', {'aaa', 'bbb'}),
         ('2', OrderedDict((
             ('33',
@@ -99,12 +99,12 @@ def testToFromDictWithStrValuesSubDicts():
         ))),
         ('3', 3)
     ))
-    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+    assert dictionary == fromDictWithStrValues(toDictWithStrValues(dictionary))
 
 
 def testToFromDictWithStrValuesMixed():
     group = cmod.PairingGroup(PAIRING_GROUP)
-    dict = OrderedDict((
+    dictionary = OrderedDict((
         ('4', {'aaa', 'bbb'}),
         ('2', OrderedDict((
             ('33',
@@ -123,11 +123,11 @@ def testToFromDictWithStrValuesMixed():
                group.random(cmod.G1)]),
         ('10', group.random(cmod.G1))
     ))
-    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+    assert dictionary == fromDictWithStrValues(toDictWithStrValues(dictionary))
 
 
 def testToFromDictWithStrValuesDictInList():
-    dict = OrderedDict((
+    dictionary = OrderedDict((
         ('2', [
             OrderedDict((
                 ('33',
@@ -149,7 +149,7 @@ def testToFromDictWithStrValuesDictInList():
          ),
         ('3', 3)
     ))
-    assert dict == fromDictWithStrValues(toDictWithStrValues(dict))
+    assert dictionary == fromDictWithStrValues(toDictWithStrValues(dictionary))
 
 
 def testGetHashInt():

@@ -15,7 +15,8 @@ def testClaimDefKeyFromToDict():
 
 
 def testClaimDefFromToDict():
-    claimDef = ClaimDefinition(name='claimDefName', version='1.0', type='CL',
+    claimDef = ClaimDefinition(name='claimDefName', version='1.0',
+                               claimDefType='CL',
                                attrNames=['attr1', 'attr2', 'attr3'],
                                issuerId='issuer1')
     assert claimDef == ClaimDefinition.fromStrDict(claimDef.toStrDict())

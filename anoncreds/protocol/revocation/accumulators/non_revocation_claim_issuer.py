@@ -13,7 +13,7 @@ class NonRevocationClaimIssuer:
         self._wallet = wallet
 
     async def genRevocationKeys(self) -> (
-    RevocationPublicKey, RevocationSecretKey):
+            RevocationPublicKey, RevocationSecretKey):
         group = cmod.PairingGroup(
             PAIRING_GROUP)  # super singular curve, 1024 bits
 
@@ -36,10 +36,11 @@ class NonRevocationClaimIssuer:
         return (RevocationPublicKey(qr, g, h, h0, h1, h2, htilde, u, pk, y, x),
                 RevocationSecretKey(x, sk))
 
-    async def issueAccumulator(self, id, iA, L) \
+    async def issueAccumulator(self, claimDefId, iA, L) \
             -> (
-            Accumulator, TailsType, AccumulatorPublicKey, AccumulatorSecretKey):
-        pkR = await self._wallet.getPublicKeyRevocation(id)
+                    Accumulator, TailsType, AccumulatorPublicKey,
+                    AccumulatorSecretKey):
+        pkR = await self._wallet.getPublicKeyRevocation(claimDefId)
         group = cmod.PairingGroup(PAIRING_GROUP)
         gamma = group.random(cmod.ZR)
 
@@ -56,16 +57,16 @@ class NonRevocationClaimIssuer:
         accPK = AccumulatorPublicKey(z)
         accSK = AccumulatorSecretKey(gamma)
         accum = Accumulator(iA, acc, V, L)
-        return (accum, g, accPK, accSK)
+        return accum, g, accPK, accSK
 
-    async def issueNonRevocationClaim(self, id: ID, Ur, iA, i) -> (
-    NonRevocationClaim, Accumulator, TimestampType):
-        accum = await self._wallet.getAccumulator(id)
-        pkR = await self._wallet.getPublicKeyRevocation(id)
-        skR = await self._wallet.getSecretKeyRevocation(id)
-        g = await self._wallet.getTails(id)
-        skAccum = await self._wallet.getSecretKeyAccumulator(id)
-        m2 = await self._wallet.getContextAttr(id)
+    async def issueNonRevocationClaim(self, claimDefId: ID, Ur, iA, i) -> (
+            NonRevocationClaim, Accumulator, TimestampType):
+        accum = await self._wallet.getAccumulator(claimDefId)
+        pkR = await self._wallet.getPublicKeyRevocation(claimDefId)
+        skR = await self._wallet.getSecretKeyRevocation(claimDefId)
+        g = await self._wallet.getTails(claimDefId)
+        skAccum = await self._wallet.getSecretKeyAccumulator(claimDefId)
+        m2 = await self._wallet.getContextAttr(claimDefId)
 
         if accum.isFull():
             raise ValueError("Accumulator is full. New one must be issued.")
@@ -81,7 +82,7 @@ class NonRevocationClaimIssuer:
 
         m2 = group.init(cmod.ZR, int(m2))
         sigma = (pkR.h0 * (pkR.h1 ** m2) * Ur * g[i] * (
-        pkR.h2 ** vrPrimeprime)) ** (1 / (skR.x + c))
+            pkR.h2 ** vrPrimeprime)) ** (1 / (skR.x + c))
         omega = groupIdentityG1()
         for j in accum.V:
             omega *= g[accum.L + 1 - j + i]
@@ -96,16 +97,17 @@ class NonRevocationClaimIssuer:
 
         ts = currentTimestampMillisec()
         return (
-        NonRevocationClaim(accum.iA, sigma, c, vrPrimeprime, witness, g[i], i,
-                           m2), accum, ts)
+            NonRevocationClaim(accum.iA, sigma, c, vrPrimeprime, witness, g[i],
+                               i,
+                               m2), accum, ts)
 
-    async def revoke(self, id: ID, i) -> (Accumulator, TimestampType):
-        accum = await self._wallet.getAccumulator(id)
-        tails = await self._wallet.getTails(id)
+    async def revoke(self, claimDefId: ID, i) -> (Accumulator, TimestampType):
+        accum = await self._wallet.getAccumulator(claimDefId)
+        tails = await self._wallet.getTails(claimDefId)
 
         accum.V.discard(i)
         accum.acc /= tails[accum.L + 1 - i]
 
         ts = currentTimestampMillisec()
 
-        return (accum, ts)
+        return accum, ts

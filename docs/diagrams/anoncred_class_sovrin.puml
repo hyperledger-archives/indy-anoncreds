@@ -1,0 +1,51 @@
+@startuml
+
+package  anoncreds.repo {
+
+interface PublicRepo
+interface LocalRepo
+interface IssuerLocalRepo
+interface ProverLocalRepo
+
+LocalRepo <|-- IssuerLocalRepo
+LocalRepo <|-- ProverLocalRepo
+
+}
+
+
+package  anoncreds.wallet {
+
+class Wallet
+class Wallet <|-- IssuerWallet
+class Wallet <|-- ProverWallet
+
+Wallet o-- PublicRepo
+Wallet o-- LocalRepo
+
+IssuerWallet o-- IssuerLocalRepo
+ProverWallet o-- ProverLocalRepo
+}
+
+
+package  anoncreds {
+
+class Issuer
+class Prover
+class Verifier
+
+Issuer o-- IssuerWallet
+Prover o-- ProverWallet
+Verifier o-- Wallet
+}
+
+package  sovrin.anoncreds #DDDDDD {
+
+Issuer <|-- SovrinIssuer
+Prover <|-- SovrinProver
+Verifier <|-- SovrinVerifier
+
+PublicRepo <|-- SovrinPublicRepo
+}
+
+
+@enduml

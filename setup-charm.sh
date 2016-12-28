@@ -1,11 +1,29 @@
 #!/bin/bash
 set -e
 
-sudo apt-get install flex
-sudo apt-get install bison
-sudo apt-get install libssl-dev
-sudo apt-get install libgmp-dev
-sudo apt-get install python3-dev
+PKG_FLEX=flex
+PKG_BISON=bison
+
+if [ -f /etc/redhat-release ]
+then
+  # assumes this is a RedHat-based system.
+  PACKAGE_MANAGER=yum
+  PKG_SSL=openssl-devel
+  PKG_GMP=gmp-devel
+else
+  # assumes `apt-get` if not a RedHat-based system, which is
+  # probably not a good assumption.
+  PACKAGE_MANAGER=apt-get
+  PKG_SSL=libssl-dev
+  PKG_GMP=libgmp-dev
+  PKG_PYTHON=python3-dev
+fi
+
+[[ ! -z $PKG_FLEX ]] && sudo $PACKAGE_MANAGER -y install $PKG_FLEX
+[[ ! -z $PKG_BISON ]] && sudo $PACKAGE_MANAGER -y install $PKG_BISON
+[[ ! -z $PKG_SSL ]] && sudo $PACKAGE_MANAGER -y install $PKG_SSL
+[[ ! -z $PKG_GMP ]] && sudo $PACKAGE_MANAGER -y install $PKG_GMP
+[[ ! -z $PKG_PYTHON ]] && sudo $PACKAGE_MANAGER -y install $PKG_PYTHON
 
 # PBC
 # Cleanup any old data

@@ -45,7 +45,7 @@ rm -fr ~/dev/pbc
 mkdir -p ~/dev/charm
 pushd ~/dev/charm
 wget https://github.com/JHUISI/charm/archive/dev.zip
-unzip dev.zip
+unzip -o dev.zip
 pushd charm-dev
 ./configure.sh --python=$(which python3.5)
 make
@@ -55,4 +55,7 @@ popd
 
 # Ensure that you are using pip3.5 for installation.
 # Use link to refer pip3.5 using pip command: http://techglimpse.com/install-update-python-pip-linux-tutorial/
-pip install -r requirements.txt
+if [ -f "requirements.txt" ]; then
+  pip install -r requirements.txt
+fi
+

@@ -1,0 +1,28 @@
+@startuml
+actor Prover as P
+participant "Issuer" as I
+participant "Verifier" as V
+participant "Public Repo" as S
+
+note over P,V: Public Repo
+note over I: Attribute Repo
+
+autonumber
+
+I -> S: genClaimDef
+
+I -> S: genKeys
+
+I -> S: issueAccumulator
+
+P -> I: createClaimRequest
+
+I -> P: issueClaim
+
+P -> P: processClaim
+
+P -> V: presentProof
+
+V -> V: verify
+
+@enduml

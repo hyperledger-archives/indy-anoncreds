@@ -1,7 +1,6 @@
+import glob
 import importlib
 import os
-import glob
-
 import re
 
 
@@ -21,5 +20,6 @@ def dynamicModule():
     mod = importlib.import_module('config.' + m)
     print('Module loaded.')
     return mod
+
 
 cmod = dynamicModule()

@@ -5,38 +5,40 @@ IBM Research (see https://idemix.wordpress.com/ and
 http://www.research.ibm.com/labs/zurich/idemix/). We have built some additional
 features for revocation.
 
-Anonymous Credentials requires a cryptographic framework. We have tested it
-with charm-crypto.  To install charm-crypto you just have to run
-`setup-charm.sh` script. It will require sudo privileges on the system.
+Anonymous Credentials requires a cryptographic framework. We have tested it with charm-crypto.
+## Installation on Linux
 
-# Installation on Linux
-
-## Prerequisites for RedHat-based Systems
+### Prerequisites for RedHat-based Systems
 
 - epel-release
 - python-setuptools
 - unzip
 - wget
 
-## Prerequisites for Debian-based Systems
+### Prerequisites for Debian-based Systems
 
-## Command-line Install
+### Command-line Install
 
 ```
 git clone https://github/evernym/anoncreds.git
 sh setupt-charm.sh
 ```
 
-# Installation on Mac
+## Installation on Mac
 
-## Prerequisites
+### Prerequisites
 
 - [Homebrew](http://brew.sh)
 - [OpenSSL](https://solitum.net/openssl-os-x-el-capitan-and-brew)
 
-## Command-line Install
+### Command-line Install
 
 ```
 git clone https://github.com/evernym/anoncreds.git
 sh setup-charm-homebrew.sh
 ```
+
+## Installation on Windows
+
+Please refer to the following guide on how to install charm-crypto on Windows x64:
+[Windows Installation](windows-installation-guide.md)

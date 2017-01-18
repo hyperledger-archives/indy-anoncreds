@@ -1,34 +1,158 @@
 import logging
 import string
+import time
+from collections import OrderedDict
+from enum import Enum
 from hashlib import sha256
+from math import sqrt, floor
 from random import randint, sample
+from sys import byteorder
+from typing import Dict, List, Set
 
 import base58
 
+from anoncreds.protocol.globals import KEYS, PK_R
+from anoncreds.protocol.globals import LARGE_PRIME, LARGE_MASTER_SECRET, \
+    LARGE_VPRIME, PAIRING_GROUP
 from config.config import cmod
-
-from anoncreds.protocol.globals import LARGE_PRIME, KEYS, PK_R, \
-    LARGE_MASTER_SECRET, LARGE_VPRIME
-from anoncreds.protocol.types import SerFmt
 
 
 def randomQR(n):
     return cmod.random(n) ** 2
 
 
-def get_hash(*args):
+def get_hash_as_int(*args, group: cmod.PairingGroup = None):
     """
     Enumerate over the input tuple and generate a hash using the tuple values
 
-    :param args:
+    :param args: sequence of either group or integer elements
+    :param group: pairing group if an element is a group element
     :return:
     """
 
-    numbers = [cmod.Conversion.IP2OS(arg) for arg in args]
+    group = group if group else cmod.PairingGroup(PAIRING_GROUP)
     h_challenge = sha256()
-    for n in sorted(numbers, key=str):
-        h_challenge.update(n)
-    return h_challenge.digest()
+
+    serialedArgs = [group.serialize(arg) if isGroupElement(arg)
+                    else cmod.Conversion.IP2OS(arg)
+                    for arg in args]
+
+    for arg in sorted(serialedArgs):
+        h_challenge.update(arg)
+    return bytes_to_int(h_challenge.digest())
+
+
+CRYPTO_INT_PREFIX = 'CryptoInt_'
+INT_PREFIX = 'Int_'
+GROUP_PREFIX = 'Group_'
+BYTES_PREFIX = 'Bytes_'
+
+
+def serializeToStr(n):
+    if isCryptoInteger(n):
+        return CRYPTO_INT_PREFIX + cmod.serialize(n).decode()
+    if isInteger(n):
+        return INT_PREFIX + str(n)
+    if isGroupElement(n):
+        return GROUP_PREFIX + cmod.PairingGroup(PAIRING_GROUP).serialize(
+            n).decode()
+    return n
+
+
+def deserializeFromStr(n: str):
+    if isStr(n) and n.startswith(CRYPTO_INT_PREFIX):
+        n = n[len(CRYPTO_INT_PREFIX):].encode()
+        return cmod.deserialize(n)
+
+    if isStr(n) and n.startswith(INT_PREFIX):
+        n = n[len(INT_PREFIX):]
+        return int(n)
+
+    if isStr(n) and n.startswith(GROUP_PREFIX):
+        n = n[len(GROUP_PREFIX):].encode()
+        res = cmod.PairingGroup(PAIRING_GROUP).deserialize(n)
+        # A fix for Identity element as serialized/deserialized not correctly
+        if str(res) == '[0, 0]':
+            return groupIdentityG1()
+        return res
+
+    return n
+
+
+def isCryptoInteger(n):
+    return isinstance(n, cmod.integer)
+
+
+def isGroupElement(n):
+    return isinstance(n, cmod.pc_element)
+
+
+def isInteger(n):
+    return isinstance(n, int)
+
+
+def isStr(n):
+    return isinstance(n, str)
+
+
+def isNamedTuple(n):
+    return isinstance(n, tuple)  # TODO: assume it's a named tuple
+
+
+def toDictWithStrValues(d):
+    if isNamedTuple(d):
+        return toDictWithStrValues(d._asdict())
+    if not isinstance(d, Dict):
+        return serializeToStr(d)
+    result = OrderedDict()
+    for key, value in d.items():
+        if isinstance(value, Dict):
+            result[serializeToStr(key)] = toDictWithStrValues(value)
+        elif isinstance(value, str):
+            result[serializeToStr(key)] = serializeToStr(value)
+        elif isNamedTuple(value):
+            result[serializeToStr(key)] = toDictWithStrValues(value._asdict())
+        elif isinstance(value, Set):
+            result[serializeToStr(key)] = {toDictWithStrValues(v) for v in
+                                           value}
+        elif isinstance(value, List):
+            result[serializeToStr(key)] = [toDictWithStrValues(v) for v in
+                                           value]
+        elif value:
+            result[serializeToStr(key)] = serializeToStr(value)
+    return result
+
+
+def fromDictWithStrValues(d):
+    if not isinstance(d, Dict) and not isinstance(d, tuple):
+        return deserializeFromStr(d)
+    result = OrderedDict()
+    for key, value in d.items():
+        if isinstance(value, Dict):
+            result[deserializeFromStr(key)] = fromDictWithStrValues(value)
+        elif isinstance(value, str):
+            result[deserializeFromStr(key)] = deserializeFromStr(value)
+        elif isinstance(value, Set):
+            result[deserializeFromStr(key)] = {fromDictWithStrValues(v) for v in
+                                               value}
+        elif isinstance(value, List):
+            result[deserializeFromStr(key)] = [fromDictWithStrValues(v) for v in
+                                               value]
+        elif value:
+            result[deserializeFromStr(key)] = deserializeFromStr(value)
+    return result
+
+
+def bytes_to_int(bytesHash):
+    return int.from_bytes(bytesHash, byteorder=byteorder)
+
+
+def int_to_ZR(intHash, group):
+    return group.init(cmod.ZR, intHash)
+
+
+def groupIdentityG1():
+    return cmod.PairingGroup(PAIRING_GROUP).init(cmod.G1, 0)
 
 
 def get_values_of_dicts(*args):
@@ -81,14 +205,31 @@ def randomString(size: int = 20,
 
 
 def getUnrevealedAttrs(encodedAttrs, revealedAttrsList):
-    flatAttrs = flattenDict(encodedAttrs)
-    revealedAttrs, unrevealedAttrs = splitRevealedAttrs(flatAttrs, revealedAttrsList)
-    return flatAttrs, unrevealedAttrs
+    revealedAttrs, unrevealedAttrs = splitRevealedAttrs(encodedAttrs,
+                                                        revealedAttrsList)
+    return unrevealedAttrs
 
 
 def flattenDict(attrs):
     return {x: y for z in attrs.values()
             for x, y in z.items()}
+
+
+def largestSquareLessThan(x: int):
+    sqrtx = int(floor(sqrt(x)))
+    return sqrtx
+
+
+def fourSquares(delta: int):
+    u1 = largestSquareLessThan(delta)
+    u2 = largestSquareLessThan(delta - (u1 ** 2))
+    u3 = largestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2))
+    u4 = largestSquareLessThan(delta - (u1 ** 2) - (u2 ** 2) - (u3 ** 2))
+    if (u1 ** 2) + (u2 ** 2) + (u3 ** 2) + (u4 ** 2) == delta:
+        return {'0': u1, '1': u2, '2': u3, '3': u4}
+    else:
+        raise Exception(
+            "Cannot get the four squares for delta {0}".format(delta))
 
 
 def strToCryptoInteger(n):
@@ -99,8 +240,8 @@ def strToCryptoInteger(n):
         return cmod.integer(int(n))
 
 
-def isCryptoInteger(n):
-    return isinstance(n, cmod.integer)
+def strToInt(s):
+    return bytes_to_int(sha256(s.encode()).digest())
 
 
 def genPrime():
@@ -129,6 +270,12 @@ def base58decodedInt(i):
         return int(base58.b58decode(str(i)).decode())
     except Exception as ex:
         raise AttributeError from ex
+
+
+class SerFmt(Enum):
+    default = 1
+    py3Int = 2
+    base58 = 3
 
 
 SerFuncs = {
@@ -186,3 +333,7 @@ def shortenDictVals(d, size=None):
         else:
             r[k] = shortenMod(v, size)
     return r
+
+
+def currentTimestampMillisec():
+    return int(time.time() * 1000)  # millisec

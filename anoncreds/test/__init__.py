@@ -1,7 +1,6 @@
-import pytest
-
 
 def run():
+    import pytest
     pytest.main()
 
 

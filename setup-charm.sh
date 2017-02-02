@@ -59,3 +59,6 @@ if [ -f "requirements.txt" ]; then
   pip install -r requirements.txt
 fi
 
+# configure dynamic linker run-time bindings
+sudo ldconfig
+

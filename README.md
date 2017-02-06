@@ -20,8 +20,9 @@ Anonymous Credentials requires a cryptographic framework. We have tested it with
 ### Command-line Install
 
 ```
-git clone https://github/evernym/anoncreds.git
-sh setupt-charm.sh
+git clone https://github.com/evernym/anoncreds.git
+cd anoncreds
+sh setup-charm.sh
 ```
 
 ## Installation on Mac
@@ -35,6 +36,7 @@ sh setupt-charm.sh
 
 ```
 git clone https://github.com/evernym/anoncreds.git
+cd anoncreds
 sh setup-charm-homebrew.sh
 ```
 

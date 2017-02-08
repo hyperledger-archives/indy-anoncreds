@@ -14,7 +14,7 @@ class PrimaryClaimIssuer:
 
     async def genKeys(self, schemaId: ID, p_prime=None, q_prime=None) -> (
             PublicKey, SecretKey):
-        schema = await self._wallet.getClaimDef(schemaId)
+        schema = await self._wallet.getSchema(schemaId)
         if not schema.attrNames and isinstance(schema.attrNames, list):
             raise ValueError("List of attribute names is required to "
                              "setup credential definition")

@@ -24,7 +24,7 @@ class PrimaryProofVerifier:
                               allRevealedAttrs):
         THat = []
         pk = await self._wallet.getPublicKey(ID(schemaKey))
-        attrNames = (await self._wallet.getClaimDef(ID(schemaKey))).attrNames
+        attrNames = (await self._wallet.getSchema(ID(schemaKey))).attrNames
         unrevealedAttrNames = set(attrNames) - set(proof.revealedAttrNames)
 
         T1 = calcTeq(pk, proof.Aprime, proof.e, proof.v,

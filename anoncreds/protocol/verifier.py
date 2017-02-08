@@ -37,14 +37,14 @@ class Verifier:
         :return: True if verified successfully and false otherwise.
         """
         TauList = []
-        for claimDefKey, proofItem in zip(proof.claimDefKeys, proof.proofs):
+        for schemaKey, proofItem in zip(proof.schemaKeys, proof.proofs):
             if proofItem.nonRevocProof:
                 TauList += await self._nonRevocVerifier.verifyNonRevocation(
-                    proofInput, claimDefKey, proof.cHash,
+                    proofInput, schemaKey, proof.cHash,
                     proofItem.nonRevocProof)
             if proofItem.primaryProof:
                 TauList += await self._primaryVerifier.verify(proofInput,
-                                                              claimDefKey,
+                                                              schemaKey,
                                                               proof.cHash,
                                                               proofItem.primaryProof,
                                                               allRevealedAttrs)

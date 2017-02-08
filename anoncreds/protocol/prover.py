@@ -162,7 +162,7 @@ class Prover:
         revealedAttrsWithValues = {}
 
         allClaims = await self.wallet.getAllClaims()
-        for credDefKey, claim in allClaims.items():
+        for schemaKey, claim in allClaims.items():
             revealedAttrsForClaim = []
             predicatesForClaim = []
 
@@ -179,8 +179,7 @@ class Prover:
                     foundPredicates.add(predicate)
 
             if revealedAttrsForClaim or predicatesForClaim:
-                # TODO: is it claimDefKey?
-                proofClaims[credDefKey] = ProofClaims(claim,
+                proofClaims[schemaKey] = ProofClaims(claim,
                                                       revealedAttrsForClaim,
                                                       predicatesForClaim)
 

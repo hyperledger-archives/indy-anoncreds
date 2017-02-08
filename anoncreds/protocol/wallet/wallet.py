@@ -79,7 +79,7 @@ class WalletInMemory(Wallet):
 
         schema = await self._repo.getSchema(schemaId)
         if not schema:
-            raise ValueError('No claim definition with ID={} and key={}'.format(
+            raise ValueError('No schema with ID={} and key={}'.format(
                 schemaId.schemaId, schemaId.schemaKey))
 
         self._cacheSchema(schema)
@@ -139,7 +139,7 @@ class WalletInMemory(Wallet):
 
         if not value:
             raise ValueError(
-                'No value for claim definition with ID={} and key={}'.format(
+                'No value for schema with ID={} and key={}'.format(
                     schemaId.schemaId, schemaId.schemaKey))
 
         dictionary[schemaKey] = value

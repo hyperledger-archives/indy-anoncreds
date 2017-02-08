@@ -8,14 +8,14 @@ from config.config import cmod
 
 
 def testSchemaKeyFromToDict():
-    schemaKey = SchemaKey(name='claimDefName', version='1.0',
+    schemaKey = SchemaKey(name='schemaName', version='1.0',
                             issuerId='issuer1')
     assert schemaKey == SchemaKey.fromStrDict(
         schemaKey.toStrDict())
 
 
 def testSchemaFromToDict():
-    schema = Schema(name='claimDefName', version='1.0',
+    schema = Schema(name='schemaName', version='1.0',
                       schemaType='CL',
                       attrNames=['attr1', 'attr2', 'attr3'],
                       issuerId='issuer1')

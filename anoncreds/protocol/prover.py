@@ -39,7 +39,7 @@ class Prover:
         """
         Creates a claim request to the issuer.
 
-        :param schemaId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param proverId: a prover ID request a claim for (if None then
         the current prover default ID is used)
@@ -58,12 +58,12 @@ class Prover:
         """
         Creates a claim request to the issuer.
 
-        :param schemaIds: The claim definition IDs (references to claim
+        :param schemaIds: The schema IDs (references to claim
         definition schema)
         :param proverId: a prover ID request a claim for (if None then
         the current prover default ID is used)
         :param reqNonRevoc: whether to request non-revocation claim
-        :return: a dictionary of Claim Requests for each Claim Definition.
+        :return: a dictionary of Claim Requests for each Schema.
         """
         res = {}
         for schemaId in schemaIds:
@@ -74,9 +74,9 @@ class Prover:
 
     async def processClaim(self, schemaId: ID, claims: Claims):
         """
-        Processes and saves a received Claim for the given Claim Definition.
+        Processes and saves a received Claim for the given Schema.
 
-        :param schemaId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param claims: claims to be processed and saved
         """

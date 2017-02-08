@@ -31,13 +31,13 @@ class Issuer:
     async def genSchema(self, name, version, attrNames,
                         schemaType=TYPE_CL) -> Schema:
         """
-        Generates and submits Claim Definition.
+        Generates and submits Schema.
 
-        :param name: claim definition name
-        :param version: claim definition version
-        :param attrNames: a list of attributes the claim definition contains
-        :param schemaType: a type of the claim definition
-        :return: submitted Claim Definition
+        :param name: schema name
+        :param version: schema version
+        :param attrNames: a list of attributes the schema contains
+        :param schemaType: a type of the schema
+        :return: submitted Schema
         """
         schema = Schema(name, version, attrNames, schemaType,
                           self.issuerId)
@@ -49,7 +49,7 @@ class Issuer:
         Generates and submits keys (both public and secret, primary and
         non-revocation).
 
-        :param schemaId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param p_prime: optional p_prime parameter
         :param q_prime: optional q_prime parameter
@@ -68,7 +68,7 @@ class Issuer:
         """
         Issues and submits an accumulator used for non-revocation proof.
 
-        :param schemaId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param iA: accumulator ID
         :param L: maximum number of claims within accumulator.
@@ -87,7 +87,7 @@ class Issuer:
         """
         Performs revocation of a Claim.
 
-        :param schemaId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param i: claim's sequence number within accumulator
         """
@@ -99,9 +99,9 @@ class Issuer:
                          iA=None,
                          i=None) -> Claims:
         """
-        Issue a claim for the given user and claim definition.
+        Issue a claim for the given user and schema.
 
-        :param schemaId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param claimRequest: A claim request containing prover ID and
         prover-generated values
@@ -127,9 +127,9 @@ class Issuer:
     async def issueClaims(self, allClaimRequest: Dict[ID, ClaimRequest]) -> \
             Dict[ID, Claims]:
         """
-        Issue claims for the given users and claim definitions.
+        Issue claims for the given users and schemas.
 
-        :param allClaimRequest: a map of claim definition ID to a claim
+        :param allClaimRequest: a map of schema ID to a claim
         request containing prover ID and prover-generated values
         :return: The claims (both primary and non-revocation)
         """

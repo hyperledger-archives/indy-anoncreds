@@ -74,7 +74,7 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
     def __init__(self, schemaId, repo: PublicRepo):
         WalletInMemory.__init__(self, schemaId, repo)
 
-        # other dicts with key=claimDefKey
+        # other dicts with key=schemaKey
         self._m1s = {}
         self._m2s = {}
 

@@ -85,7 +85,7 @@ class PublicRepoInMemory(PublicRepo):
             return self._schemasById[schemaId.schemaId]
 
         raise KeyError(
-            'No claim definition with ID={} and key={}'.format(
+            'No schema with ID={} and key={}'.format(
                 schemaId.schemaId,
                 schemaId.schemaKey))
 
@@ -152,7 +152,7 @@ class PublicRepoInMemory(PublicRepo):
         schemaKey = schema.getKey()
         if not schemaKey in dictionary:
             raise ValueError(
-                'No value for claim definition with ID={} and key={}'.format(
+                'No value for schema with ID={} and key={}'.format(
                     schemaId.schemaId, schemaId.schemaKey))
         return dictionary[schemaKey]
 

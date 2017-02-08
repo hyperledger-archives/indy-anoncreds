@@ -75,7 +75,7 @@ class IssuerWalletInMemory(IssuerWallet, WalletInMemory):
     def __init__(self, schemaId, repo: PublicRepo):
         WalletInMemory.__init__(self, schemaId, repo)
 
-        # other dicts with key=claimDefKey
+        # other dicts with key=schemaKey
         self._sks = {}
         self._skRs = {}
         self._accumSks = {}

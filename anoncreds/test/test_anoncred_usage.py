@@ -20,11 +20,11 @@ async def testSingleIssuerSingleProver(primes1):
     attrRepo = AttributeRepoInMemory()
     issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
 
-    # 2. Create a Claim Def
+    # 2. Create a Schema
     schema = await issuer.genSchema('GVT', '1.0', GVT.attribNames())
     schemaId = ID(schema.getKey())
 
-    # 3. Create keys for the Claim Def
+    # 3. Create keys for the Schema
     await issuer.genKeys(schemaId, **primes1)
 
     # 4. Issue accumulator
@@ -60,14 +60,14 @@ async def testMultiplIssuersSingleProver(primes1, primes2):
     issuer1 = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
     issuer2 = Issuer(IssuerWalletInMemory('issuer2', publicRepo), attrRepo)
 
-    # 2. Create a Claim Def
+    # 2. Create a Schema
     schema1 = await issuer1.genSchema('GVT', '1.0', GVT.attribNames())
     schemaId1 = ID(schema1.getKey())
     schema2 = await issuer2.genSchema('XYZCorp', '1.0',
                                         XYZCorp.attribNames())
     schemaId2 = ID(schema2.getKey())
 
-    # 3. Create keys for the Claim Def
+    # 3. Create keys for the Schema
     await issuer1.genKeys(schemaId1, **primes1)
     await issuer2.genKeys(schemaId2, **primes2)
 
@@ -108,14 +108,14 @@ async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     attrRepo = AttributeRepoInMemory()
     issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
 
-    # 2. Create a Claim Def
+    # 2. Create a Schema
     schema1 = await issuer.genSchema('GVT', '1.0', GVT.attribNames())
     schemaId1 = ID(schema1.getKey())
     schema2 = await issuer.genSchema('XYZCorp', '1.0',
                                        XYZCorp.attribNames())
     schemaId2 = ID(schema2.getKey())
 
-    # 3. Create keys for the Claim Def
+    # 3. Create keys for the Schema
     await issuer.genKeys(schemaId1, **primes1)
     await issuer.genKeys(schemaId2, **primes2)
 
@@ -154,11 +154,11 @@ async def testSingleIssuerSingleProverPrimaryOnly(primes1):
     attrRepo = AttributeRepoInMemory()
     issuer = Issuer(IssuerWalletInMemory('issuer1', publicRepo), attrRepo)
 
-    # 2. Create a Claim Def
+    # 2. Create a Schema
     schema = await issuer.genSchema('GVT', '1.0', GVT.attribNames())
     schemaId = ID(schema.getKey())
 
-    # 3. Create keys for the Claim Def
+    # 3. Create keys for the Schema
     await issuer.genKeys(schemaId, **primes1)
 
     # 4. Issue accumulator

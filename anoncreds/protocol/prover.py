@@ -10,7 +10,7 @@ from anoncreds.protocol.revocation.accumulators.non_revocation_proof_builder imp
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, Proof, \
     InitProof, ProofInput, ProofClaims, \
     FullProof, \
-    ClaimDefinition, ID, ClaimDefinitionKey, ClaimRequest, Claims
+    Schema, ID, SchemaKey, ClaimRequest, Claims
 from anoncreds.protocol.utils import get_hash_as_int
 from anoncreds.protocol.wallet.prover_wallet import ProverWallet
 from config.config import cmod
@@ -152,7 +152,7 @@ class Prover:
     #
 
     async def _findClaims(self, proofInput: ProofInput) -> (
-            Dict[ClaimDefinitionKey, ProofClaims], Dict[str, Any]):
+            Dict[SchemaKey, ProofClaims], Dict[str, Any]):
         revealedAttrs, predicates = set(proofInput.revealedAttrs), set(
             proofInput.predicates)
 
@@ -194,7 +194,7 @@ class Prover:
 
         return proofClaims, revealedAttrsWithValues
 
-    async def _prepareProof(self, claims: Dict[ClaimDefinitionKey, ProofClaims],
+    async def _prepareProof(self, claims: Dict[SchemaKey, ProofClaims],
                             nonce) -> FullProof:
         m1Tilde = cmod.integer(cmod.randomBits(LARGE_M2_TILDE))
         initProofs = {}
@@ -243,14 +243,14 @@ class Prover:
 
         return FullProof(cH, claimDefKeys, proofs, CList)
 
-    async def _getCList(self, initProofs: Dict[ClaimDefinition, InitProof]):
+    async def _getCList(self, initProofs: Dict[Schema, InitProof]):
         CList = []
         for initProof in initProofs.values():
             CList += await initProof.nonRevocInitProof.asCList()
             CList += await initProof.primaryInitProof.asCList()
             return CList
 
-    async def _getTauList(self, initProofs: Dict[ClaimDefinition, InitProof]):
+    async def _getTauList(self, initProofs: Dict[Schema, InitProof]):
         TauList = []
         for initProof in initProofs.values():
             TauList += await initProof.nonRevocInitProof.asTauList()

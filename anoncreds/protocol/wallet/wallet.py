@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Any, Dict, Sequence
 
 from anoncreds.protocol.repo.public_repo import PublicRepo
-from anoncreds.protocol.types import ClaimDefinition, ClaimDefinitionKey, \
+from anoncreds.protocol.types import Schema, SchemaKey, \
     PublicKey, ID, \
     RevocationPublicKey, AccumulatorPublicKey, Accumulator, TailsType
 
@@ -15,11 +15,11 @@ class Wallet:
     # GET
 
     @abstractmethod
-    async def getClaimDef(self, claimDefId: ID) -> ClaimDefinition:
+    async def getClaimDef(self, claimDefId: ID) -> Schema:
         raise NotImplementedError
 
     @abstractmethod
-    async def getAllClaimDef(self) -> Sequence[ClaimDefinition]:
+    async def getAllClaimDef(self) -> Sequence[Schema]:
         raise NotImplementedError
 
     @abstractmethod
@@ -71,7 +71,7 @@ class WalletInMemory(Wallet):
 
     # GET
 
-    async def getClaimDef(self, claimDefId: ID) -> ClaimDefinition:
+    async def getClaimDef(self, claimDefId: ID) -> Schema:
         if claimDefId.claimDefKey and claimDefId.claimDefKey in self._claimDefsByKey:
             return self._claimDefsByKey[claimDefId.claimDefKey]
         if claimDefId.claimDefId and claimDefId.claimDefId in self._claimDefsById:
@@ -86,7 +86,7 @@ class WalletInMemory(Wallet):
 
         return claimDef
 
-    async def getAllClaimDef(self) -> Sequence[ClaimDefinition]:
+    async def getAllClaimDef(self) -> Sequence[Schema]:
         return self._claimDefsByKey.values()
 
     async def getPublicKey(self, claimDefId: ID) -> PublicKey:
@@ -122,7 +122,7 @@ class WalletInMemory(Wallet):
 
     # HELPER
 
-    async def _getValueForId(self, dictionary: Dict[ClaimDefinitionKey, Any],
+    async def _getValueForId(self, dictionary: Dict[SchemaKey, Any],
                              claimDefId: ID,
                              getFromRepo=None) -> Any:
         claimDef = await self.getClaimDef(claimDefId)
@@ -145,13 +145,13 @@ class WalletInMemory(Wallet):
         dictionary[claimDefKey] = value
         return value
 
-    async def _cacheValueForId(self, dictionary: Dict[ClaimDefinitionKey, Any],
+    async def _cacheValueForId(self, dictionary: Dict[SchemaKey, Any],
                                claimDefId: ID, value: Any):
         claimDef = await self.getClaimDef(claimDefId)
         claimDefKey = claimDef.getKey()
         dictionary[claimDefKey] = value
 
-    def _cacheClaimDef(self, claimDef: ClaimDefinition):
+    def _cacheClaimDef(self, claimDef: Schema):
         self._claimDefsByKey[claimDef.getKey()] = claimDef
         if claimDef.seqId:
             self._claimDefsById[claimDef.seqId] = claimDef

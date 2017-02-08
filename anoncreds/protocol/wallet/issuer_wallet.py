@@ -1,7 +1,7 @@
 from abc import abstractmethod
 
 from anoncreds.protocol.repo.public_repo import PublicRepo
-from anoncreds.protocol.types import ClaimDefinition, PublicKey, SecretKey, ID, \
+from anoncreds.protocol.types import Schema, PublicKey, SecretKey, ID, \
     RevocationPublicKey, AccumulatorPublicKey, Accumulator, TailsType, \
     RevocationSecretKey, AccumulatorSecretKey, \
     TimestampType
@@ -16,7 +16,7 @@ class IssuerWallet(Wallet):
 
     @abstractmethod
     async def submitClaimDef(self,
-                             claimDef: ClaimDefinition) -> ClaimDefinition:
+                             claimDef: Schema) -> Schema:
         raise NotImplementedError
 
     @abstractmethod
@@ -85,7 +85,7 @@ class IssuerWalletInMemory(IssuerWallet, WalletInMemory):
     # SUBMIT
 
     async def submitClaimDef(self,
-                             claimDef: ClaimDefinition) -> ClaimDefinition:
+                             claimDef: Schema) -> Schema:
         claimDef = await self._repo.submitClaimDef(claimDef)
         self._cacheClaimDef(claimDef)
         return claimDef

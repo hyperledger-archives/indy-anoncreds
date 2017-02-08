@@ -2,15 +2,15 @@ from abc import abstractmethod
 from typing import Dict, Any
 
 from anoncreds.protocol.types import ID, PublicKey, RevocationPublicKey, \
-    ClaimDefinition, TailsType, Accumulator, \
-    AccumulatorPublicKey, TimestampType, ClaimDefinitionKey
+    Schema, TailsType, Accumulator, \
+    AccumulatorPublicKey, TimestampType, SchemaKey
 
 
 class PublicRepo:
     # GET
 
     @abstractmethod
-    async def getClaimDef(self, claimDefId: ID) -> ClaimDefinition:
+    async def getClaimDef(self, claimDefId: ID) -> Schema:
         raise NotImplementedError
 
     @abstractmethod
@@ -39,7 +39,7 @@ class PublicRepo:
 
     @abstractmethod
     async def submitClaimDef(self,
-                             claimDef: ClaimDefinition) -> ClaimDefinition:
+                             claimDef: Schema) -> Schema:
         raise NotImplementedError
 
     @abstractmethod
@@ -77,7 +77,7 @@ class PublicRepoInMemory(PublicRepo):
 
     # GET
 
-    async def getClaimDef(self, claimDefId: ID) -> ClaimDefinition:
+    async def getClaimDef(self, claimDefId: ID) -> Schema:
         if claimDefId.claimDefKey and claimDefId.claimDefKey in self._claimDefsByKey:
             return self._claimDefsByKey[claimDefId.claimDefKey]
 
@@ -109,7 +109,7 @@ class PublicRepoInMemory(PublicRepo):
     # SUBMIT
 
     async def submitClaimDef(self,
-                             claimDef: ClaimDefinition) -> ClaimDefinition:
+                             claimDef: Schema) -> Schema:
         claimDef = claimDef._replace(seqId=self._claimDefId)
         self._claimDefId += 1
         self._claimDefsByKey[claimDef.getKey()] = claimDef
@@ -146,7 +146,7 @@ class PublicRepoInMemory(PublicRepo):
                                 timestampMs: TimestampType):
         await self._cacheValueForId(self._accums, claimDefId, accum)
 
-    async def _getValueForId(self, dictionary: Dict[ClaimDefinitionKey, Any],
+    async def _getValueForId(self, dictionary: Dict[SchemaKey, Any],
                              claimDefId: ID) -> Any:
         claimDef = await self.getClaimDef(claimDefId)
         claimDefKey = claimDef.getKey()
@@ -156,7 +156,7 @@ class PublicRepoInMemory(PublicRepo):
                     id.claimDefId, id.claimDefKey))
         return dictionary[claimDefKey]
 
-    async def _cacheValueForId(self, dictionary: Dict[ClaimDefinitionKey, Any],
+    async def _cacheValueForId(self, dictionary: Dict[SchemaKey, Any],
                                claimDefId: ID, value: Any):
         claimDef = await self.getClaimDef(claimDefId)
         claimDefKey = claimDef.getKey()

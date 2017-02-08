@@ -6,7 +6,7 @@ from anoncreds.protocol.repo.attributes_repo import AttributeRepo
 from anoncreds.protocol.revocation.accumulators.non_revocation_claim_issuer import \
     NonRevocationClaimIssuer
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, \
-    ClaimDefinition, ID, Claims, ClaimRequest, Attribs, PublicKey, \
+    Schema, ID, Claims, ClaimRequest, Attribs, PublicKey, \
     RevocationPublicKey, AccumulatorPublicKey
 from anoncreds.protocol.utils import strToInt, get_hash_as_int
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
@@ -29,7 +29,7 @@ class Issuer:
         return self.wallet.walletId
 
     async def genClaimDef(self, name, version, attrNames,
-                          claimDefType=TYPE_CL) -> ClaimDefinition:
+                          claimDefType=TYPE_CL) -> Schema:
         """
         Generates and submits Claim Definition.
 
@@ -39,8 +39,8 @@ class Issuer:
         :param claimDefType: a type of the claim definition
         :return: submitted Claim Definition
         """
-        claimDef = ClaimDefinition(name, version, attrNames, claimDefType,
-                                   self.issuerId)
+        claimDef = Schema(name, version, attrNames, claimDefType,
+                          self.issuerId)
         return await self.wallet.submitClaimDef(claimDef)
 
     async def genKeys(self, claimDefId: ID, p_prime=None, q_prime=None) -> (

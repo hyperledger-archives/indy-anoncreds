@@ -145,31 +145,31 @@ class StrSerializer:
         return cls(**d)
 
 
-class ClaimDefinitionKey(
-    namedtuple('ClaimDefinitionKey', 'name, version, issuerId'),
+class SchemaKey(
+    namedtuple('SchemaKey', 'name, version, issuerId'),
     NamedTupleStrSerializer):
     def __hash__(self):
         keys = (self.name, self.version, self.issuerId)
         return hash(keys)
 
 
-class ID(namedtuple('ID', 'claimDefKey, claimDefId, seqId')):
-    def __new__(cls, claimDefKey: ClaimDefinitionKey = None, claimDefId=None,
+class ID(namedtuple('ID', 'schemaKey, schemaId, seqId')):
+    def __new__(cls, schemaKey: SchemaKey = None, schemaId=None,
                 seqId=None):
-        return super(ID, cls).__new__(cls, claimDefKey, claimDefId, seqId)
+        return super(ID, cls).__new__(cls, schemaKey, schemaId, seqId)
 
 
-class ClaimDefinition(namedtuple('CredentialDefinition',
-                                 'name, version, attrNames, claimDefType, '
-                                 'issuerId, seqId'),
-                      NamedTupleStrSerializer):
-    def __new__(cls, name, version, attrNames, claimDefType, issuerId, seqId=None):
-        return super(ClaimDefinition, cls).__new__(cls, name, version,
-                                                   attrNames, claimDefType, issuerId,
-                                                   seqId)
+class Schema(namedtuple('Schema',
+                        'name, version, attrNames, schemaType, '
+                        'issuerId, seqId'),
+             NamedTupleStrSerializer):
+    def __new__(cls, name, version, attrNames, schemaType, issuerId, seqId=None):
+        return super(Schema, cls).__new__(cls, name, version,
+                                          attrNames, schemaType, issuerId,
+                                          seqId)
 
     def getKey(self):
-        return ClaimDefinitionKey(self.name, self.version, self.issuerId)
+        return SchemaKey(self.name, self.version, self.issuerId)
 
 
 class PublicKey(namedtuple('PublicKey', 'N, Rms, Rctxt, R, S, Z, seqId'),
@@ -481,7 +481,7 @@ class Proof(namedtuple('Proof', 'primaryProof, nonRevocProof'),
         return Proof(primaryProof=primaryProof, nonRevocProof=nonRevocProof)
 
 
-class FullProof(namedtuple('FullProof', 'cHash, claimDefKeys, proofs, CList'),
+class FullProof(namedtuple('FullProof', 'cHash, schemaKeys, proofs, CList'),
                 NamedTupleStrSerializer):
     def getCredDefs(self):
         return self.proofs.keys()
@@ -489,9 +489,9 @@ class FullProof(namedtuple('FullProof', 'cHash, claimDefKeys, proofs, CList'),
     @classmethod
     def fromStrDict(cls, d):
         cHash = deserializeFromStr(d['cHash'])
-        claimDefKeys = [ClaimDefinitionKey.fromStrDict(v) for v in
-                        d['claimDefKeys']]
+        schemaKeys = [SchemaKey.fromStrDict(v) for v in
+                      d['schemaKeys']]
         proofs = [Proof.fromStrDict(v) for v in d['proofs']]
         CList = [deserializeFromStr(v) for v in d['CList']]
-        return FullProof(cHash=cHash, claimDefKeys=claimDefKeys, proofs=proofs,
+        return FullProof(cHash=cHash, schemaKeys=schemaKeys, proofs=proofs,
                          CList=CList)

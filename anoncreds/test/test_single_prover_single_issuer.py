@@ -5,6 +5,7 @@ from anoncreds.protocol.types import ProofInput, PredicateGE, Claims, \
 from anoncreds.test.conftest import presentProofAndVerify
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testPrimaryClaimOnlyEmpty(prover1, verifier, claimsProver1Gvt, nonce):
     proofInput = ProofInput([])
@@ -16,6 +17,7 @@ async def testPrimaryClaimOnlyEmpty(prover1, verifier, claimsProver1Gvt, nonce):
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testPrimaryClaimNoPredicates(prover1, verifier, claimsProver1Gvt,
                                        nonce, claimDefGvtId,
@@ -32,6 +34,7 @@ async def testPrimaryClaimNoPredicates(prover1, verifier, claimsProver1Gvt,
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testPrimaryClaimPredicatesOnly(prover1, verifier, claimsProver1Gvt,
                                          nonce, claimDefGvtId,
@@ -47,35 +50,41 @@ async def testPrimaryClaimPredicatesOnly(prover1, verifier, claimsProver1Gvt,
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testEmpty(prover1, verifier, claimsProver1Gvt):
     assert await presentProofAndVerify(verifier, ProofInput(), prover1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testNoPredicates(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [])
     assert await presentProofAndVerify(verifier, proofInput, prover1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipleRevealedAttrs(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name', 'sex'], [])
     assert await presentProofAndVerify(verifier, proofInput, prover1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testGePredicate(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
     assert await presentProofAndVerify(verifier, proofInput, prover1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testGePredicateForEqual(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 28)])
     assert await presentProofAndVerify(verifier, proofInput, prover1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testGePredicateNegative(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 29)])
@@ -83,6 +92,7 @@ async def testGePredicateNegative(prover1, verifier, claimsProver1Gvt):
         await presentProofAndVerify(verifier, proofInput, prover1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipleGePredicate(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'],
@@ -91,6 +101,7 @@ async def testMultipleGePredicate(prover1, verifier, claimsProver1Gvt):
     assert await presentProofAndVerify(verifier, proofInput, prover1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipleGePredicateNegative(prover1, verifier, claimsProver1Gvt):
     proofInput = ProofInput(['name'],
@@ -100,6 +111,7 @@ async def testMultipleGePredicateNegative(prover1, verifier, claimsProver1Gvt):
         await presentProofAndVerify(verifier, proofInput, prover1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testNonceShouldBeSame(prover1, verifier, claimsProver1Gvt, nonce,
                                 genNonce):
@@ -109,6 +121,7 @@ async def testNonceShouldBeSame(prover1, verifier, claimsProver1Gvt, nonce,
     assert not await verifier.verify(proofInput, proof, revealedAttrs, genNonce)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 def testAttrsInClaims(claimsProver1Gvt, attrsProver1Gvt):
     attrs = claimsProver1Gvt.primaryClaim.attrs
     encodedAttrs = claimsProver1Gvt.primaryClaim.encodedAttrs
@@ -119,6 +132,7 @@ def testAttrsInClaims(claimsProver1Gvt, attrsProver1Gvt):
     assert encodedAttrs.keys() == attrsProver1Gvt.keys()
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testUParamShouldBeSame(prover1, verifier, issuerGvt, claimDefGvtId,
                                  attrsProver1Gvt, keysGvt,

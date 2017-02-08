@@ -32,20 +32,24 @@ def testPKFromToDict():
     assert pk == PublicKey.fromStrDict(pk.toStrDict())
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 def testRequestClaimsFromToDict(claimsRequestProver1Gvt):
     assert claimsRequestProver1Gvt == ClaimRequest.fromStrDict(
         claimsRequestProver1Gvt.toStrDict())
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 def testClaimsFromToDict(claimsProver1Gvt):
     assert claimsProver1Gvt == Claims.fromStrDict(claimsProver1Gvt.toStrDict())
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 def testClaimsFromToDictPrimaryOnly(claimsProver1Gvt):
     claims = Claims(primaryClaim=claimsProver1Gvt.primaryClaim)
     assert claims == Claims.fromStrDict(claims.toStrDict())
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testClaimProofFromToDict(prover1, nonce, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
@@ -53,6 +57,7 @@ async def testClaimProofFromToDict(prover1, nonce, claimsProver1Gvt):
     assert proof == FullProof.fromStrDict(proof.toStrDict())
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testClaimProofFromToDictPrimaryOnly(prover1, nonce, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
@@ -69,6 +74,7 @@ def testProofInputFromToDict():
     assert proofInput == ProofInput.fromStrDict(proofInput.toStrDict())
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testRevealedAttrsFromToDict(prover1, nonce, claimsProver1Gvt):
     proofInput = ProofInput(['name'], [PredicateGE('age', 18)])

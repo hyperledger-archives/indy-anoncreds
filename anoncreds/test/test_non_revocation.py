@@ -5,6 +5,7 @@ from anoncreds.protocol.utils import groupIdentityG1
 from anoncreds.test.conftest import presentProofAndVerify
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testIssueRevocationCredential(claimsProver1Gvt, issuerGvt,
                                         claimDefGvtId):
@@ -23,6 +24,7 @@ async def testIssueRevocationCredential(claimsProver1Gvt, issuerGvt,
     assert nonRevocClaimGvtProver1.witness.V == acc.V
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testRevoce(claimsProver1Gvt, issuerGvt, claimDefGvtId):
     await issuerGvt.revoke(claimDefGvtId, 1)
@@ -31,6 +33,7 @@ async def testRevoce(claimsProver1Gvt, issuerGvt, claimDefGvtId):
     assert newAcc.acc == groupIdentityG1()
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testUpdateWitnessNotChangedIfInSync(claimsProver1Gvt, claimDefGvtId,
                                               prover1):
@@ -47,6 +50,7 @@ async def testUpdateWitnessNotChangedIfInSync(claimsProver1Gvt, claimDefGvtId,
     assert oldOmega == c2.witness.omega
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testUpdateWitnessChangedIfOutOfSync(claimsProver1Gvt, issuerGvt,
                                               claimDefGvtId, prover1):
@@ -66,6 +70,7 @@ async def testUpdateWitnessChangedIfOutOfSync(claimsProver1Gvt, issuerGvt,
     assert oldOmega != c2.witness.omega
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testUpdateRevocedWitness(claimsProver1Gvt, issuerGvt, claimDefGvtId,
                                    prover1):
@@ -76,6 +81,7 @@ async def testUpdateRevocedWitness(claimsProver1Gvt, issuerGvt, claimDefGvtId,
             claimDefGvtId.claimDefKey, nonRevocClaimGvtProver1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testInitNonRevocClaim(claimDefGvtId, prover1, issuerGvt,
                                 attrsProver1Gvt, keysGvt, issueAccumulatorGvt):
@@ -91,6 +97,7 @@ async def testInitNonRevocClaim(claimDefGvtId, prover1, issuerGvt,
     assert oldV + vrPrime == newC2.v
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testCAndTauList(claimsProver1Gvt, claimDefGvtId, prover1):
     nonRevocClaimGvtProver1 = claimsProver1Gvt.nonRevocClaim
@@ -99,6 +106,7 @@ async def testCAndTauList(claimsProver1Gvt, claimDefGvtId, prover1):
                                            nonRevocClaimGvtProver1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testRevocedWithUpdateWitness(claimDefGvtId, issuerGvt, prover1,
                                        verifier, claimsProver1Gvt):
@@ -109,6 +117,7 @@ async def testRevocedWithUpdateWitness(claimDefGvtId, issuerGvt, prover1,
         await presentProofAndVerify(verifier, proofInput, prover1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testRevocedWithoutUpdateWitness(claimDefGvtId, issuerGvt, prover1,
                                           verifier, claimsProver1Gvt):

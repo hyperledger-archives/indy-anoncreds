@@ -1,5 +1,7 @@
 from collections import OrderedDict
 
+import pytest
+
 from anoncreds.protocol.globals import PAIRING_GROUP
 from anoncreds.protocol.utils import toDictWithStrValues, \
     deserializeFromStr, serializeToStr, fromDictWithStrValues, get_hash_as_int
@@ -27,11 +29,13 @@ def testCryptoIntModSerializeToFromStr():
     assert value == deserializeFromStr(serializeToStr(value))
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 def testGroupElementSerializeToFromStr():
     value = cmod.PairingGroup(PAIRING_GROUP).random(cmod.G1)
     assert value == deserializeFromStr(serializeToStr(value))
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 def testGroupElementZRIdentitySerializeToFromStr():
     elem = cmod.PairingGroup(PAIRING_GROUP).init(cmod.ZR, 555)
     identity = elem / elem
@@ -44,6 +48,7 @@ def testGroupElementG1IdentitySerializeToFromStr():
     assert identity == deserializeFromStr(serializeToStr(identity))
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 def testToFromDictWithStrValues():
     group = cmod.PairingGroup(PAIRING_GROUP)
     dictionary = OrderedDict((
@@ -63,6 +68,7 @@ def testToFromDictWithStrValuesInteKeys():
     assert dictionary == fromDictWithStrValues(toDictWithStrValues(dictionary))
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 def testToFromDictWithStrValuesLists():
     group = cmod.PairingGroup(PAIRING_GROUP)
     dictionary = OrderedDict((
@@ -102,6 +108,7 @@ def testToFromDictWithStrValuesSubDicts():
     assert dictionary == fromDictWithStrValues(toDictWithStrValues(dictionary))
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 def testToFromDictWithStrValuesMixed():
     group = cmod.PairingGroup(PAIRING_GROUP)
     dictionary = OrderedDict((

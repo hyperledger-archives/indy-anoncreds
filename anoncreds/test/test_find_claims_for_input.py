@@ -3,12 +3,14 @@ import pytest
 from anoncreds.protocol.types import ProofInput, ProofClaims, PredicateGE
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testEmpty(prover1, allClaims):
     proofInput = ProofInput([], [])
     assert ({}, {}) == await prover1._findClaims(proofInput)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testOneRevealedOnly(prover1, allClaims, claimDefGvtId, attrRepo):
     proofInput = ProofInput(['name'])
@@ -22,6 +24,7 @@ async def testOneRevealedOnly(prover1, allClaims, claimDefGvtId, attrRepo):
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testPredicatesEmpty(prover1, allClaims, claimDefGvtId, attrRepo):
     proofInput = ProofInput(['name'], [])
@@ -35,6 +38,7 @@ async def testPredicatesEmpty(prover1, allClaims, claimDefGvtId, attrRepo):
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testOnePredicateOnly(prover1, allClaims, claimDefGvtId):
     proofInput = ProofInput(predicates=[PredicateGE('age', 18)])
@@ -45,6 +49,7 @@ async def testOnePredicateOnly(prover1, allClaims, claimDefGvtId):
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testRevealedEmpty(prover1, allClaims, claimDefGvtId):
     proofInput = ProofInput([], [PredicateGE('age', 18)])
@@ -55,6 +60,7 @@ async def testRevealedEmpty(prover1, allClaims, claimDefGvtId):
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testRevealedAndPredicateSameIssuer(prover1, allClaims, claimDefGvtId,
                                              attrRepo):
@@ -70,6 +76,7 @@ async def testRevealedAndPredicateSameIssuer(prover1, allClaims, claimDefGvtId,
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testRevealedAndPredicateDifferentIssuers(prover1, allClaims,
                                                    claimDefGvtId, claimDefXyzId,
@@ -88,6 +95,7 @@ async def testRevealedAndPredicateDifferentIssuers(prover1, allClaims,
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipledRevealed(prover1, allClaims, claimDefGvtId,
                                 claimDefXyzId, attrRepo):
@@ -110,6 +118,7 @@ async def testMultipledRevealed(prover1, allClaims, claimDefGvtId,
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipledPredicates(prover1, allClaims, claimDefGvtId,
                                   claimDefXyzId):
@@ -125,6 +134,7 @@ async def testMultipledPredicates(prover1, allClaims, claimDefGvtId,
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipleAll(prover1, allClaims, claimDefGvtId, claimDefXyzId,
                           attrRepo):
@@ -150,6 +160,7 @@ async def testMultipleAll(prover1, allClaims, claimDefGvtId, claimDefXyzId,
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testAttrNotFound(prover1, allClaims):
     proofInput = ProofInput(['name', 'aaaa'], [])
@@ -157,6 +168,7 @@ async def testAttrNotFound(prover1, allClaims):
         await prover1._findClaims(proofInput)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testPredicateNotFound(prover1, allClaims):
     proofInput = ProofInput([],

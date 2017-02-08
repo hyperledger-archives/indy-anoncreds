@@ -13,6 +13,7 @@ from anoncreds.protocol.wallet.wallet import WalletInMemory
 from anoncreds.test.conftest import GVT, XYZCorp
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testSingleIssuerSingleProver(primes1):
     # 1. Init entities
@@ -52,6 +53,7 @@ async def testSingleIssuerSingleProver(primes1):
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultiplIssuersSingleProver(primes1, primes2):
     # 1. Init entities
@@ -101,6 +103,7 @@ async def testMultiplIssuersSingleProver(primes1, primes2):
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     # 1. Init entities

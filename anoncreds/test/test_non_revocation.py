@@ -41,7 +41,7 @@ async def testUpdateWitnessNotChangedIfInSync(claimsProver1Gvt, schemaGvtId,
     oldOmega = nonRevocClaimGvtProver1.witness.omega
 
     c2 = await prover1._nonRevocProofBuilder.updateNonRevocationClaim(
-        schemaGvtId.claimDefKey,
+        schemaGvtId.schemaKey,
         nonRevocClaimGvtProver1)
     assert c2.witness.V == acc.V
     assert oldOmega == c2.witness.omega
@@ -60,7 +60,7 @@ async def testUpdateWitnessChangedIfOutOfSync(claimsProver1Gvt, issuerGvt,
     # witness is updated
     oldOmega = nonRevocClaimGvtProver1.witness.omega
     c2 = await prover1._nonRevocProofBuilder.updateNonRevocationClaim(
-        schemaGvtId.claimDefKey,
+        schemaGvtId.schemaKey,
         nonRevocClaimGvtProver1)
     assert c2.witness.V == acc.V
     assert oldOmega != c2.witness.omega
@@ -73,7 +73,7 @@ async def testUpdateRevocedWitness(claimsProver1Gvt, issuerGvt, schemaGvtId,
     await issuerGvt.revoke(schemaGvtId, 1)
     with pytest.raises(ValueError):
         await prover1._nonRevocProofBuilder.updateNonRevocationClaim(
-            schemaGvtId.claimDefKey, nonRevocClaimGvtProver1)
+            schemaGvtId.schemaKey, nonRevocClaimGvtProver1)
 
 
 @pytest.mark.asyncio

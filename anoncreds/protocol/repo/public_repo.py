@@ -158,6 +158,6 @@ class PublicRepoInMemory(PublicRepo):
 
     async def _cacheValueForId(self, dictionary: Dict[SchemaKey, Any],
                                schemaId: ID, value: Any):
-        claimDef = await self.getSchema(schemaId)
-        schemaKey = claimDef.getKey()
+        schema = await self.getSchema(schemaId)
+        schemaKey = schema.getKey()
         dictionary[schemaKey] = value

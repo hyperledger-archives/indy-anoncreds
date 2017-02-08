@@ -13,13 +13,13 @@ note over I, D #white
     <font color=red>red:</font> store locally
 endnote
 
-== Claim Definition setup ==
+== Schema setup ==
 
-note over I: Define Claim definition with attributes **m1, m2, ..., ml**
+note over I: Define Schema with attributes **m1, m2, ..., ml**
 
-I -[#green]> S: Submit **CLAIM_DEF** txn
+I -[#green]> S: Submit **SCHEMA** txn
 
-== Issuer Setup for each Claim Definition==
+== Issuer Setup for each Schema==
 
 note over I: **1.** Generate Primary Keys: **PK** and **SK**\n**2.** Generate Non-revocation Keys: **PKr** and **SKr**
 
@@ -37,7 +37,7 @@ I -[#green]> S: Submit Accumulator Definition: **REVOC_REG** txn
 I -[#blue]> D: Publish **Tails**
 
 
-== Claim Issuance for a Claim Definition==
+== Claim Issuance for a Schema==
 
 
 note over P: Generate Master Secret **m1**
@@ -50,7 +50,7 @@ note over P: **P1.** generate U, vPrime, Ur and vrPrime with prover-generated va
 
 P -> P: Store **vPrime**, **vrPrime**
 
-P -[#black]> I: **P2.** Request Claim for the given Claim Def, U and Ur.
+P -[#black]> I: **P2.** Request Claim for the given Schema, U and Ur.
 
 note over I
     **I1.** Set attribute values **m3,...ml** and encode to 256 bits
@@ -87,7 +87,7 @@ end note
 P -> P: Store **c1,c2,m2**
 
 
-== Presentation for each Claim Definition ==
+== Presentation for each Schema ==
 
 note over P
     **P1.** Take nonce **n1** from a Verifier's link

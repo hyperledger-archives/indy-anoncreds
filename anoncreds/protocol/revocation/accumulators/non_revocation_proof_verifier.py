@@ -14,20 +14,20 @@ class NonRevocationProofVerifier:
     def __init__(self, wallet: Wallet):
         self._wallet = wallet
 
-    async def verifyNonRevocation(self, proofInput: ProofInput, claimDefKey,
+    async def verifyNonRevocation(self, proofInput: ProofInput, schemaKey,
                                   cHash, nonRevocProof: NonRevocProof) \
             -> Sequence[T]:
         if await self._wallet.shouldUpdateAccumulator(
-                claimDefId=ID(claimDefKey),
+                schemaId=ID(schemaKey),
                 ts=proofInput.ts,
                 seqNo=proofInput.seqNo):
-            await self._wallet.updateAccumulator(claimDefId=ID(claimDefKey),
+            await self._wallet.updateAccumulator(schemaId=ID(schemaKey),
                                                  ts=proofInput.ts,
                                                  seqNo=proofInput.seqNo)
 
-        pkR = await self._wallet.getPublicKeyRevocation(ID(claimDefKey))
-        accum = await self._wallet.getAccumulator(ID(claimDefKey))
-        accumPk = await self._wallet.getPublicKeyAccumulator(ID(claimDefKey))
+        pkR = await self._wallet.getPublicKeyRevocation(ID(schemaKey))
+        accum = await self._wallet.getAccumulator(ID(schemaKey))
+        accumPk = await self._wallet.getPublicKeyAccumulator(ID(schemaKey))
 
         CProof = nonRevocProof.CProof
         XList = nonRevocProof.XList

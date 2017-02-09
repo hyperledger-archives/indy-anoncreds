@@ -1,25 +1,25 @@
 import pytest
 
-from anoncreds.protocol.types import PublicKey, ClaimDefinition, Claims, \
+from anoncreds.protocol.types import PublicKey, Schema, Claims, \
     ProofInput, PredicateGE, FullProof, \
-    ClaimDefinitionKey, ClaimRequest, Proof
+    SchemaKey, ClaimRequest, Proof
 from anoncreds.protocol.utils import toDictWithStrValues, fromDictWithStrValues
 from config.config import cmod
 
 
-def testClaimDefKeyFromToDict():
-    claimDefKey = ClaimDefinitionKey(name='claimDefName', version='1.0',
-                                     issuerId='issuer1')
-    assert claimDefKey == ClaimDefinitionKey.fromStrDict(
-        claimDefKey.toStrDict())
+def testSchemaKeyFromToDict():
+    schemaKey = SchemaKey(name='schemaName', version='1.0',
+                            issuerId='issuer1')
+    assert schemaKey == SchemaKey.fromStrDict(
+        schemaKey.toStrDict())
 
 
-def testClaimDefFromToDict():
-    claimDef = ClaimDefinition(name='claimDefName', version='1.0',
-                               claimDefType='CL',
-                               attrNames=['attr1', 'attr2', 'attr3'],
-                               issuerId='issuer1')
-    assert claimDef == ClaimDefinition.fromStrDict(claimDef.toStrDict())
+def testSchemaFromToDict():
+    schema = Schema(name='schemaName', version='1.0',
+                      schemaType='CL',
+                      attrNames=['attr1', 'attr2', 'attr3'],
+                      issuerId='issuer1')
+    assert schema == Schema.fromStrDict(schema.toStrDict())
 
 
 def testPKFromToDict():

@@ -12,10 +12,10 @@ class PrimaryClaimIssuer:
     def __init__(self, wallet: IssuerWallet):
         self._wallet = wallet
 
-    async def genKeys(self, claimDefId: ID, p_prime=None, q_prime=None) -> (
+    async def genKeys(self, schemaId: ID, p_prime=None, q_prime=None) -> (
             PublicKey, SecretKey):
-        claimDef = await self._wallet.getClaimDef(claimDefId)
-        if not claimDef.attrNames and isinstance(claimDef.attrNames, list):
+        schema = await self._wallet.getSchema(schemaId)
+        if not schema.attrNames and isinstance(schema.attrNames, list):
             raise ValueError("List of attribute names is required to "
                              "setup credential definition")
 
@@ -34,7 +34,7 @@ class PrimaryClaimIssuer:
         Xz = PrimaryClaimIssuer._genX(p_prime, q_prime)
         Xr = {}
 
-        for name in claimDef.attrNames:
+        for name in schema.attrNames:
             Xr[str(name)] = PrimaryClaimIssuer._genX(p_prime, q_prime)
 
         # Generate `Z` as the exponentiation of the quadratic random 'S' .
@@ -43,7 +43,7 @@ class PrimaryClaimIssuer:
 
         # Generate random numbers corresponding to every attributes
         R = {}
-        for name in claimDef.attrNames:
+        for name in schema.attrNames:
             R[str(name)] = (S ** Xr[str(name)]) % n
 
         # Rms is a random number needed corresponding to master secret m1
@@ -72,7 +72,7 @@ class PrimaryClaimIssuer:
         print("In {} iterations, found prime {}".format(i, prime))
         return prime
 
-    async def issuePrimaryClaim(self, claimDefId: ID, attributes: Attribs,
+    async def issuePrimaryClaim(self, schemaId: ID, attributes: Attribs,
                                 U) -> PrimaryClaim:
         u = strToCryptoInteger(U) if isinstance(U, str) else U
 
@@ -87,16 +87,16 @@ class PrimaryClaimIssuer:
         eend = (estart + 2 ** LARGE_E_END_RANGE)
         e = get_prime_in_range(estart, eend)
         encodedAttrs = attributes.encoded()
-        A = await self._sign(claimDefId, encodedAttrs, vprimeprime, u, e)
+        A = await self._sign(schemaId, encodedAttrs, vprimeprime, u, e)
 
-        m2 = await self._wallet.getContextAttr(claimDefId)
+        m2 = await self._wallet.getContextAttr(schemaId)
         return PrimaryClaim(attributes._vals, encodedAttrs, m2, A, e,
                             vprimeprime)
 
-    async def _sign(self, claimDefId: ID, attrs, v, u, e):
-        pk = await self._wallet.getPublicKey(claimDefId)
-        sk = await self._wallet.getSecretKey(claimDefId)
-        m2 = await self._wallet.getContextAttr(claimDefId)
+    async def _sign(self, schemaId: ID, attrs, v, u, e):
+        pk = await self._wallet.getPublicKey(schemaId)
+        sk = await self._wallet.getSecretKey(schemaId)
+        m2 = await self._wallet.getContextAttr(schemaId)
 
         Rx = 1 % pk.N
         # Get the product sequence for the (R[i] and attrs[i]) combination

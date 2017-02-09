@@ -2,162 +2,162 @@ from abc import abstractmethod
 from typing import Dict, Any
 
 from anoncreds.protocol.types import ID, PublicKey, RevocationPublicKey, \
-    ClaimDefinition, TailsType, Accumulator, \
-    AccumulatorPublicKey, TimestampType, ClaimDefinitionKey
+    Schema, TailsType, Accumulator, \
+    AccumulatorPublicKey, TimestampType, SchemaKey
 
 
 class PublicRepo:
     # GET
 
     @abstractmethod
-    async def getClaimDef(self, claimDefId: ID) -> ClaimDefinition:
+    async def getSchema(self, schemaId: ID) -> Schema:
         raise NotImplementedError
 
     @abstractmethod
-    async def getPublicKey(self, claimDefId: ID) -> PublicKey:
+    async def getPublicKey(self, schemaId: ID) -> PublicKey:
         raise NotImplementedError
 
     @abstractmethod
     async def getPublicKeyRevocation(self,
-                                     claimDefId: ID) -> RevocationPublicKey:
+                                     schemaId: ID) -> RevocationPublicKey:
         raise NotImplementedError
 
     @abstractmethod
     async def getPublicKeyAccumulator(self,
-                                      claimDefId: ID) -> AccumulatorPublicKey:
+                                      schemaId: ID) -> AccumulatorPublicKey:
         raise NotImplementedError
 
     @abstractmethod
-    async def getAccumulator(self, claimDefId: ID) -> Accumulator:
+    async def getAccumulator(self, schemaId: ID) -> Accumulator:
         raise NotImplementedError
 
     @abstractmethod
-    async def getTails(self, claimDefId: ID) -> TailsType:
+    async def getTails(self, schemaId: ID) -> TailsType:
         raise NotImplementedError
 
     # SUBMIT
 
     @abstractmethod
-    async def submitClaimDef(self,
-                             claimDef: ClaimDefinition) -> ClaimDefinition:
+    async def submitSchema(self,
+                           schema: Schema) -> Schema:
         raise NotImplementedError
 
     @abstractmethod
-    async def submitPublicKeys(self, claimDefId: ID, pk: PublicKey,
+    async def submitPublicKeys(self, schemaId: ID, pk: PublicKey,
                                pkR: RevocationPublicKey = None) -> (
             PublicKey, RevocationPublicKey):
         raise NotImplementedError
 
     @abstractmethod
-    async def submitAccumulator(self, claimDefId: ID,
+    async def submitAccumulator(self, schemaId: ID,
                                 accumPK: AccumulatorPublicKey,
                                 accum: Accumulator, tails: TailsType) -> \
             AccumulatorPublicKey:
         raise NotImplementedError
 
     @abstractmethod
-    async def submitAccumUpdate(self, claimDefId: ID, accum: Accumulator,
+    async def submitAccumUpdate(self, schemaId: ID, accum: Accumulator,
                                 timestampMs: TimestampType):
         raise NotImplementedError
 
 
 class PublicRepoInMemory(PublicRepo):
     def __init__(self):
-        self._claimDefsByKey = {}
-        self._claimDefsById = {}
+        self._schemasByKey = {}
+        self._schemasById = {}
         self._pks = {}
         self._pkRs = {}
         self._accums = {}
         self._accumPks = {}
         self._tails = {}
-        self._claimDefId = 1
+        self._schemaId = 1
         self._pkId = 1
         self._pkRId = 1
         self._acumPkId = 1
 
     # GET
 
-    async def getClaimDef(self, claimDefId: ID) -> ClaimDefinition:
-        if claimDefId.claimDefKey and claimDefId.claimDefKey in self._claimDefsByKey:
-            return self._claimDefsByKey[claimDefId.claimDefKey]
+    async def getSchema(self, schemaId: ID) -> Schema:
+        if schemaId.schemaKey and schemaId.schemaKey in self._schemasByKey:
+            return self._schemasByKey[schemaId.schemaKey]
 
-        if claimDefId.claimDefId and claimDefId.claimDefId in self._claimDefsById:
-            return self._claimDefsById[claimDefId.claimDefId]
+        if schemaId.schemaId and schemaId.schemaId in self._schemasById:
+            return self._schemasById[schemaId.schemaId]
 
         raise KeyError(
-            'No claim definition with ID={} and key={}'.format(
-                claimDefId.claimDefId,
-                claimDefId.claimDefKey))
+            'No schema with ID={} and key={}'.format(
+                schemaId.schemaId,
+                schemaId.schemaKey))
 
-    async def getPublicKey(self, claimDefId: ID) -> PublicKey:
-        return await self._getValueForId(self._pks, claimDefId)
+    async def getPublicKey(self, schemaId: ID) -> PublicKey:
+        return await self._getValueForId(self._pks, schemaId)
 
     async def getPublicKeyRevocation(self,
-                                     claimDefId: ID) -> RevocationPublicKey:
-        return await self._getValueForId(self._pkRs, claimDefId)
+                                     schemaId: ID) -> RevocationPublicKey:
+        return await self._getValueForId(self._pkRs, schemaId)
 
     async def getPublicKeyAccumulator(self,
-                                      claimDefId: ID) -> AccumulatorPublicKey:
-        return await self._getValueForId(self._accumPks, claimDefId)
+                                      schemaId: ID) -> AccumulatorPublicKey:
+        return await self._getValueForId(self._accumPks, schemaId)
 
-    async def getAccumulator(self, claimDefId: ID) -> Accumulator:
-        return await self._getValueForId(self._accums, claimDefId)
+    async def getAccumulator(self, schemaId: ID) -> Accumulator:
+        return await self._getValueForId(self._accums, schemaId)
 
-    async def getTails(self, claimDefId: ID) -> TailsType:
-        return await self._getValueForId(self._tails, claimDefId)
+    async def getTails(self, schemaId: ID) -> TailsType:
+        return await self._getValueForId(self._tails, schemaId)
 
     # SUBMIT
 
-    async def submitClaimDef(self,
-                             claimDef: ClaimDefinition) -> ClaimDefinition:
-        claimDef = claimDef._replace(seqId=self._claimDefId)
-        self._claimDefId += 1
-        self._claimDefsByKey[claimDef.getKey()] = claimDef
-        self._claimDefsById[claimDef.seqId] = claimDef
-        return claimDef
+    async def submitSchema(self,
+                           schema: Schema) -> Schema:
+        schema = schema._replace(seqId=self._schemaId)
+        self._schemaId += 1
+        self._schemasByKey[schema.getKey()] = schema
+        self._schemasById[schema.seqId] = schema
+        return schema
 
-    async def submitPublicKeys(self, claimDefId: ID, pk: PublicKey,
+    async def submitPublicKeys(self, schemaId: ID, pk: PublicKey,
                                pkR: RevocationPublicKey = None) -> (
             PublicKey, RevocationPublicKey):
         pk = pk._replace(seqId=self._pkId)
         self._pkId += 1
-        await self._cacheValueForId(self._pks, claimDefId, pk)
+        await self._cacheValueForId(self._pks, schemaId, pk)
 
         if pkR:
             pkR = pkR._replace(seqId=self._pkRId)
             self._pkRId += 1
-            await self._cacheValueForId(self._pkRs, claimDefId, pkR)
+            await self._cacheValueForId(self._pkRs, schemaId, pkR)
 
         return pk, pkR
 
-    async def submitAccumulator(self, claimDefId: ID,
+    async def submitAccumulator(self, schemaId: ID,
                                 accumPK: AccumulatorPublicKey,
                                 accum: Accumulator,
                                 tails: TailsType) -> AccumulatorPublicKey:
         accumPK = accumPK._replace(seqId=self._acumPkId)
         self._acumPkId += 1
-        await self._cacheValueForId(self._accums, claimDefId, accum)
-        accumPk = await self._cacheValueForId(self._accumPks, claimDefId,
+        await self._cacheValueForId(self._accums, schemaId, accum)
+        accumPk = await self._cacheValueForId(self._accumPks, schemaId,
                                               accumPK)
-        await self._cacheValueForId(self._tails, claimDefId, tails)
+        await self._cacheValueForId(self._tails, schemaId, tails)
         return accumPk
 
-    async def submitAccumUpdate(self, claimDefId: ID, accum: Accumulator,
+    async def submitAccumUpdate(self, schemaId: ID, accum: Accumulator,
                                 timestampMs: TimestampType):
-        await self._cacheValueForId(self._accums, claimDefId, accum)
+        await self._cacheValueForId(self._accums, schemaId, accum)
 
-    async def _getValueForId(self, dictionary: Dict[ClaimDefinitionKey, Any],
-                             claimDefId: ID) -> Any:
-        claimDef = await self.getClaimDef(claimDefId)
-        claimDefKey = claimDef.getKey()
-        if not claimDefKey in dictionary:
+    async def _getValueForId(self, dictionary: Dict[SchemaKey, Any],
+                             schemaId: ID) -> Any:
+        schema = await self.getSchema(schemaId)
+        schemaKey = schema.getKey()
+        if not schemaKey in dictionary:
             raise ValueError(
-                'No value for claim definition with ID={} and key={}'.format(
-                    id.claimDefId, id.claimDefKey))
-        return dictionary[claimDefKey]
+                'No value for schema with ID={} and key={}'.format(
+                    schemaId.schemaId, schemaId.schemaKey))
+        return dictionary[schemaKey]
 
-    async def _cacheValueForId(self, dictionary: Dict[ClaimDefinitionKey, Any],
-                               claimDefId: ID, value: Any):
-        claimDef = await self.getClaimDef(claimDefId)
-        claimDefKey = claimDef.getKey()
-        dictionary[claimDefKey] = value
+    async def _cacheValueForId(self, dictionary: Dict[SchemaKey, Any],
+                               schemaId: ID, value: Any):
+        schema = await self.getSchema(schemaId)
+        schemaKey = schema.getKey()
+        dictionary[schemaKey] = value

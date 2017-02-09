@@ -63,3 +63,5 @@ dist/*/*
 # virtual environment
 include/
 
+# hidden files
+.*

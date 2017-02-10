@@ -9,7 +9,7 @@ note over I: Attribute Repo
 
 autonumber
 
-I -> S: genClaimDef
+I -> S: genSchema
 
 I -> S: genKeys
 

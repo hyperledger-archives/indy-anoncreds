@@ -6,7 +6,7 @@ from anoncreds.protocol.repo.attributes_repo import AttributeRepo
 from anoncreds.protocol.revocation.accumulators.non_revocation_claim_issuer import \
     NonRevocationClaimIssuer
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, \
-    ClaimDefinition, ID, Claims, ClaimRequest, Attribs, PublicKey, \
+    Schema, ID, Claims, ClaimRequest, Attribs, PublicKey, \
     RevocationPublicKey, AccumulatorPublicKey
 from anoncreds.protocol.utils import strToInt, get_hash_as_int
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
@@ -28,80 +28,80 @@ class Issuer:
     def issuerId(self):
         return self.wallet.walletId
 
-    async def genClaimDef(self, name, version, attrNames,
-                          claimDefType=TYPE_CL) -> ClaimDefinition:
+    async def genSchema(self, name, version, attrNames,
+                        schemaType=TYPE_CL) -> Schema:
         """
-        Generates and submits Claim Definition.
+        Generates and submits Schema.
 
-        :param name: claim definition name
-        :param version: claim definition version
-        :param attrNames: a list of attributes the claim definition contains
-        :param claimDefType: a type of the claim definition
-        :return: submitted Claim Definition
+        :param name: schema name
+        :param version: schema version
+        :param attrNames: a list of attributes the schema contains
+        :param schemaType: a type of the schema
+        :return: submitted Schema
         """
-        claimDef = ClaimDefinition(name, version, attrNames, claimDefType,
-                                   self.issuerId)
-        return await self.wallet.submitClaimDef(claimDef)
+        schema = Schema(name, version, attrNames, schemaType,
+                          self.issuerId)
+        return await self.wallet.submitSchema(schema)
 
-    async def genKeys(self, claimDefId: ID, p_prime=None, q_prime=None) -> (
+    async def genKeys(self, schemaId: ID, p_prime=None, q_prime=None) -> (
             PublicKey, RevocationPublicKey):
         """
         Generates and submits keys (both public and secret, primary and
         non-revocation).
 
-        :param claimDefId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param p_prime: optional p_prime parameter
         :param q_prime: optional q_prime parameter
         :return: Submitted Public keys (both primary and non-revocation)
         """
-        pk, sk = await self._primaryIssuer.genKeys(claimDefId, p_prime, q_prime)
+        pk, sk = await self._primaryIssuer.genKeys(schemaId, p_prime, q_prime)
         pkR, skR = await self._nonRevocationIssuer.genRevocationKeys()
-        pk = await self.wallet.submitPublicKeys(claimDefId=claimDefId, pk=pk,
+        pk = await self.wallet.submitPublicKeys(schemaId=schemaId, pk=pk,
                                                 pkR=pkR)
-        pkR = await self.wallet.submitSecretKeys(claimDefId=claimDefId, sk=sk,
+        pkR = await self.wallet.submitSecretKeys(schemaId=schemaId, sk=sk,
                                                  skR=skR)
         return pk, pkR
 
-    async def issueAccumulator(self, claimDefId: ID, iA,
+    async def issueAccumulator(self, schemaId: ID, iA,
                                L) -> AccumulatorPublicKey:
         """
         Issues and submits an accumulator used for non-revocation proof.
 
-        :param claimDefId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param iA: accumulator ID
         :param L: maximum number of claims within accumulator.
         :return: Submitted accumulator public key
         """
         accum, tails, accPK, accSK = await self._nonRevocationIssuer.issueAccumulator(
-            claimDefId, iA, L)
-        accPK = await self.wallet.submitAccumPublic(claimDefId=claimDefId,
+            schemaId, iA, L)
+        accPK = await self.wallet.submitAccumPublic(schemaId=schemaId,
                                                     accumPK=accPK,
                                                     accum=accum, tails=tails)
-        await self.wallet.submitAccumSecret(claimDefId=claimDefId,
+        await self.wallet.submitAccumSecret(schemaId=schemaId,
                                             accumSK=accSK)
         return accPK
 
-    async def revoke(self, claimDefId: ID, i):
+    async def revoke(self, schemaId: ID, i):
         """
         Performs revocation of a Claim.
 
-        :param claimDefId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param i: claim's sequence number within accumulator
         """
-        acc, ts = await self._nonRevocationIssuer.revoke(claimDefId, i)
-        await self.wallet.submitAccumUpdate(claimDefId=claimDefId, accum=acc,
+        acc, ts = await self._nonRevocationIssuer.revoke(schemaId, i)
+        await self.wallet.submitAccumUpdate(schemaId=schemaId, accum=acc,
                                             timestampMs=ts)
 
-    async def issueClaim(self, claimDefId: ID, claimRequest: ClaimRequest,
+    async def issueClaim(self, schemaId: ID, claimRequest: ClaimRequest,
                          iA=None,
                          i=None) -> Claims:
         """
-        Issue a claim for the given user and claim definition.
+        Issue a claim for the given user and schema.
 
-        :param claimDefId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param claimRequest: A claim request containing prover ID and
         prover-generated values
@@ -110,16 +110,16 @@ class Issuer:
         :return: The claim (both primary and non-revocation)
         """
 
-        claimDefKey = (await self.wallet.getClaimDef(claimDefId)).getKey()
-        attributes = self._attrRepo.getAttributes(claimDefKey,
+        schemaKey = (await self.wallet.getSchema(schemaId)).getKey()
+        attributes = self._attrRepo.getAttributes(schemaKey,
                                                   claimRequest.userId)
-        iA = iA if iA else (await self.wallet.getAccumulator(claimDefId)).iA
+        iA = iA if iA else (await self.wallet.getAccumulator(schemaId)).iA
 
-        await self._genContxt(claimDefId, iA, claimRequest.userId)
+        await self._genContxt(schemaId, iA, claimRequest.userId)
 
-        c1 = await self._issuePrimaryClaim(claimDefId, attributes,
+        c1 = await self._issuePrimaryClaim(schemaId, attributes,
                                            claimRequest.U)
-        c2 = await self._issueNonRevocationClaim(claimDefId, claimRequest.Ur,
+        c2 = await self._issueNonRevocationClaim(schemaId, claimRequest.Ur,
                                                  iA,
                                                  i) if claimRequest.Ur else None
         return Claims(primaryClaim=c1, nonRevocClaim=c2)
@@ -127,40 +127,40 @@ class Issuer:
     async def issueClaims(self, allClaimRequest: Dict[ID, ClaimRequest]) -> \
             Dict[ID, Claims]:
         """
-        Issue claims for the given users and claim definitions.
+        Issue claims for the given users and schemas.
 
-        :param allClaimRequest: a map of claim definition ID to a claim
+        :param allClaimRequest: a map of schema ID to a claim
         request containing prover ID and prover-generated values
         :return: The claims (both primary and non-revocation)
         """
         res = {}
-        for claimDefId, claimReq in allClaimRequest.items():
-            res[claimDefId] = await self.issueClaim(claimDefId, claimReq)
+        for schemaId, claimReq in allClaimRequest.items():
+            res[schemaId] = await self.issueClaim(schemaId, claimReq)
         return res
 
     #
     # PRIVATE
     #
 
-    async def _genContxt(self, claimDefId: ID, iA, userId):
+    async def _genContxt(self, schemaId: ID, iA, userId):
         iA = strToInt(str(iA))
         userId = strToInt(str(userId))
         S = iA | userId
         H = get_hash_as_int(S)
         m2 = cmod.integer(H % (2 ** LARGE_MASTER_SECRET))
-        await self.wallet.submitContextAttr(claimDefId, m2)
+        await self.wallet.submitContextAttr(schemaId, m2)
         return m2
 
-    async def _issuePrimaryClaim(self, claimDefId: ID, attributes: Attribs,
+    async def _issuePrimaryClaim(self, schemaId: ID, attributes: Attribs,
                                  U) -> PrimaryClaim:
-        return await self._primaryIssuer.issuePrimaryClaim(claimDefId,
+        return await self._primaryIssuer.issuePrimaryClaim(schemaId,
                                                            attributes, U)
 
-    async def _issueNonRevocationClaim(self, claimDefId: ID, Ur, iA=None,
+    async def _issueNonRevocationClaim(self, schemaId: ID, Ur, iA=None,
                                        i=None) -> NonRevocationClaim:
         claim, accum, ts = await self._nonRevocationIssuer.issueNonRevocationClaim(
-            claimDefId, Ur, iA, i)
-        await self.wallet.submitAccumUpdate(claimDefId=claimDefId, accum=accum,
+            schemaId, Ur, iA, i)
+        await self.wallet.submitAccumUpdate(schemaId=schemaId, accum=accum,
                                             timestampMs=ts)
         return claim
 

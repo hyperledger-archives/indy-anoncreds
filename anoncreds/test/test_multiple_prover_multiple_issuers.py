@@ -4,6 +4,7 @@ from anoncreds.protocol.types import ProofInput, PredicateGE
 from anoncreds.test.conftest import presentProofAndVerify
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testNoPredicates(prover1, prover2, verifier, allClaims):
     proofInput = ProofInput(['name', 'status'], [])
@@ -11,6 +12,7 @@ async def testNoPredicates(prover1, prover2, verifier, allClaims):
     assert await presentProofAndVerify(verifier, proofInput, prover2)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testGePredicate(prover1, prover2, verifier, allClaims):
     proofInput = ProofInput(['name'],
@@ -20,6 +22,7 @@ async def testGePredicate(prover1, prover2, verifier, allClaims):
     assert await presentProofAndVerify(verifier, proofInput, prover2)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testGePredicateNegativeForOne(prover1, prover2, verifier, allClaims):
     proofInput = ProofInput(['name'],
@@ -30,6 +33,7 @@ async def testGePredicateNegativeForOne(prover1, prover2, verifier, allClaims):
         await presentProofAndVerify(verifier, proofInput, prover1)
 
 
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testGePredicateNegativeForBoth(prover1, prover2, verifier, allClaims):
     proofInput = ProofInput(['name'],

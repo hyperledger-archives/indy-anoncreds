@@ -10,21 +10,21 @@ class PrimaryProofVerifier:
     def __init__(self, wallet: Wallet):
         self._wallet = wallet
 
-    async def verify(self, proofInput: ProofInput, claimDefKey, cHash,
+    async def verify(self, proofInput: ProofInput, schemaKey, cHash,
                      primaryProof: PrimaryProof, allRevealedAttrs):
         cH = cmod.integer(cHash)
-        THat = await self._verifyEquality(claimDefKey, cH, primaryProof.eqProof,
+        THat = await self._verifyEquality(schemaKey, cH, primaryProof.eqProof,
                                           allRevealedAttrs)
         for geProof in primaryProof.geProofs:
-            THat += await self._verifyGEPredicate(claimDefKey, cH, geProof)
+            THat += await self._verifyGEPredicate(schemaKey, cH, geProof)
 
         return THat
 
-    async def _verifyEquality(self, claimDefKey, cH, proof: PrimaryEqualProof,
+    async def _verifyEquality(self, schemaKey, cH, proof: PrimaryEqualProof,
                               allRevealedAttrs):
         THat = []
-        pk = await self._wallet.getPublicKey(ID(claimDefKey))
-        attrNames = (await self._wallet.getClaimDef(ID(claimDefKey))).attrNames
+        pk = await self._wallet.getPublicKey(ID(schemaKey))
+        attrNames = (await self._wallet.getSchema(ID(schemaKey))).attrNames
         unrevealedAttrNames = set(attrNames) - set(proof.revealedAttrNames)
 
         T1 = calcTeq(pk, proof.Aprime, proof.e, proof.v,
@@ -41,9 +41,9 @@ class PrimaryProofVerifier:
         THat.append(T)
         return THat
 
-    async def _verifyGEPredicate(self, claimDefKey, cH,
+    async def _verifyGEPredicate(self, schemaKey, cH,
                                  proof: PrimaryPredicateGEProof):
-        pk = await self._wallet.getPublicKey(ID(claimDefKey))
+        pk = await self._wallet.getPublicKey(ID(schemaKey))
         k, v = proof.predicate.attrName, proof.predicate.value
 
         TauList = calcTge(pk, proof.u, proof.r, proof.mj, proof.alpha, proof.T)

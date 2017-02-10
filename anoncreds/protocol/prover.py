@@ -10,7 +10,7 @@ from anoncreds.protocol.revocation.accumulators.non_revocation_proof_builder imp
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, Proof, \
     InitProof, ProofInput, ProofClaims, \
     FullProof, \
-    ClaimDefinition, ID, ClaimDefinitionKey, ClaimRequest, Claims
+    Schema, ID, SchemaKey, ClaimRequest, Claims
 from anoncreds.protocol.utils import get_hash_as_int
 from anoncreds.protocol.wallet.prover_wallet import ProverWallet
 from config.config import cmod
@@ -34,56 +34,56 @@ class Prover:
     def proverId(self):
         return self.wallet.walletId
 
-    async def createClaimRequest(self, claimDefId: ID, proverId=None,
+    async def createClaimRequest(self, schemaId: ID, proverId=None,
                                  reqNonRevoc=True) -> ClaimRequest:
         """
         Creates a claim request to the issuer.
 
-        :param claimDefId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param proverId: a prover ID request a claim for (if None then
         the current prover default ID is used)
         :param reqNonRevoc: whether to request non-revocation claim
         :return: Claim Request
         """
-        await self._genMasterSecret(claimDefId)
-        U = await self._genU(claimDefId)
-        Ur = None if not reqNonRevoc else await self._genUr(claimDefId)
+        await self._genMasterSecret(schemaId)
+        U = await self._genU(schemaId)
+        Ur = None if not reqNonRevoc else await self._genUr(schemaId)
         proverId = proverId if proverId else self.proverId
         return ClaimRequest(userId=proverId, U=U, Ur=Ur)
 
-    async def createClaimRequests(self, claimDefIds: Sequence[ID],
+    async def createClaimRequests(self, schemaIds: Sequence[ID],
                                   proverId=None,
                                   reqNonRevoc=True) -> Dict[ID, ClaimRequest]:
         """
         Creates a claim request to the issuer.
 
-        :param claimDefIds: The claim definition IDs (references to claim
+        :param schemaIds: The schema IDs (references to claim
         definition schema)
         :param proverId: a prover ID request a claim for (if None then
         the current prover default ID is used)
         :param reqNonRevoc: whether to request non-revocation claim
-        :return: a dictionary of Claim Requests for each Claim Definition.
+        :return: a dictionary of Claim Requests for each Schema.
         """
         res = {}
-        for claimDefId in claimDefIds:
-            res[claimDefId] = await self.createClaimRequest(claimDefId,
-                                                            proverId,
-                                                            reqNonRevoc)
+        for schemaId in schemaIds:
+            res[schemaId] = await self.createClaimRequest(schemaId,
+                                                          proverId,
+                                                          reqNonRevoc)
         return res
 
-    async def processClaim(self, claimDefId: ID, claims: Claims):
+    async def processClaim(self, schemaId: ID, claims: Claims):
         """
-        Processes and saves a received Claim for the given Claim Definition.
+        Processes and saves a received Claim for the given Schema.
 
-        :param claimDefId: The claim definition ID (reference to claim
+        :param schemaId: The schema ID (reference to claim
         definition schema)
         :param claims: claims to be processed and saved
         """
-        await self.wallet.submitContextAttr(claimDefId, claims.primaryClaim.m2)
-        await self._initPrimaryClaim(claimDefId, claims.primaryClaim)
+        await self.wallet.submitContextAttr(schemaId, claims.primaryClaim.m2)
+        await self._initPrimaryClaim(schemaId, claims.primaryClaim)
         if claims.nonRevocClaim:
-            await self._initNonRevocationClaim(claimDefId, claims.nonRevocClaim)
+            await self._initNonRevocationClaim(schemaId, claims.nonRevocClaim)
 
     async def processClaims(self, allClaims: Dict[ID, Claims]):
         """
@@ -93,8 +93,8 @@ class Prover:
         definition.
         """
         res = []
-        for claimDefId, claims in allClaims.items():
-            res.append(await self.processClaim(claimDefId, claims))
+        for schemaId, claims in allClaims.items():
+            res.append(await self.processClaim(schemaId, claims))
         return res
 
     async def presentProof(self, proofInput: ProofInput, nonce) -> (
@@ -115,36 +115,36 @@ class Prover:
     # REQUEST CLAIMS
     #
 
-    async def _genMasterSecret(self, claimDefId: ID):
+    async def _genMasterSecret(self, schemaId: ID):
         ms = cmod.integer(cmod.randomBits(LARGE_MASTER_SECRET))
-        await self.wallet.submitMasterSecret(claimDefId=claimDefId, ms=ms)
+        await self.wallet.submitMasterSecret(schemaId=schemaId, ms=ms)
 
-    async def _genU(self, claimDefId: ID):
+    async def _genU(self, schemaId: ID):
         claimInitData = await self._primaryClaimInitializer.genClaimInitData(
-            claimDefId)
-        await self.wallet.submitPrimaryClaimInitData(claimDefId=claimDefId,
+            schemaId)
+        await self.wallet.submitPrimaryClaimInitData(schemaId=schemaId,
                                                      claimInitData=claimInitData)
         return claimInitData.U
 
-    async def _genUr(self, claimDefId: ID):
+    async def _genUr(self, schemaId: ID):
         claimInitData = await self._nonRevocClaimInitializer.genClaimInitData(
-            claimDefId)
-        await self.wallet.submitNonRevocClaimInitData(claimDefId=claimDefId,
+            schemaId)
+        await self.wallet.submitNonRevocClaimInitData(schemaId=schemaId,
                                                       claimInitData=claimInitData)
         return claimInitData.U
 
-    async def _initPrimaryClaim(self, claimDefId: ID, claim: PrimaryClaim):
+    async def _initPrimaryClaim(self, schemaId: ID, claim: PrimaryClaim):
         claim = await self._primaryClaimInitializer.preparePrimaryClaim(
-            claimDefId,
+            schemaId,
             claim)
-        await self.wallet.submitPrimaryClaim(claimDefId=claimDefId, claim=claim)
+        await self.wallet.submitPrimaryClaim(schemaId=schemaId, claim=claim)
 
-    async def _initNonRevocationClaim(self, claimDefId: ID,
+    async def _initNonRevocationClaim(self, schemaId: ID,
                                       claim: NonRevocationClaim):
         claim = await self._nonRevocClaimInitializer.initNonRevocationClaim(
-            claimDefId,
+            schemaId,
             claim)
-        await self.wallet.submitNonRevocClaim(claimDefId=claimDefId,
+        await self.wallet.submitNonRevocClaim(schemaId=schemaId,
                                               claim=claim)
 
     #
@@ -152,7 +152,7 @@ class Prover:
     #
 
     async def _findClaims(self, proofInput: ProofInput) -> (
-            Dict[ClaimDefinitionKey, ProofClaims], Dict[str, Any]):
+            Dict[SchemaKey, ProofClaims], Dict[str, Any]):
         revealedAttrs, predicates = set(proofInput.revealedAttrs), set(
             proofInput.predicates)
 
@@ -162,7 +162,7 @@ class Prover:
         revealedAttrsWithValues = {}
 
         allClaims = await self.wallet.getAllClaims()
-        for credDefKey, claim in allClaims.items():
+        for schemaKey, claim in allClaims.items():
             revealedAttrsForClaim = []
             predicatesForClaim = []
 
@@ -179,7 +179,7 @@ class Prover:
                     foundPredicates.add(predicate)
 
             if revealedAttrsForClaim or predicatesForClaim:
-                proofClaims[credDefKey] = ProofClaims(claim,
+                proofClaims[schemaKey] = ProofClaims(claim,
                                                       revealedAttrsForClaim,
                                                       predicatesForClaim)
 
@@ -194,7 +194,7 @@ class Prover:
 
         return proofClaims, revealedAttrsWithValues
 
-    async def _prepareProof(self, claims: Dict[ClaimDefinitionKey, ProofClaims],
+    async def _prepareProof(self, claims: Dict[SchemaKey, ProofClaims],
                             nonce) -> FullProof:
         m1Tilde = cmod.integer(cmod.randomBits(LARGE_M2_TILDE))
         initProofs = {}
@@ -202,13 +202,13 @@ class Prover:
         TauList = []
 
         # 1. init proofs
-        for claimDefKey, val in claims.items():
+        for schemaKey, val in claims.items():
             c1, c2, revealedAttrs, predicates = val.claims.primaryClaim, val.claims.nonRevocClaim, val.revealedAttrs, val.predicates
 
             nonRevocInitProof = None
             if c2:
                 nonRevocInitProof = await self._nonRevocProofBuilder.initProof(
-                    claimDefKey, c2)
+                    schemaKey, c2)
                 CList += nonRevocInitProof.asCList()
                 TauList += nonRevocInitProof.asTauList()
 
@@ -217,40 +217,40 @@ class Prover:
                 m2Tilde = cmod.integer(int(
                     nonRevocInitProof.TauListParams.m2)) if nonRevocInitProof else None
                 primaryInitProof = await self._primaryProofBuilder.initProof(
-                    claimDefKey, c1, revealedAttrs, predicates,
+                    schemaKey, c1, revealedAttrs, predicates,
                     m1Tilde, m2Tilde)
                 CList += primaryInitProof.asCList()
                 TauList += primaryInitProof.asTauList()
 
             initProof = InitProof(nonRevocInitProof, primaryInitProof)
-            initProofs[claimDefKey] = initProof
+            initProofs[schemaKey] = initProof
 
         # 2. hash
         cH = self._get_hash(CList, TauList, nonce)
 
         # 3. finalize proofs
         proofs = []
-        claimDefKeys = []
-        for claimDefKey, initProof in initProofs.items():
-            claimDefKeys.append(claimDefKey)
+        schemaKeys = []
+        for schemaKey, initProof in initProofs.items():
+            schemaKeys.append(schemaKey)
             nonRevocProof = None
             if initProof.nonRevocInitProof:
                 nonRevocProof = await self._nonRevocProofBuilder.finalizeProof(
-                    claimDefKey, cH, initProof.nonRevocInitProof)
+                    schemaKey, cH, initProof.nonRevocInitProof)
             primaryProof = await self._primaryProofBuilder.finalizeProof(
-                claimDefKey, cH, initProof.primaryInitProof)
+                schemaKey, cH, initProof.primaryInitProof)
             proofs.append(Proof(primaryProof, nonRevocProof))
 
-        return FullProof(cH, claimDefKeys, proofs, CList)
+        return FullProof(cH, schemaKeys, proofs, CList)
 
-    async def _getCList(self, initProofs: Dict[ClaimDefinition, InitProof]):
+    async def _getCList(self, initProofs: Dict[Schema, InitProof]):
         CList = []
         for initProof in initProofs.values():
             CList += await initProof.nonRevocInitProof.asCList()
             CList += await initProof.primaryInitProof.asCList()
             return CList
 
-    async def _getTauList(self, initProofs: Dict[ClaimDefinition, InitProof]):
+    async def _getTauList(self, initProofs: Dict[Schema, InitProof]):
         TauList = []
         for initProof in initProofs.values():
             TauList += await initProof.nonRevocInitProof.asTauList()

@@ -156,7 +156,7 @@ If the pre-built packages (see above) doesn't work or not appropriate for some r
             ```
         3. Search for the text `#ifdef _MSC_VER`. Paste in the cut-out lines, ABOVE the `#ifdef _MSC_VER`.
     6. Patch the cygwin compiler in distutils:
-        1. Open _C:\Users\sovrin\AppData\Local\Application Data\Programs\Python\Python35\Lib\distutils\cygwinccompiler.py_
+        1. Open _C:\Users\user\AppData\Local\Application Data\Programs\Python\Python35\Lib\distutils\cygwinccompiler.py_
         2. Comment out all lines with `get_msvcr()` call.
     
 7. Build charm-crypto

@@ -19,7 +19,7 @@ async def testOneRevealedOnly(prover1, allClaims, schemaGvtId, attrRepo):
                        ProofClaims(claimsGvt, ['name'], [])}
     revealedAttrs = {'name':
                          attrRepo.getAttributes(schemaGvtId.schemaKey,
-                                                prover1.proverId).encoded()[
+                                                prover1.proverId)[
                              'name']}
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
@@ -33,7 +33,7 @@ async def testPredicatesEmpty(prover1, allClaims, schemaGvtId, attrRepo):
                        ProofClaims(claimsGvt, ['name'], [])}
     revealedAttrs = {'name':
                          attrRepo.getAttributes(schemaGvtId.schemaKey,
-                                                prover1.proverId).encoded()[
+                                                prover1.proverId)[
                              'name']}
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
@@ -71,7 +71,7 @@ async def testRevealedAndPredicateSameIssuer(prover1, allClaims, schemaGvtId,
                                    [PredicateGE('age', 18)])}
     revealedAttrs = {'name':
                          attrRepo.getAttributes(schemaGvtId.schemaKey,
-                                                prover1.proverId).encoded()[
+                                                prover1.proverId)[
                              'name']}
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
@@ -90,7 +90,7 @@ async def testRevealedAndPredicateDifferentIssuers(prover1, allClaims,
                        ProofClaims(claimsXyz, ['status'], [])}
     revealedAttrs = {'status':
                          attrRepo.getAttributes(schemaXyzId.schemaKey,
-                                                prover1.proverId).encoded()[
+                                                prover1.proverId)[
                              'status']}
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
 
@@ -108,11 +108,11 @@ async def testMultipledRevealed(prover1, allClaims, schemaGvtId,
                        ProofClaims(claimsXyz, ['status'], [])}
     revealedAttrs = {'name':
                          attrRepo.getAttributes(schemaGvtId.schemaKey,
-                                                prover1.proverId).encoded()[
+                                                prover1.proverId)[
                              'name'],
                      'status':
                          attrRepo.getAttributes(schemaXyzId.schemaKey,
-                                                prover1.proverId).encoded()[
+                                                prover1.proverId)[
                              'status'],
                      }
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
@@ -150,11 +150,11 @@ async def testMultipleAll(prover1, allClaims, schemaGvtId, schemaXyzId,
                                    [PredicateGE('period', 8)])}
     revealedAttrs = {'name':
                          attrRepo.getAttributes(schemaGvtId.schemaKey,
-                                                prover1.proverId).encoded()[
+                                                prover1.proverId)[
                              'name'],
                      'status':
                          attrRepo.getAttributes(schemaXyzId.schemaKey,
-                                                prover1.proverId).encoded()[
+                                                prover1.proverId)[
                              'status'],
                      }
     assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)

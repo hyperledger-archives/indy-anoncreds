@@ -11,8 +11,8 @@ class PrimaryProofVerifier:
     def __init__(self, wallet: Wallet):
         self._wallet = wallet
 
-    async def verify(self, proofInput: ProofInput, schemaKey, cHash,
-                     primaryProof: PrimaryProof, allRevealedAttrs):
+    async def verify(self, schemaKey, cHash, primaryProof: PrimaryProof,
+                     allRevealedAttrs):
         cH = cmod.integer(cHash)
         THat = await self._verifyEquality(schemaKey, cH, primaryProof.eqProof,
                                           allRevealedAttrs)

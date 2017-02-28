@@ -43,8 +43,7 @@ class Verifier:
                     proofInput, schemaKey, proof.cHash,
                     proofItem.nonRevocProof)
             if proofItem.primaryProof:
-                TauList += await self._primaryVerifier.verify(proofInput,
-                                                              schemaKey,
+                TauList += await self._primaryVerifier.verify(schemaKey,
                                                               proof.cHash,
                                                               proofItem.primaryProof,
                                                               allRevealedAttrs)

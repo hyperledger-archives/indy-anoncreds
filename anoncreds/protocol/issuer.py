@@ -113,12 +113,16 @@ class Issuer:
         schemaKey = (await self.wallet.getSchema(schemaId)).getKey()
         attributes = self._attrRepo.getAttributes(schemaKey,
                                                   claimRequest.userId)
-        iA = iA if iA else (await self.wallet.getAccumulator(schemaId)).iA
 
+        # TODO re-enable when revocation registry is implemented
+        # iA = iA if iA else (await self.wallet.getAccumulator(schemaId)).iA
+
+        # TODO this has un-obvious side-effects
         await self._genContxt(schemaId, iA, claimRequest.userId)
 
         c1 = await self._issuePrimaryClaim(schemaId, attributes,
                                            claimRequest.U)
+        # TODO re-enable when revocation registry is fully implemented
         c2 = await self._issueNonRevocationClaim(schemaId, claimRequest.Ur,
                                                  iA,
                                                  i) if claimRequest.Ur else None

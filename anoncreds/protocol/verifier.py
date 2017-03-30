@@ -32,7 +32,7 @@ class Verifier:
         :param proofInput: description of a proof to be presented (revealed
         attributes, predicates, timestamps for non-revocation)
         :param proof: a proof
-        :param allRevealedAttrs: values of revealed attributes
+        :param allRevealedAttrs: values of revealed attributes (initial values, non-encoded)
         :param nonce: verifier's nonce
         :return: True if verified successfully and false otherwise.
         """
@@ -43,8 +43,7 @@ class Verifier:
                     proofInput, schemaKey, proof.cHash,
                     proofItem.nonRevocProof)
             if proofItem.primaryProof:
-                TauList += await self._primaryVerifier.verify(proofInput,
-                                                              schemaKey,
+                TauList += await self._primaryVerifier.verify(schemaKey,
                                                               proof.cHash,
                                                               proofItem.primaryProof,
                                                               allRevealedAttrs)

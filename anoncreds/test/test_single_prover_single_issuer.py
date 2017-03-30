@@ -20,25 +20,24 @@ async def testPrimaryClaimOnlyEmpty(prover1, verifier, claimsProver1Gvt, nonce):
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testPrimaryClaimNoPredicates(prover1, verifier, claimsProver1Gvt,
-                                       nonce, schemaGvtId,
-                                       attrRepo):
-    revealledAttrs = ['name']
-    proofInput = ProofInput(revealledAttrs)
+                                       nonce, schemaGvtId):
+    revealledAttrNames = ['name']
+    proofInput = ProofInput(revealledAttrNames)
     claims, revealedAttrs = await prover1._findClaims(proofInput)
     claims = {
         schemaKey: ProofClaims(
             Claims(primaryClaim=proofClaim.claims.primaryClaim),
-            revealedAttrs=revealledAttrs)
+            revealedAttrs=revealledAttrNames)
         for schemaKey, proofClaim in claims.items()}
     proof = await prover1._prepareProof(claims, nonce)
+
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testPrimaryClaimPredicatesOnly(prover1, verifier, claimsProver1Gvt,
-                                         nonce, schemaGvtId,
-                                         attrRepo):
+                                         nonce, schemaGvtId):
     predicates = [PredicateGE('age', 18)]
     proofInput = ProofInput(predicates=predicates)
     claims, revealedAttrs = await prover1._findClaims(proofInput)

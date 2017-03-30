@@ -3,7 +3,7 @@ from hashlib import sha256
 from typing import TypeVar, Sequence, Dict, Set
 
 from anoncreds.protocol.utils import toDictWithStrValues, \
-    fromDictWithStrValues, deserializeFromStr
+    fromDictWithStrValues, deserializeFromStr, encodeAttr
 from config.config import cmod
 
 
@@ -83,8 +83,7 @@ class Attribs:
                 attrName = at.name
                 if attrName in self._vals:
                     if at.encode:
-                        encoded[attrName] = cmod.Conversion.bytes2integer(
-                            sha256(str(self._vals[attrName]).encode()).digest())
+                        encoded[attrName] = encodeAttr(self._vals[attrName])
                     else:
                         encoded[attrName] = self._vals[at.name]
         return encoded

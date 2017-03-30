@@ -87,7 +87,8 @@ class IssuerWalletInMemory(IssuerWallet, WalletInMemory):
     async def submitSchema(self,
                            schema: Schema) -> Schema:
         schema = await self._repo.submitSchema(schema)
-        self._cacheSchema(schema)
+        if schema:
+            self._cacheSchema(schema)
         return schema
 
     async def submitPublicKeys(self, schemaId: ID, pk: PublicKey,

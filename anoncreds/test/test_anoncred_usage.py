@@ -50,6 +50,7 @@ async def testSingleIssuerSingleProver(primes1):
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
     proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
+    assert revealedAttrs['name'] == 'Alex'
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
@@ -100,6 +101,9 @@ async def testMultiplIssuersSingleProver(primes1, primes2):
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
     proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
+
+    assert revealedAttrs['name'] == 'Alex'
+    assert revealedAttrs['status'] == 'FULL'
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
@@ -147,6 +151,8 @@ async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
     proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
+
+    assert revealedAttrs['name'] == 'Alex'
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
 
 
@@ -186,4 +192,6 @@ async def testSingleIssuerSingleProverPrimaryOnly(primes1):
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
     proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
+
+    assert revealedAttrs['name'] == 'Alex'
     assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)

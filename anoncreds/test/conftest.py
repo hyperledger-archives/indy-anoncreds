@@ -273,7 +273,7 @@ def genNonce(verifier):
     return verifier.generateNonce()
 
 
-async def presentProofAndVerify(verifier, proofInput: ProofInput, prover):
+async def presentProofAndVerify(verifier: Verifier, proofInput: ProofInput, prover):
     nonce = verifier.generateNonce()
     proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
     return await verifier.verify(proofInput, proof, revealedAttrs, nonce)

@@ -2,6 +2,7 @@ from anoncreds.protocol.globals import LARGE_E_START, ITERATIONS, DELTA
 from anoncreds.protocol.primary.primary_proof_common import calcTeq, calcTge
 from anoncreds.protocol.types import PrimaryEqualProof, \
     PrimaryPredicateGEProof, PrimaryProof, ID, ProofInput
+from anoncreds.protocol.utils import encodeAttr
 from anoncreds.protocol.wallet.wallet import Wallet
 from config.config import cmod
 
@@ -10,8 +11,8 @@ class PrimaryProofVerifier:
     def __init__(self, wallet: Wallet):
         self._wallet = wallet
 
-    async def verify(self, proofInput: ProofInput, schemaKey, cHash,
-                     primaryProof: PrimaryProof, allRevealedAttrs):
+    async def verify(self, schemaKey, cHash, primaryProof: PrimaryProof,
+                     allRevealedAttrs):
         cH = cmod.integer(cHash)
         THat = await self._verifyEquality(schemaKey, cH, primaryProof.eqProof,
                                           allRevealedAttrs)
@@ -33,7 +34,7 @@ class PrimaryProofVerifier:
 
         Rar = 1 % pk.N
         for attrName in proof.revealedAttrNames:
-            Rar *= pk.R[str(attrName)] ** allRevealedAttrs[attrName]
+            Rar *= pk.R[str(attrName)] ** encodeAttr(allRevealedAttrs[attrName])
         Rar *= proof.Aprime ** (2 ** LARGE_E_START)
         T2 = (pk.Z / Rar) ** (-1 * cH) % pk.N
         T = T1 * T2 % pk.N

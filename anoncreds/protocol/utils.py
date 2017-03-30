@@ -17,6 +17,10 @@ from anoncreds.protocol.globals import LARGE_PRIME, LARGE_MASTER_SECRET, \
 from config.config import cmod
 
 
+def encodeAttr(attrValue):
+    return cmod.Conversion.bytes2integer(sha256(str(attrValue).encode()).digest())
+
+
 def randomQR(n):
     return cmod.random(n) ** 2
 

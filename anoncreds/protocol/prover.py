@@ -105,7 +105,7 @@ class Prover:
         :param proofInput: description of a proof to be presented (revealed
         attributes, predicates, timestamps for non-revocation)
         :param nonce: verifier's nonce
-        :return: a proof (both primary and non-revocation)
+        :return: a proof (both primary and non-revocation) and revealed attributes (initial non-encoded values)
         """
         claims, revealedAttrsWithValues = await self._findClaims(proofInput)
         proof = await self._prepareProof(claims, nonce)
@@ -171,7 +171,7 @@ class Prover:
                     revealedAttrsForClaim.append(revealedAttr)
                     foundRevealedAttrs.add(revealedAttr)
                     revealedAttrsWithValues[revealedAttr] = \
-                        claim.primaryClaim.encodedAttrs[revealedAttr]
+                        claim.primaryClaim.attrs[revealedAttr]
 
             for predicate in predicates:
                 if predicate.attrName in claim.primaryClaim.encodedAttrs:

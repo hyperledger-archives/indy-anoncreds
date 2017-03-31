@@ -1,3 +1,4 @@
+import os
 from collections import namedtuple
 from hashlib import sha256
 from typing import TypeVar, Sequence, Dict, Set
@@ -151,6 +152,15 @@ class SchemaKey(
         keys = (self.name, self.version, self.issuerId)
         return hash(keys)
 
+    def __str__(self):
+        rtn = list()
+        rtn.append('Schema Key')
+        rtn.append("    Name: {}".format(str(self.name)))
+        rtn.append("    Version: {}".format(str(self.version)))
+        rtn.append("    IssuerId: {}".format(str(self.issuerId)))
+
+        return os.linesep.join(rtn)
+
 
 class ID(namedtuple('ID', 'schemaKey, schemaId, seqId')):
     def __new__(cls, schemaKey: SchemaKey = None, schemaId=None,
@@ -247,6 +257,13 @@ class PrimaryClaim(
     NamedTupleStrSerializer):
     pass
 
+    def __str__(self):
+        rtn = ['Attributes:']
+        for key, value in self.attrs.items():
+            rtn.append('    {}: {}'.format(str(key), str(value)))
+
+        return os.linesep.join(rtn)
+
 
 class Witness(namedtuple('Witness', 'sigmai, ui, gi, omega, V'),
               NamedTupleStrSerializer):
@@ -276,6 +293,23 @@ class Claims(namedtuple('Claims', 'primaryClaim, nonRevocClaim'),
         if 'nonRevocClaim' in d:
             nonRevoc = NonRevocationClaim.fromStrDict(d['nonRevocClaim'])
         return Claims(primaryClaim=primary, nonRevocClaim=nonRevoc)
+
+    def __str__(self):
+        return str(self.primaryClaim)
+
+
+class ClaimsPair(dict):
+    def __str__(self):
+        rtn = list()
+        rtn.append('Claims')
+
+        for schema_key, claims in self.items():
+            rtn.append('')
+            rtn.append(schema_key.name)
+            rtn.append(str(schema_key))
+            rtn.append(str(claims))
+
+        return os.linesep.join(rtn)
 
 
 class ProofInput(

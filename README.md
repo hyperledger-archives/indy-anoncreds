@@ -1,4 +1,5 @@
 # AnonCreds: Anonymous credentials protocol implementation in python
+[![Build Status](https://jenkins.evernym.com/buildStatus/icon?job=Anoncreds/master)](https://jenkins.evernym.com/view/Core/job/Anoncreds/job/master/)
 
 This is a python implementation of the anonymous credentials ideas developed by
 IBM Research (see https://idemix.wordpress.com/ and

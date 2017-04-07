@@ -230,6 +230,10 @@ class Accumulator:
     def isFull(self):
         return self.currentI > self.L
 
+    def __eq__(self, other):
+        return self.iA == other.iA and self.acc == other.acc \
+               and self.V == other.V and self.L == other.L \
+               and self.currentI == other.currentI
 
 ClaimInitDataType = namedtuple('ClaimInitDataType', 'U, vPrime')
 

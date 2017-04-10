@@ -1,5 +1,4 @@
 from collections import namedtuple
-from hashlib import sha256
 from typing import TypeVar, Sequence, Dict, Set
 
 from anoncreds.protocol.utils import toDictWithStrValues, \
@@ -176,6 +175,11 @@ class PublicKey(namedtuple('PublicKey', 'N, Rms, Rctxt, R, S, Z, seqId'),
     def __new__(cls, N, Rms, Rctxt, R, S, Z, seqId=None):
         return super(PublicKey, cls).__new__(cls, N, Rms, Rctxt, R, S, Z, seqId)
 
+    def __eq__(self, other):
+        return self.N == other.N and self.Rms == other.Rms \
+               and self.Rctxt == other.Rctxt and self.S == other.S \
+               and self.Z == other.Z and self.seqId == other.seqId \
+               and dict(self.R) == dict(other.R)
 
 SecretKey = namedtuple('SecretKey', 'pPrime, qPrime')
 

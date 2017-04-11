@@ -28,6 +28,9 @@ class Issuer:
     def issuerId(self):
         return self.wallet.walletId
 
+    def isSchemaExists(self, schemaKey):
+        return self.wallet._schemasByKey.get(schemaKey)
+
     async def genSchema(self, name, version, attrNames,
                         schemaType=TYPE_CL) -> Schema:
         """

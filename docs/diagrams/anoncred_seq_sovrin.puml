@@ -25,7 +25,7 @@ note over I: **1.** Generate Primary Keys: **PK** and **SK**\n**2.** Generate No
 
 I -> I: Store Private Keys **SK**, **SKr**
 
-I -[#green]> S: Submit Primary and Revocation Public Keys: **ISSUER_KEY** txn
+I -[#green]> S: Submit Primary and Revocation Public Keys: **CLAIM_DEF** txn
 
 
 note over I:**3.**  Create accumulator with keys: **accum**, **PKaccum**, **SKaccum**, **Tails**
@@ -44,7 +44,7 @@ note over P: Generate Master Secret **m1**
 
 P -> P: Store **m1**
 
-S -[#green]-> P: Get **PK** and **PKr**: **ISSUER_KEY** txn
+S -[#green]-> P: Get **PK** and **PKr**: **CLAIM_DEF** txn
 
 note over P: **P1.** generate U, vPrime, Ur and vrPrime with prover-generated values
 
@@ -64,7 +64,7 @@ S -[#green]-> I: Get **accum** value: **REVOC_REG_UPDATE** txn
 
 S -[#green]-> I: Get **PKaccum** value: **REVOC_REG** txn
 
-S -[#green]-> I: Get **PK** and **PKr**: **ISSUER_KEY** txn
+S -[#green]-> I: Get **PK** and **PKr**: **CLAIM_DEF** txn
 
 
 note over I
@@ -94,7 +94,7 @@ note over P
     **P1.** Take **revealedAttributes, predicates, accumSeqNo/TS** from a Verifier's link
 end note
 
-S -[#green]-> P: Get **PK** and **PKr**: **ISSUER_KEY** txn
+S -[#green]-> P: Get **PK** and **PKr**: **CLAIM_DEF** txn
 
 S -[#green]-> P: Get **PKaccum** value: **REVOC_REG** txn
 
@@ -114,7 +114,7 @@ P -[#black]> V: Send Full Proof: **Pr=(PrC, PrP)**
 
 S -[#green]-> V: Update **accum**: **REVOC_REG_UPDATE**
 
-S -[#green]-> V: Get **PK** and **PKr**: **ISSUER_KEY** txn
+S -[#green]-> V: Get **PK** and **PKr**: **CLAIM_DEF** txn
 
 S -[#green]-> V: Get **PKaccum** value: **REVOC_REG** txn
 

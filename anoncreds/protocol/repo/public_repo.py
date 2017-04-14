@@ -14,12 +14,15 @@ class PublicRepo:
         raise NotImplementedError
 
     @abstractmethod
-    async def getPublicKey(self, schemaId: ID) -> PublicKey:
+    async def getPublicKey(self,
+                           schemaId: ID,
+                           signatureType = 'CL') -> PublicKey:
         raise NotImplementedError
 
     @abstractmethod
     async def getPublicKeyRevocation(self,
-                                     schemaId: ID) -> RevocationPublicKey:
+                                     schemaId: ID,
+                                     signatureType = 'CL') -> RevocationPublicKey:
         raise NotImplementedError
 
     @abstractmethod
@@ -92,11 +95,14 @@ class PublicRepoInMemory(PublicRepo):
                 schemaId.schemaId,
                 schemaId.schemaKey))
 
-    async def getPublicKey(self, schemaId: ID) -> PublicKey:
+    async def getPublicKey(self,
+                           schemaId: ID,
+                           signatureType = 'CL') -> PublicKey:
         return await self._getValueForId(self._pks, schemaId)
 
     async def getPublicKeyRevocation(self,
-                                     schemaId: ID) -> RevocationPublicKey:
+                                     schemaId: ID,
+                                     signatureType = 'CL') -> RevocationPublicKey:
         return await self._getValueForId(self._pkRs, schemaId)
 
     async def getPublicKeyAccumulator(self,

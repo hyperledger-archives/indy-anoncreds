@@ -1,10 +1,9 @@
 from abc import abstractmethod
-from typing import Dict
 
 from anoncreds.protocol.repo.public_repo import PublicRepo
-from anoncreds.protocol.types import SchemaKey, ID, \
+from anoncreds.protocol.types import ID, \
     Claims, ClaimInitDataType, \
-    PrimaryClaim, NonRevocationClaim
+    PrimaryClaim, NonRevocationClaim, ClaimsPair
 from anoncreds.protocol.wallet.wallet import Wallet, WalletInMemory
 
 
@@ -52,7 +51,7 @@ class ProverWallet(Wallet):
         raise NotImplementedError
 
     @abstractmethod
-    async def getAllClaims(self) -> Dict[SchemaKey, Claims]:
+    async def getAllClaims(self) -> ClaimsPair:
         raise NotImplementedError
 
     @abstractmethod
@@ -120,8 +119,8 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
                                                                   schemaId)
         return Claims(c1, c2)
 
-    async def getAllClaims(self) -> Dict[SchemaKey, Claims]:
-        res = {}
+    async def getAllClaims(self) -> ClaimsPair:
+        res = ClaimsPair()
         for schemaKey in self._c1s.keys():
             res[schemaKey] = await self.getClaims(ID(schemaKey))
         return res

@@ -158,12 +158,14 @@ class ID(namedtuple('ID', 'schemaKey, schemaId, seqId')):
 
 
 class Schema(namedtuple('Schema',
-                        'name, version, attrNames, schemaType, '
-                        'issuerId, seqId'),
+                        'name, version, attrNames, issuerId, seqId'),
              NamedTupleStrSerializer):
-    def __new__(cls, name, version, attrNames, schemaType, issuerId, seqId=None):
-        return super(Schema, cls).__new__(cls, name, version,
-                                          attrNames, schemaType, issuerId,
+    def __new__(cls, name, version, attrNames, issuerId, seqId=None):
+        return super(Schema, cls).__new__(cls,
+                                          name,
+                                          version,
+                                          attrNames,
+                                          issuerId,
                                           seqId)
 
     def getKey(self):
@@ -180,6 +182,7 @@ class PublicKey(namedtuple('PublicKey', 'N, Rms, Rctxt, R, S, Z, seqId'),
                and self.Rctxt == other.Rctxt and self.S == other.S \
                and self.Z == other.Z and self.seqId == other.seqId \
                and dict(self.R) == dict(other.R)
+
 
 class SecretKey(namedtuple('SecretKey', 'pPrime, qPrime'),
                 NamedTupleStrSerializer):

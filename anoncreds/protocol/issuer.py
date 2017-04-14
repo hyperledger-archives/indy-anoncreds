@@ -31,19 +31,16 @@ class Issuer:
     def isSchemaExists(self, schemaKey):
         return self.wallet._schemasByKey.get(schemaKey)
 
-    async def genSchema(self, name, version, attrNames,
-                        schemaType=TYPE_CL) -> Schema:
+    async def genSchema(self, name, version, attrNames) -> Schema:
         """
         Generates and submits Schema.
 
         :param name: schema name
         :param version: schema version
         :param attrNames: a list of attributes the schema contains
-        :param schemaType: a type of the schema
         :return: submitted Schema
         """
-        schema = Schema(name, version, attrNames, schemaType,
-                          self.issuerId)
+        schema = Schema(name, version, attrNames, self.issuerId)
         return await self.wallet.submitSchema(schema)
 
     async def genKeys(self, schemaId: ID, p_prime=None, q_prime=None) -> (

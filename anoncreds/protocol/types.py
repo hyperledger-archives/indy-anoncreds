@@ -168,12 +168,14 @@ class ID(namedtuple('ID', 'schemaKey, schemaId, seqId')):
 
 
 class Schema(namedtuple('Schema',
-                        'name, version, attrNames, schemaType, '
-                        'issuerId, seqId'),
+                        'name, version, attrNames, issuerId, seqId'),
              NamedTupleStrSerializer):
-    def __new__(cls, name, version, attrNames, schemaType, issuerId, seqId=None):
-        return super(Schema, cls).__new__(cls, name, version,
-                                          attrNames, schemaType, issuerId,
+    def __new__(cls, name, version, attrNames, issuerId, seqId=None):
+        return super(Schema, cls).__new__(cls,
+                                          name,
+                                          version,
+                                          attrNames,
+                                          issuerId,
                                           seqId)
 
     def getKey(self):
@@ -191,7 +193,10 @@ class PublicKey(namedtuple('PublicKey', 'N, Rms, Rctxt, R, S, Z, seqId'),
                and self.Z == other.Z and self.seqId == other.seqId \
                and dict(self.R) == dict(other.R)
 
-SecretKey = namedtuple('SecretKey', 'pPrime, qPrime')
+
+class SecretKey(namedtuple('SecretKey', 'pPrime, qPrime'),
+                NamedTupleStrSerializer):
+    pass
 
 
 class RevocationPublicKey(namedtuple('RevocationPublicKey',
@@ -203,7 +208,9 @@ class RevocationPublicKey(namedtuple('RevocationPublicKey',
                                                        seqId)
 
 
-RevocationSecretKey = namedtuple('RevocationSecretKey', 'x, sk')
+class RevocationSecretKey(namedtuple('RevocationSecretKey', 'x, sk'),
+                          NamedTupleStrSerializer):
+    pass
 
 
 class AccumulatorPublicKey(namedtuple('AccumulatorPublicKey', 'z, seqId'),
@@ -212,7 +219,9 @@ class AccumulatorPublicKey(namedtuple('AccumulatorPublicKey', 'z, seqId'),
         return super(AccumulatorPublicKey, cls).__new__(cls, z, seqId)
 
 
-AccumulatorSecretKey = namedtuple('AccumulatorSecretKey', 'gamma')
+class AccumulatorSecretKey(
+    namedtuple('AccumulatorSecretKey', 'gamma'), NamedTupleStrSerializer):
+    pass
 
 
 class Predicate(namedtuple('Predicate', 'attrName, value, type'),

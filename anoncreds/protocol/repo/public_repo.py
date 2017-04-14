@@ -43,8 +43,11 @@ class PublicRepo:
         raise NotImplementedError
 
     @abstractmethod
-    async def submitPublicKeys(self, schemaId: ID, pk: PublicKey,
-                               pkR: RevocationPublicKey = None) -> (
+    async def submitPublicKeys(self,
+                               schemaId: ID,
+                               pk: PublicKey,
+                               pkR: RevocationPublicKey = None,
+                               signatureType = 'CL') -> (
             PublicKey, RevocationPublicKey):
         raise NotImplementedError
 
@@ -116,8 +119,11 @@ class PublicRepoInMemory(PublicRepo):
         self._schemasById[schema.seqId] = schema
         return schema
 
-    async def submitPublicKeys(self, schemaId: ID, pk: PublicKey,
-                               pkR: RevocationPublicKey = None) -> (
+    async def submitPublicKeys(self,
+                               schemaId: ID,
+                               pk: PublicKey,
+                               pkR: RevocationPublicKey = None,
+                               signatureType='CL') -> (
             PublicKey, RevocationPublicKey):
         pk = pk._replace(seqId=self._pkId)
         self._pkId += 1

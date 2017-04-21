@@ -1,5 +1,5 @@
+import os
 from collections import namedtuple
-from hashlib import sha256
 from typing import TypeVar, Sequence, Dict, Set
 
 from anoncreds.protocol.utils import toDictWithStrValues, \
@@ -151,6 +151,15 @@ class SchemaKey(
         keys = (self.name, self.version, self.issuerId)
         return hash(keys)
 
+    def __str__(self):
+        rtn = list()
+        rtn.append('Schema Key')
+        rtn.append("    Name: {}".format(str(self.name)))
+        rtn.append("    Version: {}".format(str(self.version)))
+        rtn.append("    IssuerId: {}".format(str(self.issuerId)))
+
+        return os.linesep.join(rtn)
+
 
 class ID(namedtuple('ID', 'schemaKey, schemaId, seqId')):
     def __new__(cls, schemaKey: SchemaKey = None, schemaId=None,
@@ -159,12 +168,14 @@ class ID(namedtuple('ID', 'schemaKey, schemaId, seqId')):
 
 
 class Schema(namedtuple('Schema',
-                        'name, version, attrNames, schemaType, '
-                        'issuerId, seqId'),
+                        'name, version, attrNames, issuerId, seqId'),
              NamedTupleStrSerializer):
-    def __new__(cls, name, version, attrNames, schemaType, issuerId, seqId=None):
-        return super(Schema, cls).__new__(cls, name, version,
-                                          attrNames, schemaType, issuerId,
+    def __new__(cls, name, version, attrNames, issuerId, seqId=None):
+        return super(Schema, cls).__new__(cls,
+                                          name,
+                                          version,
+                                          attrNames,
+                                          issuerId,
                                           seqId)
 
     def getKey(self):
@@ -176,8 +187,16 @@ class PublicKey(namedtuple('PublicKey', 'N, Rms, Rctxt, R, S, Z, seqId'),
     def __new__(cls, N, Rms, Rctxt, R, S, Z, seqId=None):
         return super(PublicKey, cls).__new__(cls, N, Rms, Rctxt, R, S, Z, seqId)
 
+    def __eq__(self, other):
+        return self.N == other.N and self.Rms == other.Rms \
+               and self.Rctxt == other.Rctxt and self.S == other.S \
+               and self.Z == other.Z and self.seqId == other.seqId \
+               and dict(self.R) == dict(other.R)
 
-SecretKey = namedtuple('SecretKey', 'pPrime, qPrime')
+
+class SecretKey(namedtuple('SecretKey', 'pPrime, qPrime'),
+                NamedTupleStrSerializer):
+    pass
 
 
 class RevocationPublicKey(namedtuple('RevocationPublicKey',
@@ -189,7 +208,9 @@ class RevocationPublicKey(namedtuple('RevocationPublicKey',
                                                        seqId)
 
 
-RevocationSecretKey = namedtuple('RevocationSecretKey', 'x, sk')
+class RevocationSecretKey(namedtuple('RevocationSecretKey', 'x, sk'),
+                          NamedTupleStrSerializer):
+    pass
 
 
 class AccumulatorPublicKey(namedtuple('AccumulatorPublicKey', 'z, seqId'),
@@ -198,7 +219,9 @@ class AccumulatorPublicKey(namedtuple('AccumulatorPublicKey', 'z, seqId'),
         return super(AccumulatorPublicKey, cls).__new__(cls, z, seqId)
 
 
-AccumulatorSecretKey = namedtuple('AccumulatorSecretKey', 'gamma')
+class AccumulatorSecretKey(
+    namedtuple('AccumulatorSecretKey', 'gamma'), NamedTupleStrSerializer):
+    pass
 
 
 class Predicate(namedtuple('Predicate', 'attrName, value, type'),
@@ -230,6 +253,10 @@ class Accumulator:
     def isFull(self):
         return self.currentI > self.L
 
+    def __eq__(self, other):
+        return self.iA == other.iA and self.acc == other.acc \
+               and self.V == other.V and self.L == other.L \
+               and self.currentI == other.currentI
 
 ClaimInitDataType = namedtuple('ClaimInitDataType', 'U, vPrime')
 
@@ -246,6 +273,13 @@ class PrimaryClaim(
     namedtuple('PrimaryClaim', 'attrs, encodedAttrs, m2, A, e, v'),
     NamedTupleStrSerializer):
     pass
+
+    def __str__(self):
+        rtn = ['Attributes:']
+        for key, value in self.attrs.items():
+            rtn.append('    {}: {}'.format(str(key), str(value)))
+
+        return os.linesep.join(rtn)
 
 
 class Witness(namedtuple('Witness', 'sigmai, ui, gi, omega, V'),
@@ -276,6 +310,23 @@ class Claims(namedtuple('Claims', 'primaryClaim, nonRevocClaim'),
         if 'nonRevocClaim' in d:
             nonRevoc = NonRevocationClaim.fromStrDict(d['nonRevocClaim'])
         return Claims(primaryClaim=primary, nonRevocClaim=nonRevoc)
+
+    def __str__(self):
+        return str(self.primaryClaim)
+
+
+class ClaimsPair(dict):
+    def __str__(self):
+        rtn = list()
+        rtn.append('Claims')
+
+        for schema_key, claims in self.items():
+            rtn.append('')
+            rtn.append(schema_key.name)
+            rtn.append(str(schema_key))
+            rtn.append(str(claims))
+
+        return os.linesep.join(rtn)
 
 
 class ProofInput(

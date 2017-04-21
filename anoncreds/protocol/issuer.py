@@ -28,19 +28,19 @@ class Issuer:
     def issuerId(self):
         return self.wallet.walletId
 
-    async def genSchema(self, name, version, attrNames,
-                        schemaType=TYPE_CL) -> Schema:
+    def isSchemaExists(self, schemaKey):
+        return self.wallet._schemasByKey.get(schemaKey)
+
+    async def genSchema(self, name, version, attrNames) -> Schema:
         """
         Generates and submits Schema.
 
         :param name: schema name
         :param version: schema version
         :param attrNames: a list of attributes the schema contains
-        :param schemaType: a type of the schema
         :return: submitted Schema
         """
-        schema = Schema(name, version, attrNames, schemaType,
-                          self.issuerId)
+        schema = Schema(name, version, attrNames, self.issuerId)
         return await self.wallet.submitSchema(schema)
 
     async def genKeys(self, schemaId: ID, p_prime=None, q_prime=None) -> (
@@ -113,12 +113,16 @@ class Issuer:
         schemaKey = (await self.wallet.getSchema(schemaId)).getKey()
         attributes = self._attrRepo.getAttributes(schemaKey,
                                                   claimRequest.userId)
-        iA = iA if iA else (await self.wallet.getAccumulator(schemaId)).iA
 
+        # TODO re-enable when revocation registry is implemented
+        # iA = iA if iA else (await self.wallet.getAccumulator(schemaId)).iA
+
+        # TODO this has un-obvious side-effects
         await self._genContxt(schemaId, iA, claimRequest.userId)
 
         c1 = await self._issuePrimaryClaim(schemaId, attributes,
                                            claimRequest.U)
+        # TODO re-enable when revocation registry is fully implemented
         c2 = await self._issueNonRevocationClaim(schemaId, claimRequest.Ur,
                                                  iA,
                                                  i) if claimRequest.Ur else None

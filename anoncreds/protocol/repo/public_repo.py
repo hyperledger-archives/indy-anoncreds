@@ -14,12 +14,15 @@ class PublicRepo:
         raise NotImplementedError
 
     @abstractmethod
-    async def getPublicKey(self, schemaId: ID) -> PublicKey:
+    async def getPublicKey(self,
+                           schemaId: ID,
+                           signatureType = 'CL') -> PublicKey:
         raise NotImplementedError
 
     @abstractmethod
     async def getPublicKeyRevocation(self,
-                                     schemaId: ID) -> RevocationPublicKey:
+                                     schemaId: ID,
+                                     signatureType = 'CL') -> RevocationPublicKey:
         raise NotImplementedError
 
     @abstractmethod
@@ -43,8 +46,11 @@ class PublicRepo:
         raise NotImplementedError
 
     @abstractmethod
-    async def submitPublicKeys(self, schemaId: ID, pk: PublicKey,
-                               pkR: RevocationPublicKey = None) -> (
+    async def submitPublicKeys(self,
+                               schemaId: ID,
+                               pk: PublicKey,
+                               pkR: RevocationPublicKey = None,
+                               signatureType = 'CL') -> (
             PublicKey, RevocationPublicKey):
         raise NotImplementedError
 
@@ -89,11 +95,14 @@ class PublicRepoInMemory(PublicRepo):
                 schemaId.schemaId,
                 schemaId.schemaKey))
 
-    async def getPublicKey(self, schemaId: ID) -> PublicKey:
+    async def getPublicKey(self,
+                           schemaId: ID,
+                           signatureType = 'CL') -> PublicKey:
         return await self._getValueForId(self._pks, schemaId)
 
     async def getPublicKeyRevocation(self,
-                                     schemaId: ID) -> RevocationPublicKey:
+                                     schemaId: ID,
+                                     signatureType = 'CL') -> RevocationPublicKey:
         return await self._getValueForId(self._pkRs, schemaId)
 
     async def getPublicKeyAccumulator(self,
@@ -116,8 +125,11 @@ class PublicRepoInMemory(PublicRepo):
         self._schemasById[schema.seqId] = schema
         return schema
 
-    async def submitPublicKeys(self, schemaId: ID, pk: PublicKey,
-                               pkR: RevocationPublicKey = None) -> (
+    async def submitPublicKeys(self,
+                               schemaId: ID,
+                               pk: PublicKey,
+                               pkR: RevocationPublicKey = None,
+                               signatureType='CL') -> (
             PublicKey, RevocationPublicKey):
         pk = pk._replace(seqId=self._pkId)
         self._pkId += 1

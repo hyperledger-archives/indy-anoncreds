@@ -15,10 +15,10 @@ def testSchemaKeyFromToDict():
 
 
 def testSchemaFromToDict():
-    schema = Schema(name='schemaName', version='1.0',
-                      schemaType='CL',
-                      attrNames=['attr1', 'attr2', 'attr3'],
-                      issuerId='issuer1')
+    schema = Schema(name='schemaName',
+                    version='1.0',
+                    attrNames=['attr1', 'attr2', 'attr3'],
+                    issuerId='issuer1')
     assert schema == Schema.fromStrDict(schema.toStrDict())
 
 

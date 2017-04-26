@@ -1,5 +1,7 @@
 from functools import reduce
 
+import time
+
 from anoncreds.protocol.globals import LARGE_NONCE
 from anoncreds.protocol.primary.primary_proof_verifier import \
     PrimaryProofVerifier
@@ -36,17 +38,26 @@ class Verifier:
         :param nonce: verifier's nonce
         :return: True if verified successfully and false otherwise.
         """
+        PRINT = False
         TauList = []
         for schemaKey, proofItem in zip(proof.schemaKeys, proof.proofs):
             if proofItem.nonRevocProof:
+                mark = time.time()
                 TauList += await self._nonRevocVerifier.verifyNonRevocation(
                     proofInput, schemaKey, proof.cHash,
                     proofItem.nonRevocProof)
+                if PRINT:
+                    print("Revoc Proof")
+                    print(time.time() - mark)
             if proofItem.primaryProof:
+                mark = time.time()
                 TauList += await self._primaryVerifier.verify(schemaKey,
                                                               proof.cHash,
                                                               proofItem.primaryProof,
                                                               allRevealedAttrs)
+                if PRINT:
+                    print("Primary Verifier")
+                    print(time.time() - mark)
 
         CHver = self._get_hash(proof.CList, TauList, nonce)
 

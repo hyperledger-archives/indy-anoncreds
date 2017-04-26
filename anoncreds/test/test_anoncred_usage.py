@@ -1,4 +1,5 @@
 import pytest
+import time
 
 from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
@@ -39,7 +40,11 @@ async def testSingleIssuerSingleProver(primes1):
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
     claimsReq = await prover.createClaimRequest(schemaId)
-    claims = await issuer.issueClaim(schemaId, claimsReq)
+    print("\nissuer.issueClaim\n")
+    for i in range(4):
+        print(time.time())
+        claims = await issuer.issueClaim(schemaId, claimsReq)
+    print(time.time())
     await prover.processClaim(schemaId, claims)
 
     # 6. proof Claims
@@ -49,9 +54,17 @@ async def testSingleIssuerSingleProver(primes1):
 
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
     nonce = verifier.generateNonce()
-    proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
+    print("\nprover.presentProof\n")
+    for i in range(100):
+        print(time.time())
+        proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
+    print(time.time())
     assert revealedAttrs['name'] == 'Alex'
-    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    print("\nverifier.verify\n")
+    for i in range(100):
+        print(time.time())
+        assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    print(time.time())
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')

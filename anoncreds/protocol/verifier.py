@@ -47,8 +47,7 @@ class Verifier:
                     proofInput, schemaKey, proof.cHash,
                     proofItem.nonRevocProof)
                 if PRINT:
-                    print("Revoc Proof")
-                    print(time.time() - mark)
+                    print("Revoc Proof: " + str(time.time() - mark))
             if proofItem.primaryProof:
                 mark = time.time()
                 TauList += await self._primaryVerifier.verify(schemaKey,
@@ -56,8 +55,7 @@ class Verifier:
                                                               proofItem.primaryProof,
                                                               allRevealedAttrs)
                 if PRINT:
-                    print("Primary Verifier")
-                    print(time.time() - mark)
+                    print("Primary Verifier: " + str(time.time() - mark))
 
         CHver = self._get_hash(proof.CList, TauList, nonce)
 

@@ -120,8 +120,17 @@ PublicParams = namedtuple('PublicParams', 'Gamma, rho, g, h')
 
 T = TypeVar('T')
 VType = Set[int]
-TailsType = Dict[int, cmod.integer]
 TimestampType = int
+
+class Tails:
+
+    def __init__(self):
+        self.g = {}
+        self.gprime = {}
+
+    def addValue(self, index, gVal, gprimeVal):
+        self.g[index] = gVal
+        self.gprime[index] = gprimeVal
 
 
 class NamedTupleStrSerializer:
@@ -200,11 +209,11 @@ class SecretKey(namedtuple('SecretKey', 'pPrime, qPrime'),
 
 
 class RevocationPublicKey(namedtuple('RevocationPublicKey',
-                                     'qr, g, h, h0, h1, h2, htilde, u, pk, y, x, seqId'),
+                                     'qr, g, gprime, h, h0, h1, h2, htilde, hhat, u, pk, y, seqId'),
                           NamedTupleStrSerializer):
-    def __new__(cls, qr, g, h, h0, h1, h2, htilde, u, pk, y, x, seqId=None):
-        return super(RevocationPublicKey, cls).__new__(cls, qr, g, h, h0, h1,
-                                                       h2, htilde, u, pk, y, x,
+    def __new__(cls, qr, g, gprime, h, h0, h1, h2, htilde, hhat, u, pk, y, seqId=None):
+        return super(RevocationPublicKey, cls).__new__(cls, qr, g, gprime, h, h0, h1,
+                                                       h2, htilde, hhat, u, pk, y,
                                                        seqId)
 
 
@@ -288,7 +297,7 @@ class Witness(namedtuple('Witness', 'sigmai, ui, gi, omega, V'),
 
 
 class NonRevocationClaim(
-    namedtuple('NonRevocationClaim', 'iA, sigma, c, v, witness, gi, i, m2'),
+    namedtuple('NonRevocationClaim', 'iA, sigma, c, v, witness,i, m2'),
     NamedTupleStrSerializer):
     @classmethod
     def fromStrDict(cls, d):

@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 from anoncreds.protocol.repo.public_repo import PublicRepo
 from anoncreds.protocol.types import Schema, PublicKey, SecretKey, ID, \
-    RevocationPublicKey, AccumulatorPublicKey, Accumulator, TailsType, \
+    RevocationPublicKey, AccumulatorPublicKey, Accumulator, Tails, \
     RevocationSecretKey, AccumulatorSecretKey, \
     TimestampType
 from anoncreds.protocol.wallet.wallet import Wallet, WalletInMemory
@@ -33,7 +33,7 @@ class IssuerWallet(Wallet):
     @abstractmethod
     async def submitAccumPublic(self, schemaId: ID,
                                 accumPK: AccumulatorPublicKey,
-                                accum: Accumulator, tails: TailsType):
+                                accum: Accumulator, tails: Tails):
         raise NotImplementedError
 
     @abstractmethod
@@ -109,7 +109,7 @@ class IssuerWalletInMemory(IssuerWallet, WalletInMemory):
     async def submitAccumPublic(self, schemaId: ID,
                                 accumPK: AccumulatorPublicKey,
                                 accum: Accumulator,
-                                tails: TailsType) -> AccumulatorPublicKey:
+                                tails: Tails) -> AccumulatorPublicKey:
         accumPK = await self._repo.submitAccumulator(schemaId, accumPK, accum,
                                                      tails)
         await self._cacheValueForId(self._accums, schemaId, accum)

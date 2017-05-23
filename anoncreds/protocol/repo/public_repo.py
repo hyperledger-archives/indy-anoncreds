@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Dict, Any
 
 from anoncreds.protocol.types import ID, PublicKey, RevocationPublicKey, \
-    Schema, TailsType, Accumulator, \
+    Schema, Tails, Accumulator, \
     AccumulatorPublicKey, TimestampType, SchemaKey
 
 
@@ -35,7 +35,7 @@ class PublicRepo:
         raise NotImplementedError
 
     @abstractmethod
-    async def getTails(self, schemaId: ID) -> TailsType:
+    async def getTails(self, schemaId: ID) -> Tails:
         raise NotImplementedError
 
     # SUBMIT
@@ -57,7 +57,7 @@ class PublicRepo:
     @abstractmethod
     async def submitAccumulator(self, schemaId: ID,
                                 accumPK: AccumulatorPublicKey,
-                                accum: Accumulator, tails: TailsType) -> \
+                                accum: Accumulator, tails: Tails) -> \
             AccumulatorPublicKey:
         raise NotImplementedError
 
@@ -112,7 +112,7 @@ class PublicRepoInMemory(PublicRepo):
     async def getAccumulator(self, schemaId: ID) -> Accumulator:
         return await self._getValueForId(self._accums, schemaId)
 
-    async def getTails(self, schemaId: ID) -> TailsType:
+    async def getTails(self, schemaId: ID) -> Tails:
         return await self._getValueForId(self._tails, schemaId)
 
     # SUBMIT
@@ -145,7 +145,7 @@ class PublicRepoInMemory(PublicRepo):
     async def submitAccumulator(self, schemaId: ID,
                                 accumPK: AccumulatorPublicKey,
                                 accum: Accumulator,
-                                tails: TailsType) -> AccumulatorPublicKey:
+                                tails: Tails) -> AccumulatorPublicKey:
         accumPK = accumPK._replace(seqId=self._acumPkId)
         self._acumPkId += 1
         await self._cacheValueForId(self._accums, schemaId, accum)

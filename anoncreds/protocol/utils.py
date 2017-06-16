@@ -244,6 +244,15 @@ def strToCryptoInteger(n):
         return cmod.integer(int(n))
 
 
+def to_crypto_int(a, b=None):
+    return strToCryptoInteger(a + 'mod' + b) if b else strToCryptoInteger(a)
+
+
+
+def crypto_int_to_str(n):
+    return cmod.toInt(n)
+
+
 def strToInt(s):
     return bytes_to_int(sha256(s.encode()).digest())
 

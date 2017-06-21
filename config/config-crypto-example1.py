@@ -5,7 +5,7 @@ dynamically.
 
 # noinspection PyUnresolvedReferences
 from charm.core.math.integer import integer, random, randomBits, isPrime, \
-    randomPrime, serialize, deserialize
+    randomPrime, serialize, deserialize, toInt
 
 # noinspection PyUnresolvedReferences
 from charm.toolbox.conversion import Conversion

@@ -3,7 +3,7 @@ from collections import namedtuple
 from typing import TypeVar, Sequence, Dict, Set
 
 from anoncreds.protocol.utils import toDictWithStrValues, \
-    fromDictWithStrValues, deserializeFromStr, encodeAttr
+    fromDictWithStrValues, deserializeFromStr, encodeAttr, crypto_int_to_str, to_crypto_int
 from config.config import cmod
 
 
@@ -193,6 +193,35 @@ class PublicKey(namedtuple('PublicKey', 'N, Rms, Rctxt, R, S, Z, seqId'),
                and self.Z == other.Z and self.seqId == other.seqId \
                and dict(self.R) == dict(other.R)
 
+    def to_str_dict(self):
+        public_key = {
+            'n': str(crypto_int_to_str(self.N)),
+            's': str(crypto_int_to_str(self.S)),
+            'rms': str(crypto_int_to_str(self.Rms)),
+            'rctxt': str(crypto_int_to_str(self.Rctxt)),
+            'z': str(crypto_int_to_str(self.Z)),
+            'r': {}
+        }
+
+        for key in self.R:
+            public_key['r'][key] = str(crypto_int_to_str(self.R[key]))
+
+        return public_key
+
+    @classmethod
+    def from_str_dict(cls, data):
+        N = to_crypto_int(data['n'])
+        Rms = to_crypto_int(data['rms'], data['n'])
+        Rctxt = to_crypto_int(data['rctxt'], data['n'])
+        S = to_crypto_int(data['s'], data['n'])
+        Z = to_crypto_int(data['z'], data['n'])
+        R = {}
+
+        for key in data['r']:
+            R[key] = to_crypto_int(data['r'][key], data['n'])
+
+        return cls(N, Rms, Rctxt, R, S, Z)
+
 
 class SecretKey(namedtuple('SecretKey', 'pPrime, qPrime'),
                 NamedTupleStrSerializer):
@@ -265,6 +294,19 @@ class ClaimRequest(namedtuple('ClaimRequest', 'userId, U, Ur'),
                    NamedTupleStrSerializer):
     def __new__(cls, userId, U, Ur=None):
         return super(ClaimRequest, cls).__new__(cls, userId, U, Ur)
+
+    def to_str_dict(self):
+        return {
+            'prover_did': str(self.userId),
+            'u': str(crypto_int_to_str(self.U)),
+            'ur': self.Ur
+        }
+
+    @classmethod
+    def from_str_dict(cls, data, n):
+        u = to_crypto_int(data['u'], str(n))
+
+        return cls(userId=data['prover_did'], U=u, Ur=data['ur'])
 
 
 # Accumulator = namedtuple('Accumulator', ['iA', 'acc', 'V', 'L'])

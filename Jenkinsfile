@@ -9,6 +9,9 @@ def testUbuntu = {
         echo 'Ubuntu Test: Checkout csm'
         checkout scm
 
+        helpers.shell('cp setup-charm.sh ci/setup-charm.sh')
+        helpers.shell('sed -ir s/sudo// ci/setup-charm.sh')
+
         echo 'Ubuntu Test: Build docker image'
         def testEnv = dockerHelpers.build(name)
 

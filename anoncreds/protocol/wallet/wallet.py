@@ -12,6 +12,10 @@ class Wallet:
         self.walletId = schemaId
         self._repo = repo
 
+    @property
+    def name(self):
+        return self.walletId
+
     # GET
 
     @abstractmethod

@@ -52,4 +52,7 @@ def testWindowsNoDocker = {
     }
 }
 
-testAndPublish(name, [ubuntu: testUbuntu, windows: testWindowsNoDocker, windowsNoDocker: testWindowsNoDocker])
+options = new TestAndPublishOptions()
+options.setPublishableBranches(['feature/repo-merge']) //REMOVE IT BEFORE MERGE
+options.setPostfixes([master: 'repo-merge']) //REMOVE IT BEFORE MERGE
+testAndPublish(name, [ubuntu: testUbuntu, windows: testWindowsNoDocker, windowsNoDocker: testWindowsNoDocker], true, options)

@@ -2,14 +2,15 @@ import pytest
 
 from anoncreds.protocol.types import PublicKey, Schema, Claims, \
     ProofInput, PredicateGE, FullProof, \
-    SchemaKey, ClaimRequest, Proof
+    SchemaKey, ClaimRequest, Proof, AttributeInfo, ProofInfo, AggregatedProof, RequestedProof, PrimaryProof, \
+    PrimaryEqualProof, PrimaryPredicateGEProof, ID, ClaimAttributeValues
 from anoncreds.protocol.utils import toDictWithStrValues, fromDictWithStrValues
 from config.config import cmod
 
 
 def testSchemaKeyFromToDict():
     schemaKey = SchemaKey(name='schemaName', version='1.0',
-                            issuerId='issuer1')
+                          issuerId='issuer1')
     assert schemaKey == SchemaKey.fromStrDict(
         schemaKey.toStrDict())
 
@@ -92,33 +93,299 @@ def testClaimsFromToDictPrimaryOnly(claimsProver1Gvt):
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
+async def testAggregatedProofFromToDict(prover1, nonce, claimsProver1Gvt):
+    proofInput = ProofInput(nonce=nonce,
+                            revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid': PredicateGE('age', 18)})
+
+    proof = await prover1.presentProof(proofInput)
+
+    assert proof.aggregatedProof == AggregatedProof.fromStrDict(proof.aggregatedProof.toStrDict())
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def testRequestedProofFromToDict(prover1, nonce, claimsProver1Gvt):
+    proofInput = ProofInput(nonce=nonce,
+                            revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid': PredicateGE('age', 18)})
+
+    proof = await prover1.presentProof(proofInput)
+
+    assert proof.requestedProof == RequestedProof.fromStrDict(proof.requestedProof.toStrDict())
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
 async def testClaimProofFromToDict(prover1, nonce, claimsProver1Gvt):
-    proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
-    proof, _ = await prover1.presentProof(proofInput, nonce)
+    proofInput = ProofInput(nonce=nonce,
+                            revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid': PredicateGE('age', 18)})
+
+    proof = await prover1.presentProof(proofInput)
+
     assert proof == FullProof.fromStrDict(proof.toStrDict())
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
-async def testClaimProofFromToDictPrimaryOnly(prover1, nonce, claimsProver1Gvt):
-    proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
-    proof, _ = await prover1.presentProof(proofInput, nonce)
+async def testClaimProofFromToDictPrimaryOnly(prover1, nonce, claimsProver1Gvt, schemaGvt):
+    proofInput = ProofInput(nonce=nonce,
+                            revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid': PredicateGE('age', 18)})
 
-    proofs = [Proof(primaryProof=proof.proofs[0].primaryProof)]
+    proof = await prover1.presentProof(proofInput)
+
+    proofInfo = proof.proofs[str(schemaGvt.seqId)]
+    proofs = {schemaGvt.seqId: ProofInfo(Proof(primaryProof=proofInfo.proof.primaryProof),
+                                         issuer_did=schemaGvt.issuerId,
+                                         schema_seq_no=proofInfo.schema_seq_no)}
     proof = proof._replace(proofs=proofs)
     assert proof == FullProof.fromStrDict(proof.toStrDict())
 
 
 def testProofInputFromToDict():
-    proofInput = ProofInput(['name', 'age'],
-                            [PredicateGE('age', 18), PredicateGE('age', 25)])
+    proofInput = ProofInput(nonce=1,
+                            revealedAttrs={'attr_uuid1': AttributeInfo(name='name'),
+                                           'attr_uuid2': AttributeInfo(name='age')},
+                            predicates={'predicate_uuid1': PredicateGE('age', 18),
+                                        'predicate_uuid2': PredicateGE('age', 25)})
+
     assert proofInput == ProofInput.fromStrDict(proofInput.toStrDict())
+
+
+def test_proof_input_from_to_dict():
+    proof_input = ProofInput(nonce=1,
+                             revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                             predicates={'predicate_uuid': PredicateGE('age', 18)})
+
+    proof_input_serialized = {
+        'nonce': '1',
+        'revealedAttrs': {'attr_uuid': {'name': 'name', 'schema_seq_no': None, 'issuer_did': None}},
+        'predicates': {'predicate_uuid': {'p_type': 'ge', 'value': 18, 'attr_name': 'age', 'schema_seq_no': None,
+                                          'issuer_did': None}}
+    }
+    assert proof_input.to_str_dict() == proof_input_serialized
+    assert proof_input == ProofInput.from_str_dict(proof_input_serialized)
+    assert proof_input == ProofInput.from_str_dict(proof_input.to_str_dict())
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
-async def testRevealedAttrsFromToDict(prover1, nonce, claimsProver1Gvt):
-    proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
-    _, revealedAttrs = await prover1.presentProof(proofInput, nonce)
-    assert revealedAttrs == fromDictWithStrValues(
-        toDictWithStrValues(revealedAttrs))
+async def test_requested_proof_from_to_dict(prover1, nonce, claimsProver1Gvt):
+    proofInput = ProofInput(nonce=nonce,
+                            revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid': PredicateGE('age', 18)})
+
+    proof = await prover1.presentProof(proofInput)
+
+    requested_proof_serialized = {
+        'revealed_attrs': {'attr_uuid': ['1', 'Alex', '1139481716457488690172217916278103335']},
+        'predicates': {'predicate_uuid': '1'},
+        'self_attested_attrs': {},
+        'unrevealed_attrs': {}
+    }
+
+    assert proof.requestedProof.to_str_dict() == requested_proof_serialized
+    assert proof.requestedProof == RequestedProof.from_str_dict(requested_proof_serialized)
+    assert proof.requestedProof == RequestedProof.from_str_dict(proof.requestedProof.to_str_dict())
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def test_attribute_values_from_to_dict():
+    attr_values = ClaimAttributeValues(raw='Alex', encoded=cmod.integer(11))
+
+    attr_values_serialized = ['Alex', '11']
+
+    assert attr_values.to_str_dict() == attr_values_serialized
+    assert attr_values == ClaimAttributeValues.from_str_dict(attr_values_serialized)
+    assert attr_values == ClaimAttributeValues.from_str_dict(attr_values.to_str_dict())
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def test_aggregated_proof_from_to_dict(prover1, nonce, claimsProver1Gvt):
+    aggregated_proof = AggregatedProof(1, [cmod.integer(111), cmod.integer(32321), cmod.integer(323)])
+
+    aggregated_proof_serialized = {
+        'c_hash': '1',
+        'c_list': [[111], [126, 65], [1, 67]]
+    }
+
+    assert aggregated_proof.to_str_dict() == aggregated_proof_serialized
+    assert aggregated_proof == AggregatedProof.from_str_dict(aggregated_proof_serialized)
+    assert aggregated_proof == AggregatedProof.from_str_dict(aggregated_proof.to_str_dict())
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def test_equal_proof_from_to_dict():
+    n = cmod.integer(12345)
+
+    eqProof = PrimaryEqualProof(e=cmod.integer(1), v=cmod.integer(11), m={'name': cmod.integer(12)},
+                                m1=cmod.integer(12), m2=cmod.integer(32), Aprime=cmod.integer(32) % n,
+                                revealedAttrs={'name': cmod.integer(35)})
+
+    proof_serialized = {
+        'a_prime': '32',
+        'e': '1',
+        'm': {'name': '12'},
+        'm1': '12',
+        'm2': '32',
+        'v': '11',
+        'revealed_attrs': {'name': '35'}
+    }
+
+    assert eqProof.to_str_dict() == proof_serialized
+    assert eqProof == PrimaryEqualProof.from_str_dict(proof_serialized, n)
+    assert eqProof == PrimaryEqualProof.from_str_dict(eqProof.to_str_dict(), n)
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def test_ge_proof_from_to_dict():
+    n = cmod.integer(12345)
+
+    predicate = PredicateGE(attrName='age', value=18)
+    geProof = PrimaryPredicateGEProof(alpha=cmod.integer(1), mj=cmod.integer(12), r={'1': cmod.integer(13)},
+                                      u={'1': cmod.integer(42)}, T={'1': cmod.integer(21) % n}, predicate=predicate)
+
+    proof_serialized = {
+        'alpha': '1',
+        'mj': '12',
+        't': {'1': '21'},
+        'r': {'1': '13'},
+        'u': {'1': '42'},
+        'predicate': {
+            'p_type': 'ge',
+            'attr_name': 'age',
+            'value': 18,
+            'schema_seq_no': None,
+            'issuer_did': None
+        }
+    }
+
+    assert geProof.to_str_dict() == proof_serialized
+    assert geProof == PrimaryPredicateGEProof.from_str_dict(proof_serialized, n)
+    assert geProof == PrimaryPredicateGEProof.from_str_dict(geProof.to_str_dict(), n)
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def test_primary_proof_from_to_dict():
+    n = cmod.integer(12345)
+
+    eqProof = PrimaryEqualProof(e=cmod.integer(1), v=cmod.integer(11), m={'name': cmod.integer(12)},
+                                m1=cmod.integer(12), m2=cmod.integer(32), Aprime=cmod.integer(32) % n,
+                                revealedAttrs={'name': cmod.integer(35)})
+
+    predicate = PredicateGE(attrName='age', value=18)
+    geProof = PrimaryPredicateGEProof(alpha=cmod.integer(1), mj=cmod.integer(12), r={'1': cmod.integer(13)},
+                                      u={'1': cmod.integer(42)}, T={'1': cmod.integer(21) % n}, predicate=predicate)
+    primaryProof = PrimaryProof(eqProof=eqProof, geProofs=[geProof])
+
+    proof_serialized = {
+        'eq_proof': {
+            'a_prime': '32',
+            'e': '1',
+            'm': {'name': '12'},
+            'm1': '12',
+            'm2': '32',
+            'v': '11',
+            'revealed_attrs': {'name': '35'}
+        },
+        'ge_proofs': [
+            {
+                'alpha': '1',
+                'mj': '12',
+                't': {'1': '21'},
+                'r': {'1': '13'},
+                'u': {'1': '42'},
+                'predicate': {
+                    'p_type': 'ge',
+                    'attr_name': 'age',
+                    'value': 18,
+                    'schema_seq_no': None,
+                    'issuer_did': None
+                }
+            }
+        ]
+    }
+
+    assert primaryProof.to_str_dict() == proof_serialized
+    assert primaryProof == PrimaryProof.from_str_dict(proof_serialized, n)
+    assert primaryProof == PrimaryProof.from_str_dict(primaryProof.to_str_dict(), n)
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def test_proof_info_from_to_dict():
+    n = cmod.integer(12345)
+
+    eqProof = PrimaryEqualProof(e=cmod.integer(1), v=cmod.integer(11), m={'name': cmod.integer(12)},
+                                m1=cmod.integer(12), m2=cmod.integer(32), Aprime=cmod.integer(32) % n,
+                                revealedAttrs={'name': cmod.integer(35)})
+
+    predicate = PredicateGE(attrName='age', value=18)
+    geProof = PrimaryPredicateGEProof(alpha=cmod.integer(1), mj=cmod.integer(12), r={'1': cmod.integer(13)},
+                                      u={'1': cmod.integer(42)}, T={'1': cmod.integer(21) % n}, predicate=predicate)
+    primaryProof = PrimaryProof(eqProof=eqProof, geProofs=[geProof])
+    proofInfo = Proof(primaryProof=primaryProof)
+    proof = ProofInfo(schema_seq_no=1, proof=proofInfo, issuer_did='did')
+
+    proof_serialized = {
+        'issuer_did': 'did',
+        'schema_seq_no': 1,
+        'proof': {
+            'primary_proof': {
+                'eq_proof': {
+                    'a_prime': '32',
+                    'e': '1',
+                    'm': {'name': '12'},
+                    'm1': '12',
+                    'm2': '32',
+                    'v': '11',
+                    'revealed_attrs': {'name': '35'}
+                },
+                'ge_proofs': [
+                    {
+                        'alpha': '1',
+                        'mj': '12',
+                        't': {'1': '21'},
+                        'r': {'1': '13'},
+                        'u': {'1': '42'},
+                        'predicate': {
+                            'p_type': 'ge',
+                            'attr_name': 'age',
+                            'value': 18,
+                            'schema_seq_no': None,
+                            'issuer_did': None
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    assert proof.to_str_dict() == proof_serialized
+    assert proof == ProofInfo.from_str_dict(proof_serialized, n)
+    assert proof == ProofInfo.from_str_dict(proof.to_str_dict(), n)
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def test_proof_from_to_dict(prover1, nonce, claimsProver1Gvt, schemaGvt):
+    n = (await prover1.wallet.getPublicKey(ID(schemaId=schemaGvt.seqId))).N
+    proofInput = ProofInput(nonce=nonce,
+                            revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid': PredicateGE('age', 18)})
+
+    proof = await prover1.presentProof(proofInput)
+
+    proofInfo = proof.proofs[str(schemaGvt.seqId)]
+    proof = ProofInfo(Proof(primaryProof=proofInfo.proof.primaryProof),
+                      issuer_did=schemaGvt.issuerId,
+                      schema_seq_no=proofInfo.schema_seq_no)
+
+    assert proof == ProofInfo.from_str_dict(proof.to_str_dict(), n)

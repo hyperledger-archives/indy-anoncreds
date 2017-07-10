@@ -1,169 +1,177 @@
 import pytest
 
-from anoncreds.protocol.types import ProofInput, ProofClaims, PredicateGE
+from anoncreds.protocol.types import ProofInput, ProofClaims, PredicateGE, RequestedProof, AttributeInfo
+from anoncreds.protocol.utils import encodeAttr
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
-async def testEmpty(prover1, allClaims):
-    proofInput = ProofInput([], [])
-    assert ({}, {}) == await prover1._findClaims(proofInput)
+async def testEmpty(prover1):
+    proofInput = ProofInput(revealedAttrs={}, predicates={})
+    assert ({}, RequestedProof([], [], [], [])) == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
-async def testOneRevealedOnly(prover1, allClaims, schemaGvtId, attrRepo):
-    proofInput = ProofInput(['name'])
-    claimsGvt = await prover1.wallet.getClaims(schemaGvtId)
-    proofClaims = {schemaGvtId.schemaKey:
-                       ProofClaims(claimsGvt, ['name'], [])}
-    revealedAttrs = {'name':
-                         attrRepo.getAttributes(schemaGvtId.schemaKey,
-                                                prover1.proverId)[
-                             'name']}
-    assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
+async def testOneRevealedOnly(prover1, allClaims, schemaGvtId, attrRepo, schemaGvt):
+    proofInput = ProofInput(revealedAttrs={'uuid': AttributeInfo(name='name')})
+    claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
+
+    proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [])}
+    attr = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
+    requestedProof = RequestedProof(revealed_attrs={'uuid': [str(schemaGvt.seqId), attr, str(encodeAttr(attr))]})
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
-async def testPredicatesEmpty(prover1, allClaims, schemaGvtId, attrRepo):
-    proofInput = ProofInput(['name'], [])
-    claimsGvt = await prover1.wallet.getClaims(schemaGvtId)
-    proofClaims = {schemaGvtId.schemaKey:
-                       ProofClaims(claimsGvt, ['name'], [])}
-    revealedAttrs = {'name':
-                         attrRepo.getAttributes(schemaGvtId.schemaKey,
-                                                prover1.proverId)[
-                             'name']}
-    assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
+async def testPredicatesEmpty(prover1, allClaims, schemaGvtId, attrRepo, schemaGvt):
+    proofInput = ProofInput(revealedAttrs={'uuid': AttributeInfo(name='name')}, predicates={})
+    claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
+
+    proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [])}
+
+    attr = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
+    requestedProof = RequestedProof(revealed_attrs={'uuid': [schemaGvt.seqId, attr, str(encodeAttr(attr))]})
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
-async def testOnePredicateOnly(prover1, allClaims, schemaGvtId):
-    proofInput = ProofInput(predicates=[PredicateGE('age', 18)])
-    claimsGvt = await prover1.wallet.getClaims(schemaGvtId)
-    proofClaims = {schemaGvtId.schemaKey:
+async def testOnePredicateOnly(prover1, allClaims, schemaGvtId, schemaGvt):
+    proofInput = ProofInput(predicates={'uuid': PredicateGE('age', 18)})
+
+    claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
+    proofClaims = {schemaGvt.seqId:
                        ProofClaims(claimsGvt, [], [PredicateGE('age', 18)])}
-    revealedAttrs = {}
-    assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
+
+    requestedProof = RequestedProof(predicates={'uuid': schemaGvt.seqId})
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
-async def testRevealedEmpty(prover1, allClaims, schemaGvtId):
-    proofInput = ProofInput([], [PredicateGE('age', 18)])
-    claimsGvt = await prover1.wallet.getClaims(schemaGvtId)
-    proofClaims = {schemaGvtId.schemaKey:
+async def testRevealedEmpty(prover1, allClaims, schemaGvtId, schemaGvt):
+    proofInput = ProofInput(revealedAttrs={}, predicates={'uuid': PredicateGE('age', 18)})
+
+    claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
+    proofClaims = {schemaGvt.seqId:
                        ProofClaims(claimsGvt, [], [PredicateGE('age', 18)])}
-    revealedAttrs = {}
-    assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
+
+    requestedProof = RequestedProof(predicates={'uuid': schemaGvt.seqId})
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testRevealedAndPredicateSameIssuer(prover1, allClaims, schemaGvtId,
-                                             attrRepo):
-    proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
-    claimsGvt = await prover1.wallet.getClaims(schemaGvtId)
-    proofClaims = {schemaGvtId.schemaKey:
-                       ProofClaims(claimsGvt, ['name'],
-                                   [PredicateGE('age', 18)])}
-    revealedAttrs = {'name':
-                         attrRepo.getAttributes(schemaGvtId.schemaKey,
-                                                prover1.proverId)[
-                             'name']}
-    assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
+                                             attrRepo, schemaGvt):
+    proofInput = ProofInput(revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid': PredicateGE('age', 18)})
+
+    claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
+    proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [PredicateGE('age', 18)])}
+
+    attr = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
+    requestedProof = RequestedProof(revealed_attrs={'attr_uuid': [schemaGvt.seqId, attr, str(encodeAttr(attr))]},
+                                    predicates={'predicate_uuid': schemaGvt.seqId})
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testRevealedAndPredicateDifferentIssuers(prover1, allClaims,
                                                    schemaGvtId, schemaXyzId,
-                                                   attrRepo):
-    proofInput = ProofInput(['status'], [PredicateGE('age', 18)])
-    claimsGvt = await prover1.wallet.getClaims(schemaGvtId)
-    claimsXyz = await prover1.wallet.getClaims(schemaXyzId)
-    proofClaims = {schemaGvtId.schemaKey:
-                       ProofClaims(claimsGvt, [], [PredicateGE('age', 18)]),
-                   schemaXyzId.schemaKey:
-                       ProofClaims(claimsXyz, ['status'], [])}
-    revealedAttrs = {'status':
-                         attrRepo.getAttributes(schemaXyzId.schemaKey,
-                                                prover1.proverId)[
-                             'status']}
-    assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
+                                                   attrRepo, schemaGvt):
+    proofInput = ProofInput(revealedAttrs={'attr_uuid': AttributeInfo(name='status')},
+                            predicates={'predicate_uuid': PredicateGE('age', 18)})
+
+    claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
+    claimsXyz = await prover1.wallet.getClaimSignature(schemaXyzId)
+    proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, [], [PredicateGE('age', 18)]),
+                   schemaGvt.seqId: ProofClaims(claimsXyz, ['status'], [])}
+
+    attr = attrRepo.getAttributes(schemaXyzId.schemaKey, prover1.proverId)['status']
+    requestedProof = RequestedProof(revealed_attrs={'attr_uuid': [schemaGvt.seqId, attr, str(encodeAttr(attr))]},
+                                    predicates={'predicate_uuid': schemaGvt.seqId})
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipledRevealed(prover1, allClaims, schemaGvtId,
-                                schemaXyzId, attrRepo):
-    proofInput = ProofInput(['status', 'name'], [])
-    claimsGvt = await prover1.wallet.getClaims(schemaGvtId)
-    claimsXyz = await prover1.wallet.getClaims(schemaXyzId)
-    proofClaims = {schemaGvtId.schemaKey:
-                       ProofClaims(claimsGvt, ['name'], []),
-                   schemaXyzId.schemaKey:
-                       ProofClaims(claimsXyz, ['status'], [])}
-    revealedAttrs = {'name':
-                         attrRepo.getAttributes(schemaGvtId.schemaKey,
-                                                prover1.proverId)[
-                             'name'],
-                     'status':
-                         attrRepo.getAttributes(schemaXyzId.schemaKey,
-                                                prover1.proverId)[
-                             'status'],
-                     }
-    assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
+                                schemaXyzId, attrRepo, schemaGvt):
+    proofInput = ProofInput(revealedAttrs={'attr_uuid1': AttributeInfo(name='status'),
+                                           'attr_uuid2': AttributeInfo(name='name')})
+
+    claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
+    claimsXyz = await prover1.wallet.getClaimSignature(schemaXyzId)
+    proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], []),
+                   schemaGvt.seqId: ProofClaims(claimsXyz, ['status'], [])}
+
+    attr1 = attrRepo.getAttributes(schemaXyzId.schemaKey, prover1.proverId)['status']
+    attr2 = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
+    requestedProof = RequestedProof(revealed_attrs={'attr_uuid1': [schemaGvt.seqId, attr1, str(encodeAttr(attr1))],
+                                                    'attr_uuid2': [schemaGvt.seqId, attr2, str(encodeAttr(attr2))]})
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipledPredicates(prover1, allClaims, schemaGvtId,
-                                  schemaXyzId):
-    proofInput = ProofInput([],
-                            [PredicateGE('age', 18), PredicateGE('period', 8)])
-    claimsGvt = await prover1.wallet.getClaims(schemaGvtId)
-    claimsXyz = await prover1.wallet.getClaims(schemaXyzId)
-    proofClaims = {schemaGvtId.schemaKey:
-                       ProofClaims(claimsGvt, [], [PredicateGE('age', 18)]),
-                   schemaXyzId.schemaKey:
-                       ProofClaims(claimsXyz, [], [PredicateGE('period', 8)])}
-    revealedAttrs = {}
-    assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
+                                  schemaXyzId, schemaGvt):
+    proofInput = ProofInput(predicates={'predicate_uuid1': PredicateGE('age', 18),
+                                        'predicate_uuid2': PredicateGE('period', 8)})
+
+    claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
+    claimsXyz = await prover1.wallet.getClaimSignature(schemaXyzId)
+    proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, [], [PredicateGE('age', 18)]),
+                   schemaGvt.seqId: ProofClaims(claimsXyz, [], [PredicateGE('period', 8)])}
+
+    requestedProof = RequestedProof(predicates={'predicate_uuid1': schemaGvt.seqId,
+                                                'predicate_uuid2': schemaGvt.seqId})
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipleAll(prover1, allClaims, schemaGvtId, schemaXyzId,
-                          attrRepo):
-    proofInput = ProofInput(['status', 'name'],
-                            [PredicateGE('age', 18), PredicateGE('period', 8)])
-    claimsGvt = await prover1.wallet.getClaims(schemaGvtId)
-    claimsXyz = await prover1.wallet.getClaims(schemaXyzId)
-    proofClaims = {schemaGvtId.schemaKey:
-                       ProofClaims(claimsGvt, ['name'],
-                                   [PredicateGE('age', 18)]),
-                   schemaXyzId.schemaKey:
-                       ProofClaims(claimsXyz, ['status'],
-                                   [PredicateGE('period', 8)])}
-    revealedAttrs = {'name':
-                         attrRepo.getAttributes(schemaGvtId.schemaKey,
-                                                prover1.proverId)[
-                             'name'],
-                     'status':
-                         attrRepo.getAttributes(schemaXyzId.schemaKey,
-                                                prover1.proverId)[
-                             'status'],
-                     }
-    assert (proofClaims, revealedAttrs) == await prover1._findClaims(proofInput)
+                          attrRepo, schemaGvt):
+    proofInput = ProofInput(revealedAttrs={'attr_uuid1': AttributeInfo(name='status'),
+                                           'attr_uuid2': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid1': PredicateGE('age', 18),
+                                        'predicate_uuid2': PredicateGE('period', 8)})
+
+    claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
+    claimsXyz = await prover1.wallet.getClaimSignature(schemaXyzId)
+    proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [PredicateGE('age', 18)]),
+                   schemaGvt.seqId: ProofClaims(claimsXyz, ['status'], [PredicateGE('period', 8)])}
+
+    attr1 = attrRepo.getAttributes(schemaXyzId.schemaKey, prover1.proverId)['status']
+    attr2 = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
+
+    requestedProof = RequestedProof(
+        revealed_attrs={'attr_uuid1': [schemaGvt.seqId, attr1, str(encodeAttr(attr1))],
+                        'attr_uuid2': [schemaGvt.seqId, attr2, str(encodeAttr(attr2))]},
+        predicates={'predicate_uuid1': schemaGvt.seqId,
+                    'predicate_uuid2': schemaGvt.seqId})
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testAttrNotFound(prover1, allClaims):
-    proofInput = ProofInput(['name', 'aaaa'], [])
+    proofInput = ProofInput(revealedAttrs={'attr_uuid1': AttributeInfo(name='name'),
+                                           'attr_uuid2': AttributeInfo(name='aaa')})
     with pytest.raises(ValueError):
         await prover1._findClaims(proofInput)
 
@@ -171,7 +179,55 @@ async def testAttrNotFound(prover1, allClaims):
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testPredicateNotFound(prover1, allClaims):
-    proofInput = ProofInput([],
-                            [PredicateGE('age', 18), PredicateGE('aaaa', 8)])
+    proofInput = ProofInput(predicates={'predicate_uuid1': PredicateGE('age', 18),
+                                        'predicate_uuid2': PredicateGE('aaaa', 8)})
+    with pytest.raises(ValueError):
+        await prover1._findClaims(proofInput)
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def testOneRevealedFromSchema(prover1, allClaims, schemaGvtId, attrRepo, schemaGvt):
+    proofInput = ProofInput(revealedAttrs={'uuid': AttributeInfo(name='name', schema_seq_no=schemaGvt.seqId)})
+    claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
+
+    proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [])}
+    attr = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
+    requestedProof = RequestedProof(revealed_attrs={'uuid': [str(schemaGvt.seqId), attr, str(encodeAttr(attr))]})
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def testOneRevealedFromOtherSchema(prover1, allClaims, schemaXyz):
+    proofInput = ProofInput(revealedAttrs={'uuid': AttributeInfo(name='name', schema_seq_no=schemaXyz.seqId)})
+
+    with pytest.raises(ValueError):
+        await prover1._findClaims(proofInput)
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def testOneRevealedFromSpecificSchemaAndIssuer(prover1, allClaims, schemaGvt, schemaGvtId, attrRepo, keysGvt):
+    proofInput = ProofInput(revealedAttrs={'uuid': AttributeInfo(name='name', schema_seq_no=schemaGvt.seqId,
+                                                                 issuer_did=schemaGvt.issuerId)})
+    claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
+
+    proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [])}
+    attr = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
+    requestedProof = RequestedProof(revealed_attrs={'uuid': [str(schemaGvt.seqId), attr, str(encodeAttr(attr))]})
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
+
+    assert proofClaims, requestedProof == await prover1._findClaims(proofInput)
+
+
+@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
+@pytest.mark.asyncio
+async def testOneRevealedFromOtherIssuer(prover1, allClaims, schemaGvt, schemaXyz):
+    proofInput = ProofInput(revealedAttrs={'uuid': AttributeInfo(name='name', schema_seq_no=schemaGvt.seqId,
+                                                                 issuer_did=schemaXyz.issuerId)})
+
     with pytest.raises(ValueError):
         await prover1._findClaims(proofInput)

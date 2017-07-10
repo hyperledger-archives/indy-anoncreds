@@ -205,11 +205,11 @@ def claimsRequestProver1Gvt(prover1, schemaGvtId, keysGvt,
 @pytest.fixture(scope="function")
 def claimsProver1Gvt(prover1, issuerGvt, claimsRequestProver1Gvt, schemaGvtId,
                      attrsProver1Gvt, event_loop):
-    claims = event_loop.run_until_complete(
+    signature, claim = event_loop.run_until_complete(
         issuerGvt.issueClaim(schemaGvtId, claimsRequestProver1Gvt))
-    event_loop.run_until_complete(prover1.processClaim(schemaGvtId, claims))
+    event_loop.run_until_complete(prover1.processClaim(schemaGvtId, claim, signature))
     return event_loop.run_until_complete(
-        prover1.wallet.getClaims(schemaGvtId))
+        prover1.wallet.getClaimSignature(schemaGvtId))
 
 
 @pytest.fixture(scope="function")
@@ -217,11 +217,11 @@ def claimsProver2Gvt(prover2, issuerGvt, schemaGvtId, attrsProver2Gvt,
                      keysGvt, issueAccumulatorGvt, event_loop):
     claimsReq = event_loop.run_until_complete(
         prover2.createClaimRequest(schemaGvtId))
-    claims = event_loop.run_until_complete(
+    signature, claim = event_loop.run_until_complete(
         issuerGvt.issueClaim(schemaGvtId, claimsReq))
-    event_loop.run_until_complete(prover2.processClaim(schemaGvtId, claims))
+    event_loop.run_until_complete(prover2.processClaim(schemaGvtId, claim, signature))
     return event_loop.run_until_complete(
-        prover2.wallet.getClaims(schemaGvtId))
+        prover2.wallet.getClaimSignature(schemaGvtId))
 
 
 @pytest.fixture(scope="function")
@@ -229,11 +229,11 @@ def claimsProver1Xyz(prover1, issuerXyz, schemaXyzId, attrsProver1Xyz,
                      keysXyz, issueAccumulatorXyz, event_loop):
     claimsReq = event_loop.run_until_complete(
         prover1.createClaimRequest(schemaXyzId))
-    claims = event_loop.run_until_complete(
+    signature, claim = event_loop.run_until_complete(
         issuerXyz.issueClaim(schemaXyzId, claimsReq))
-    event_loop.run_until_complete(prover1.processClaim(schemaXyzId, claims))
+    event_loop.run_until_complete(prover1.processClaim(schemaXyzId, claim, signature))
     return event_loop.run_until_complete(
-        prover1.wallet.getClaims(schemaXyzId))
+        prover1.wallet.getClaimSignature(schemaXyzId))
 
 
 @pytest.fixture(scope="function")
@@ -241,11 +241,11 @@ def claimsProver2Xyz(prover2, issuerXyz, schemaXyzId, attrsProver2Xyz,
                      keysXyz, issueAccumulatorXyz, event_loop):
     claimsReq = event_loop.run_until_complete(
         prover2.createClaimRequest(schemaXyzId))
-    claims = event_loop.run_until_complete(
+    signature, claim = event_loop.run_until_complete(
         issuerXyz.issueClaim(schemaXyzId, claimsReq))
-    event_loop.run_until_complete(prover2.processClaim(schemaXyzId, claims))
+    event_loop.run_until_complete(prover2.processClaim(schemaXyzId, claim, signature))
     return event_loop.run_until_complete(
-        prover2.wallet.getClaims(schemaXyzId))
+        prover2.wallet.getClaimSignature(schemaXyzId))
 
 
 @pytest.fixture(scope="function")
@@ -274,6 +274,6 @@ def genNonce(verifier):
 
 
 async def presentProofAndVerify(verifier: Verifier, proofInput: ProofInput, prover):
-    nonce = verifier.generateNonce()
-    proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
-    return await verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    proofInput = ProofInput(verifier.generateNonce(), proofInput.revealedAttrs, proofInput.predicates)
+    proof = await prover.presentProof(proofInput)
+    return await verifier.verify(proofInput, proof)

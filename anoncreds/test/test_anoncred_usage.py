@@ -5,7 +5,7 @@ from anoncreds.protocol.prover import Prover
 from anoncreds.protocol.repo.attributes_repo import AttributeRepoInMemory
 from anoncreds.protocol.repo.public_repo import PublicRepoInMemory
 from anoncreds.protocol.types import ProofInput, PredicateGE, \
-    ID
+    ID, AttributeInfo
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWalletInMemory
 from anoncreds.protocol.wallet.prover_wallet import ProverWalletInMemory
@@ -39,19 +39,21 @@ async def testSingleIssuerSingleProver(primes1):
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
     claimsReq = await prover.createClaimRequest(schemaId)
-    claims = await issuer.issueClaim(schemaId, claimsReq)
-    await prover.processClaim(schemaId, claims)
+    (claim_signature, claim_attributes) = await issuer.issueClaim(schemaId, claimsReq)
+
+    await prover.processClaim(schemaId, claim_attributes, claim_signature)
 
     # 6. proof Claims
-    proofInput = ProofInput(
-        ['name'],
-        [PredicateGE('age', 18)])
-
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
-    nonce = verifier.generateNonce()
-    proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
-    assert revealedAttrs['name'] == 'Alex'
-    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
+
+    proofInput = ProofInput(
+        verifier.generateNonce(),
+        {'attr_uuid': AttributeInfo('name', schema.seqId)},
+        {'predicate_uuid': PredicateGE('age', 18)})
+
+    proof = await prover.presentProof(proofInput)
+    assert proof.requestedProof.revealed_attrs['attr_uuid'][1] == 'Alex'
+    assert await verifier.verify(proofInput, proof)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
@@ -67,7 +69,7 @@ async def testMultiplIssuersSingleProver(primes1, primes2):
     schema1 = await issuer1.genSchema('GVT', '1.0', GVT.attribNames())
     schemaId1 = ID(schema1.getKey())
     schema2 = await issuer2.genSchema('XYZCorp', '1.0',
-                                        XYZCorp.attribNames())
+                                      XYZCorp.attribNames())
     schemaId2 = ID(schema2.getKey())
 
     # 3. Create keys for the Schema
@@ -89,22 +91,27 @@ async def testMultiplIssuersSingleProver(primes1, primes2):
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
     claimsReq1 = await prover.createClaimRequest(schemaId1)
     claimsReq2 = await prover.createClaimRequest(schemaId2)
-    claims1 = await issuer1.issueClaim(schemaId1, claimsReq1)
-    claims2 = await issuer2.issueClaim(schemaId2, claimsReq2)
-    await prover.processClaim(schemaId1, claims1)
-    await prover.processClaim(schemaId2, claims2)
+    (claim1_signature, claim1_attributes) = await issuer1.issueClaim(schemaId1, claimsReq1)
+    (claim2_signature, claim2_attributes) = await issuer2.issueClaim(schemaId2, claimsReq2)
+    await prover.processClaim(schemaId1, claim1_attributes, claim1_signature)
+    await prover.processClaim(schemaId2, claim2_attributes, claim2_signature)
 
     # 6. proof Claims
-    proofInput = ProofInput(['name', 'status'],
-                            [PredicateGE('age', 18), PredicateGE('period', 5)])
-
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
-    nonce = verifier.generateNonce()
-    proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
 
-    assert revealedAttrs['name'] == 'Alex'
-    assert revealedAttrs['status'] == 'FULL'
-    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    proofInput = ProofInput(
+        verifier.generateNonce(),
+        {'attr_uuid1': AttributeInfo('name', schema1.seqId),
+         'attr_uuid2': AttributeInfo('status', schema2.seqId)},
+        {'predicate_uuid1': PredicateGE('age', 18),
+         'predicate_uuid2': PredicateGE('period', 5)})
+
+    proof = await prover.presentProof(proofInput)
+
+    assert proof.requestedProof.revealed_attrs['attr_uuid1'][1] == 'Alex'
+    assert proof.requestedProof.revealed_attrs['attr_uuid2'][1] == 'FULL'
+
+    assert await verifier.verify(proofInput, proof)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
@@ -119,7 +126,7 @@ async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     schema1 = await issuer.genSchema('GVT', '1.0', GVT.attribNames())
     schemaId1 = ID(schema1.getKey())
     schema2 = await issuer.genSchema('XYZCorp', '1.0',
-                                       XYZCorp.attribNames())
+                                     XYZCorp.attribNames())
     schemaId2 = ID(schema2.getKey())
 
     # 3. Create keys for the Schema
@@ -144,16 +151,18 @@ async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     await prover.processClaims(claims)
 
     # 6. proof Claims
-    proofInput = ProofInput(
-        ['name'],
-        [PredicateGE('age', 18), PredicateGE('period', 5)])
-
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
-    nonce = verifier.generateNonce()
-    proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
 
-    assert revealedAttrs['name'] == 'Alex'
-    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    proofInput = ProofInput(
+        verifier.generateNonce(),
+        {'attr_uuid1': AttributeInfo('name', schema1.seqId)},
+        {'predicate_uuid1': PredicateGE('age', 18),
+         'predicate_uuid2': PredicateGE('period', 5)})
+
+    proof = await prover.presentProof(proofInput)
+
+    assert proof.requestedProof.revealed_attrs['attr_uuid1'][1] == 'Alex'
+    assert await verifier.verify(proofInput, proof)
 
 
 @pytest.mark.asyncio
@@ -181,17 +190,18 @@ async def testSingleIssuerSingleProverPrimaryOnly(primes1):
     # 5. request Claims
     prover = Prover(ProverWalletInMemory(userId, publicRepo))
     claimsReq = await prover.createClaimRequest(schemaId, None, False)
-    claims = await issuer.issueClaim(schemaId, claimsReq)
-    await prover.processClaim(schemaId, claims)
+    (claim_signature, claim_attributes) = await issuer.issueClaim(schemaId, claimsReq)
+    await prover.processClaim(schemaId, claim_attributes, claim_signature)
 
     # 6. proof Claims
-    proofInput = ProofInput(
-        ['name'],
-        [PredicateGE('age', 18)])
-
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
-    nonce = verifier.generateNonce()
-    proof, revealedAttrs = await prover.presentProof(proofInput, nonce)
 
-    assert revealedAttrs['name'] == 'Alex'
-    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    proofInput = ProofInput(
+        verifier.generateNonce(),
+        {'attr_uuid1': AttributeInfo('name', schema.seqId)},
+        {'predicate_uuid1': PredicateGE('age', 18)})
+
+    proof = await prover.presentProof(proofInput)
+
+    assert proof.requestedProof.revealed_attrs['attr_uuid1'][1] == 'Alex'
+    assert await verifier.verify(proofInput, proof)

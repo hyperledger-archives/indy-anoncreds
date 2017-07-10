@@ -1,52 +1,55 @@
 import pytest
 
 from anoncreds.protocol.types import ProofInput, PredicateGE, Claims, \
-    ProofClaims
+    ProofClaims, AttributeInfo
 from anoncreds.test.conftest import presentProofAndVerify
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testPrimaryClaimOnlyEmpty(prover1, verifier, claimsProver1Gvt, nonce):
-    proofInput = ProofInput([])
-    claims, revealedAttrs = await prover1._findClaims(proofInput)
-    claims = {schemaKey: ProofClaims(
+    proofInput = ProofInput(nonce, {})
+    claims, requestedProof = await prover1._findClaims(proofInput)
+    claims = {schemaId: ProofClaims(
         Claims(primaryClaim=proofClaim.claims.primaryClaim))
-              for schemaKey, proofClaim in claims.items()}
-    proof = await prover1._prepareProof(claims, nonce)
-    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
+              for schemaId, proofClaim in claims.items()}
+
+    proof = await prover1._prepareProof(claims, proofInput.nonce, requestedProof)
+
+    assert await verifier.verify(proofInput, proof)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testPrimaryClaimNoPredicates(prover1, verifier, claimsProver1Gvt,
                                        nonce, schemaGvtId):
-    revealledAttrNames = ['name']
-    proofInput = ProofInput(revealledAttrNames)
-    claims, revealedAttrs = await prover1._findClaims(proofInput)
-    claims = {
-        schemaKey: ProofClaims(
-            Claims(primaryClaim=proofClaim.claims.primaryClaim),
-            revealedAttrs=revealledAttrNames)
-        for schemaKey, proofClaim in claims.items()}
-    proof = await prover1._prepareProof(claims, nonce)
+    proofInput = ProofInput(nonce=nonce, revealedAttrs={'uuid1': AttributeInfo(name='name')}, predicates={})
 
-    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    claims, requestedProof = await prover1._findClaims(proofInput)
+    claims = {
+        schemaId: ProofClaims(
+            Claims(primaryClaim=proofClaim.claims.primaryClaim), [AttributeInfo(name='name')], [])
+        for schemaId, proofClaim in claims.items()}
+    proof = await prover1._prepareProof(claims, proofInput.nonce, requestedProof)
+
+    assert await verifier.verify(proofInput, proof)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testPrimaryClaimPredicatesOnly(prover1, verifier, claimsProver1Gvt,
                                          nonce, schemaGvtId):
-    predicates = [PredicateGE('age', 18)]
-    proofInput = ProofInput(predicates=predicates)
-    claims, revealedAttrs = await prover1._findClaims(proofInput)
-    claims = {schemaKey: ProofClaims(
-        Claims(primaryClaim=proofClaim.claims.primaryClaim),
-        predicates=predicates)
-              for schemaKey, proofClaim in claims.items()}
-    proof = await prover1._prepareProof(claims, nonce)
-    assert await verifier.verify(proofInput, proof, revealedAttrs, nonce)
+    predicate = PredicateGE('age', 18)
+    proofInput = ProofInput(nonce=nonce, predicates={'uuid': predicate})
+    claims, requestedProof = await prover1._findClaims(proofInput)
+    claims = {
+        schemaId: ProofClaims(
+            Claims(primaryClaim=proofClaim.claims.primaryClaim), predicates=[predicate])
+        for schemaId, proofClaim in claims.items()}
+
+    proof = await prover1._prepareProof(claims, proofInput.nonce, requestedProof)
+
+    assert await verifier.verify(proofInput, proof)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
@@ -58,35 +61,39 @@ async def testEmpty(prover1, verifier, claimsProver1Gvt):
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testNoPredicates(prover1, verifier, claimsProver1Gvt):
-    proofInput = ProofInput(['name'], [])
+    proofInput = ProofInput(revealedAttrs={'uuid': AttributeInfo(name='name')}, predicates={})
     assert await presentProofAndVerify(verifier, proofInput, prover1)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipleRevealedAttrs(prover1, verifier, claimsProver1Gvt):
-    proofInput = ProofInput(['name', 'sex'], [])
+    proofInput = ProofInput(revealedAttrs={'uuid1': AttributeInfo(name='name'),
+                                           'uuid2': AttributeInfo(name='sex')}, predicates={})
     assert await presentProofAndVerify(verifier, proofInput, prover1)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testGePredicate(prover1, verifier, claimsProver1Gvt):
-    proofInput = ProofInput(['name'], [PredicateGE('age', 18)])
+    proofInput = ProofInput(revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid': PredicateGE('age', 18)})
     assert await presentProofAndVerify(verifier, proofInput, prover1)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testGePredicateForEqual(prover1, verifier, claimsProver1Gvt):
-    proofInput = ProofInput(['name'], [PredicateGE('age', 28)])
+    proofInput = ProofInput(revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid': PredicateGE('age', 28)})
     assert await presentProofAndVerify(verifier, proofInput, prover1)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testGePredicateNegative(prover1, verifier, claimsProver1Gvt):
-    proofInput = ProofInput(['name'], [PredicateGE('age', 29)])
+    proofInput = ProofInput(revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid': PredicateGE('age', 29)})
     with pytest.raises(ValueError):
         await presentProofAndVerify(verifier, proofInput, prover1)
 
@@ -94,18 +101,18 @@ async def testGePredicateNegative(prover1, verifier, claimsProver1Gvt):
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipleGePredicate(prover1, verifier, claimsProver1Gvt):
-    proofInput = ProofInput(['name'],
-                            [PredicateGE('age', 18),
-                             PredicateGE('height', 170)])
+    proofInput = ProofInput(revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid1': PredicateGE('age', 18),
+                                        'predicate_uuid2': PredicateGE('height', 170)})
     assert await presentProofAndVerify(verifier, proofInput, prover1)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testMultipleGePredicateNegative(prover1, verifier, claimsProver1Gvt):
-    proofInput = ProofInput(['name'],
-                            [PredicateGE('age', 18),
-                             PredicateGE('height', 180)])
+    proofInput = ProofInput(revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={'predicate_uuid1': PredicateGE('age', 18),
+                                        'predicate_uuid2': PredicateGE('height', 180)})
     with pytest.raises(ValueError):
         await presentProofAndVerify(verifier, proofInput, prover1)
 
@@ -114,21 +121,13 @@ async def testMultipleGePredicateNegative(prover1, verifier, claimsProver1Gvt):
 @pytest.mark.asyncio
 async def testNonceShouldBeSame(prover1, verifier, claimsProver1Gvt, nonce,
                                 genNonce):
-    revealedAttrs = ['name']
-    proofInput = ProofInput(revealedAttrs, [])
-    proof, revealedAttrs = await prover1.presentProof(proofInput, nonce)
-    assert not await verifier.verify(proofInput, proof, revealedAttrs, genNonce)
+    nonce = verifier.generateNonce()
+    proofInput = ProofInput(nonce, {'attr_uuid': AttributeInfo(name='name')})
 
+    proof = await prover1.presentProof(proofInput)
 
-@pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
-def testAttrsInClaims(claimsProver1Gvt, attrsProver1Gvt):
-    attrs = claimsProver1Gvt.primaryClaim.attrs
-    encodedAttrs = claimsProver1Gvt.primaryClaim.encodedAttrs
-
-    assert attrs
-    assert encodedAttrs
-    assert attrs == attrsProver1Gvt._vals
-    assert encodedAttrs.keys() == attrsProver1Gvt.keys()
+    proofInput = ProofInput(genNonce, proofInput.revealedAttrs, proofInput.predicates)
+    assert not await verifier.verify(proofInput, proof)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
@@ -139,10 +138,11 @@ async def testUParamShouldBeSame(prover1, verifier, issuerGvt, schemaGvtId,
     claimsReq = await prover1.createClaimRequest(schemaGvtId)
 
     claimsReq = claimsReq._replace(U=claimsReq.U ** 2)
-    claims = await issuerGvt.issueClaim(schemaGvtId, claimsReq)
-    await prover1.processClaim(schemaGvtId, claims)
+    claim_signature, claim_attributes = await issuerGvt.issueClaim(schemaGvtId, claimsReq)
+    await prover1.processClaim(schemaGvtId, claim_attributes, claim_signature)
 
-    proofInput = ProofInput(['name'], [])
+    proofInput = ProofInput(revealedAttrs={'attr_uuid': AttributeInfo(name='name')},
+                            predicates={})
     assert not await presentProofAndVerify(verifier, proofInput, prover1)
 
 
@@ -153,7 +153,7 @@ async def testUrParamShouldBeSame(prover1, issuerGvt, schemaGvtId,
     claimsReq = await prover1.createClaimRequest(schemaGvtId)
 
     claimsReq = claimsReq._replace(Ur=claimsReq.Ur ** 2)
-    claims = await issuerGvt.issueClaim(schemaGvtId, claimsReq)
+    claim_signature, claim_attributes = await issuerGvt.issueClaim(schemaGvtId, claimsReq)
 
     with pytest.raises(ValueError):
-        await prover1.processClaim(schemaGvtId, claims)
+        await prover1.processClaim(schemaGvtId, claim_attributes, claim_signature)

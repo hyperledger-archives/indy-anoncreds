@@ -3,8 +3,9 @@ from abc import abstractmethod
 from anoncreds.protocol.repo.public_repo import PublicRepo
 from anoncreds.protocol.types import ID, \
     Claims, ClaimInitDataType, \
-    PrimaryClaim, NonRevocationClaim, ClaimsPair
+    PrimaryClaim, NonRevocationClaim, ClaimsPair, ClaimAttributeValues
 from anoncreds.protocol.wallet.wallet import Wallet, WalletInMemory
+from typing import Dict, Sequence, Any
 
 
 class ProverWallet(Wallet):
@@ -12,6 +13,10 @@ class ProverWallet(Wallet):
         Wallet.__init__(self, schemaId, repo)
 
     # SUBMIT
+
+    @abstractmethod
+    async def submitClaimAttributes(self, schemaId: ID, claims: Dict[str, ClaimAttributeValues]):
+        raise NotImplementedError
 
     @abstractmethod
     async def submitPrimaryClaim(self, schemaId: ID, claim: PrimaryClaim):
@@ -47,11 +52,19 @@ class ProverWallet(Wallet):
         raise NotImplementedError
 
     @abstractmethod
-    async def getClaims(self, schemaId: ID) -> Claims:
+    async def getClaimAttributes(self, schemaId: ID) -> Claims:
         raise NotImplementedError
 
     @abstractmethod
-    async def getAllClaims(self) -> ClaimsPair:
+    async def getAllClaimsAttributes(self) -> ClaimsPair:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def getClaimSignature(self, schemaId: ID) -> Claims:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def getAllClaimsSignatures(self) -> ClaimsPair:
         raise NotImplementedError
 
     @abstractmethod
@@ -73,6 +86,8 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
     def __init__(self, schemaId, repo: PublicRepo):
         WalletInMemory.__init__(self, schemaId, repo)
 
+        self._claims = {}
+
         # other dicts with key=schemaKey
         self._m1s = {}
         self._m2s = {}
@@ -84,6 +99,9 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
         self._nonRevocInitData = {}
 
     # SUBMIT
+
+    async def submitClaimAttributes(self, schemaId: ID, claims: Dict[str, ClaimAttributeValues]):
+        await self._cacheValueForId(self._claims, schemaId, claims)
 
     async def submitPrimaryClaim(self, schemaId: ID, claim: PrimaryClaim):
         await self._cacheValueForId(self._c1s, schemaId, claim)
@@ -113,16 +131,25 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
     async def getMasterSecret(self, schemaId: ID):
         return await self._getValueForId(self._m1s, schemaId)
 
-    async def getClaims(self, schemaId: ID) -> Claims:
+    async def getClaimAttributes(self, schemaId: ID):
+        return await self._getValueForId(self._claims, schemaId)
+
+    async def getClaimSignature(self, schemaId: ID) -> Claims:
         c1 = await self._getValueForId(self._c1s, schemaId)
         c2 = None if not self._c2s else await self._getValueForId(self._c2s,
                                                                   schemaId)
         return Claims(c1, c2)
 
-    async def getAllClaims(self) -> ClaimsPair:
+    async def getAllClaimsAttributes(self) -> ClaimsPair:
+        res = dict()
+        for schemaKey in self._claims.keys():
+            res[schemaKey] = await self.getClaimAttributes(ID(schemaKey))
+        return res
+
+    async def getAllClaimsSignatures(self) -> ClaimsPair:
         res = ClaimsPair()
         for schemaKey in self._c1s.keys():
-            res[schemaKey] = await self.getClaims(ID(schemaKey))
+            res[schemaKey] = await self.getClaimSignature(ID(schemaKey))
         return res
 
     async def getPrimaryClaimInitData(self,

@@ -15,6 +15,7 @@ from anoncreds.protocol.globals import KEYS, PK_R
 from anoncreds.protocol.globals import LARGE_PRIME, LARGE_MASTER_SECRET, \
     LARGE_VPRIME, PAIRING_GROUP
 from config.config import cmod
+import sys
 
 
 def encodeAttr(attrValue):
@@ -186,9 +187,9 @@ def splitRevealedAttrs(encodedAttrs, revealedAttrs):
 
     for k, value in encodedAttrs.items():
         if k in revealedAttrs:
-            Ar[k] = value
+            Ar[k] = value.encoded
         else:
-            Aur[k] = value
+            Aur[k] = value.encoded
     return Ar, Aur
 
 
@@ -246,7 +247,6 @@ def strToCryptoInteger(n):
 
 def to_crypto_int(a, b=None):
     return strToCryptoInteger(a + 'mod' + b) if b else strToCryptoInteger(a)
-
 
 
 def crypto_int_to_str(n):
@@ -350,3 +350,27 @@ def shortenDictVals(d, size=None):
 
 def currentTimestampMillisec():
     return int(time.time() * 1000)  # millisec
+
+
+def intToArrayBytes(value):
+    value = int(value)
+    result = []
+    for i in range(0, sys.getsizeof(value)):
+        b = value >> (i * 8) & 0xff
+        result.append(b)
+
+    result.reverse()
+
+    first_non_zero = next((i for i, x in enumerate(result) if x), None)
+    result = result[first_non_zero::]
+
+    return result
+
+
+def bytesToInt(bytes):
+    result = 0
+
+    for b in bytes:
+        result = result * 256 + int(b)
+
+    return result

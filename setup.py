@@ -30,7 +30,7 @@ METADATA = os.path.join(SETUP_DIRNAME, 'anoncreds', '__metadata__.py')
 exec(compile(open(METADATA).read(), METADATA, 'exec'))
 
 setup(
-    name='anoncreds-dev',
+    name='indy-anoncreds-new-names',
     version=__version__,
     description='Anonymous credentials',
     long_description='Anonymous credentials',

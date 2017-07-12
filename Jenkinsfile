@@ -52,4 +52,4 @@ def testWindowsNoDocker = {
     }
 }
 
-testAndPublish(name, [ubuntu: testUbuntu, windows: testWindowsNoDocker, windowsNoDocker: testWindowsNoDocker])
+testAndPublish(name, [ubuntu: [anoncreds: testUbuntu], windows: [anoncreds: testWindowsNoDocker], windowsNoDocker: [anoncreds: testWindowsNoDocker]])

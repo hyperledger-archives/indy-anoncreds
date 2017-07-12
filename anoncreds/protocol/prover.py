@@ -8,7 +8,7 @@ from anoncreds.protocol.revocation.accumulators.non_revocation_proof_builder imp
     NonRevocationClaimInitializer, \
     NonRevocationProofBuilder
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, Proof, \
-    InitProof, ProofInput, ProofClaims, \
+    InitProof, ProofRequest, ProofClaims, \
     FullProof, \
     Schema, ID, SchemaKey, ClaimRequest, Claims, RequestedProof, AggregatedProof, ProofInfo, ClaimAttributeValues
 from anoncreds.protocol.utils import get_hash_as_int, isCryptoInteger
@@ -99,16 +99,16 @@ class Prover:
             res.append(await self.processClaim(schemaId, claim_attributes, claim_signature))
         return res
 
-    async def presentProof(self, proofInput: ProofInput) -> FullProof:
+    async def presentProof(self, proofRequest: ProofRequest) -> FullProof:
         """
         Presents a proof to the verifier.
 
-        :param proofInput: description of a proof to be presented (revealed
+        :param proofRequest: description of a proof to be presented (revealed
         attributes, predicates, timestamps for non-revocation)
         :return: a proof (both primary and non-revocation) and revealed attributes (initial non-encoded values)
         """
-        claims, requestedProof = await self._findClaims(proofInput)
-        proof = await self._prepareProof(claims, proofInput.nonce, requestedProof)
+        claims, requestedProof = await self._findClaims(proofRequest)
+        proof = await self._prepareProof(claims, proofRequest.nonce, requestedProof)
         return proof
 
     #
@@ -151,9 +151,9 @@ class Prover:
     # PRESENT PROOF
     #
 
-    async def _findClaims(self, proofInput: ProofInput) -> (
+    async def _findClaims(self, proofRequest: ProofRequest) -> (
             Dict[SchemaKey, ProofClaims], Dict[str, Any]):
-        revealedAttrs, predicates = proofInput.revealedAttrs, proofInput.predicates
+        revealedAttrs, predicates = proofRequest.verifiableAttributes, proofRequest.predicates
 
         foundRevealedAttrs = {}
         foundPredicates = {}

@@ -1,6 +1,6 @@
 import pytest
 
-from anoncreds.protocol.types import ProofInput, ID, AttributeInfo
+from anoncreds.protocol.types import ProofRequest, ID, AttributeInfo
 from anoncreds.protocol.utils import groupIdentityG1
 from anoncreds.test.conftest import presentProofAndVerify
 
@@ -112,20 +112,21 @@ async def testRevocedWithUpdateWitness(schemaGvtId, issuerGvt, prover1,
                                        verifier, claimsProver1Gvt):
     await issuerGvt.revoke(schemaGvtId, 1)
 
-    proofInput = ProofInput(revealedAttrs={'attr_uuid': AttributeInfo(name='name')})
+    proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
+                                verifiableAttributes={'attr_uuid': AttributeInfo(name='name')})
     with pytest.raises(ValueError):
-        await presentProofAndVerify(verifier, proofInput, prover1)
+        await presentProofAndVerify(verifier, proofRequest, prover1)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testRevocedWithoutUpdateWitness(schemaGvtId, issuerGvt, prover1,
                                           verifier, claimsProver1Gvt):
-    nonce = verifier.generateNonce()
-    proofInput = ProofInput(nonce, {'attr_uuid': AttributeInfo(name='name')})
+    proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
+                                verifiableAttributes={'attr_uuid': AttributeInfo(name='name')})
 
-    proof = await prover1.presentProof(proofInput)
+    proof = await prover1.presentProof(proofRequest)
 
     await issuerGvt.revoke(schemaGvtId, 1)
 
-    return await verifier.verify(proofInput, proof)
+    return await verifier.verify(proofRequest, proof)

@@ -4,7 +4,7 @@ from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
 from anoncreds.protocol.repo.attributes_repo import AttributeRepoInMemory
 from anoncreds.protocol.repo.public_repo import PublicRepoInMemory
-from anoncreds.protocol.types import AttribDef, AttribType, ID, ProofInput
+from anoncreds.protocol.types import AttribDef, AttribType, ID, ProofRequest
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWalletInMemory
 from anoncreds.protocol.wallet.prover_wallet import ProverWalletInMemory
@@ -273,7 +273,6 @@ def genNonce(verifier):
     return verifier.generateNonce()
 
 
-async def presentProofAndVerify(verifier: Verifier, proofInput: ProofInput, prover):
-    proofInput = ProofInput(verifier.generateNonce(), proofInput.revealedAttrs, proofInput.predicates)
-    proof = await prover.presentProof(proofInput)
-    return await verifier.verify(proofInput, proof)
+async def presentProofAndVerify(verifier: Verifier, proofRequest: ProofRequest, prover):
+    proof = await prover.presentProof(proofRequest)
+    return await verifier.verify(proofRequest, proof)

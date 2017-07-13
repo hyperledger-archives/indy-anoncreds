@@ -4,7 +4,7 @@ from anoncreds.protocol.issuer import Issuer
 from anoncreds.protocol.prover import Prover
 from anoncreds.protocol.repo.attributes_repo import AttributeRepoInMemory
 from anoncreds.protocol.repo.public_repo import PublicRepoInMemory
-from anoncreds.protocol.types import ProofInput, PredicateGE, \
+from anoncreds.protocol.types import ProofRequest, PredicateGE, \
     ID, AttributeInfo
 from anoncreds.protocol.verifier import Verifier
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWalletInMemory
@@ -46,14 +46,13 @@ async def testSingleIssuerSingleProver(primes1):
     # 6. proof Claims
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
 
-    proofInput = ProofInput(
-        verifier.generateNonce(),
-        {'attr_uuid': AttributeInfo('name', schema.seqId)},
-        {'predicate_uuid': PredicateGE('age', 18)})
+    proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
+                                verifiableAttributes={'attr_uuid': AttributeInfo('name', schema.seqId)},
+                                predicates={'predicate_uuid': PredicateGE('age', 18)})
 
-    proof = await prover.presentProof(proofInput)
+    proof = await prover.presentProof(proofRequest)
     assert proof.requestedProof.revealed_attrs['attr_uuid'][1] == 'Alex'
-    assert await verifier.verify(proofInput, proof)
+    assert await verifier.verify(proofRequest, proof)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
@@ -99,19 +98,18 @@ async def testMultiplIssuersSingleProver(primes1, primes2):
     # 6. proof Claims
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
 
-    proofInput = ProofInput(
-        verifier.generateNonce(),
-        {'attr_uuid1': AttributeInfo('name', schema1.seqId),
-         'attr_uuid2': AttributeInfo('status', schema2.seqId)},
-        {'predicate_uuid1': PredicateGE('age', 18),
-         'predicate_uuid2': PredicateGE('period', 5)})
+    proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
+                                verifiableAttributes={'attr_uuid1': AttributeInfo('name', schema1.seqId),
+                                                      'attr_uuid2': AttributeInfo('status', schema2.seqId)},
+                                predicates={'predicate_uuid1': PredicateGE('age', 18),
+                                            'predicate_uuid2': PredicateGE('period', 5)})
 
-    proof = await prover.presentProof(proofInput)
+    proof = await prover.presentProof(proofRequest)
 
     assert proof.requestedProof.revealed_attrs['attr_uuid1'][1] == 'Alex'
     assert proof.requestedProof.revealed_attrs['attr_uuid2'][1] == 'FULL'
 
-    assert await verifier.verify(proofInput, proof)
+    assert await verifier.verify(proofRequest, proof)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
@@ -153,16 +151,15 @@ async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     # 6. proof Claims
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
 
-    proofInput = ProofInput(
-        verifier.generateNonce(),
-        {'attr_uuid1': AttributeInfo('name', schema1.seqId)},
-        {'predicate_uuid1': PredicateGE('age', 18),
-         'predicate_uuid2': PredicateGE('period', 5)})
+    proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
+                                verifiableAttributes={'attr_uuid1': AttributeInfo('name', schema1.seqId)},
+                                predicates={'predicate_uuid1': PredicateGE('age', 18),
+                                            'predicate_uuid2': PredicateGE('period', 5)})
 
-    proof = await prover.presentProof(proofInput)
+    proof = await prover.presentProof(proofRequest)
 
     assert proof.requestedProof.revealed_attrs['attr_uuid1'][1] == 'Alex'
-    assert await verifier.verify(proofInput, proof)
+    assert await verifier.verify(proofRequest, proof)
 
 
 @pytest.mark.asyncio
@@ -196,12 +193,11 @@ async def testSingleIssuerSingleProverPrimaryOnly(primes1):
     # 6. proof Claims
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
 
-    proofInput = ProofInput(
-        verifier.generateNonce(),
-        {'attr_uuid1': AttributeInfo('name', schema.seqId)},
-        {'predicate_uuid1': PredicateGE('age', 18)})
+    proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
+                                verifiableAttributes={'attr_uuid1': AttributeInfo('name', schema.seqId)},
+                                predicates={'predicate_uuid1': PredicateGE('age', 18)})
 
-    proof = await prover.presentProof(proofInput)
+    proof = await prover.presentProof(proofRequest)
 
     assert proof.requestedProof.revealed_attrs['attr_uuid1'][1] == 'Alex'
-    assert await verifier.verify(proofInput, proof)
+    assert await verifier.verify(proofRequest, proof)

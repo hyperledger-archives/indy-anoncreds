@@ -23,7 +23,7 @@ REVEALED_ATTRS = "revealedAttrs"
 ZERO_INDEX = "0"
 
 ATTRS = "attrs"
-DELTA = "delta"
+DELTA = "DELTA"
 TVAL = "Tval"
 KEYS = "keys"
 NONCE = "nonce"

@@ -6,7 +6,8 @@ from anoncreds.protocol.utils import toDictWithStrValues, \
     fromDictWithStrValues, deserializeFromStr, encodeAttr, crypto_int_to_str, to_crypto_int, isCryptoInteger, \
     intToArrayBytes, bytesToInt
 from config.config import cmod
-
+from typing import NamedTuple
+import uuid
 
 class AttribType:
     def __init__(self, name: str, encode: bool):
@@ -279,15 +280,15 @@ class Predicate(namedtuple('Predicate', 'attrName, value, type, schema_seq_no, i
         attrName = d['attr_name']
         value = d['value']
         type = d['p_type']
-        schema_seq_no = int(d['schema_seq_no']) if d['schema_seq_no'] else None
-        issuer_did = int(d['issuer_did']) if d['issuer_did'] else None
-        return Predicate(attrName=attrName, value=value, type=type,
+        schema_seq_no = int(d['schema_seq_no']) if (('schema_seq_no' in d) and d['schema_seq_no']) else None
+        issuer_did = int(d['issuer_did']) if (('issuer_did' in d) and d['issuer_did']) else None
+        return PredicateGE(attrName=attrName, value=value, type=type,
                          schema_seq_no=schema_seq_no, issuer_did=issuer_did)
 
 
 # TODO: now we consdider only  >= predicate. Support other types of predicates
 class PredicateGE(Predicate):
-    def __new__(cls, attrName, value, type='ge', schema_seq_no=None, issuer_did=None):
+    def __new__(cls, attrName, value, type='GE', schema_seq_no=None, issuer_did=None):
         return super(PredicateGE, cls).__new__(cls, attrName, value, type, schema_seq_no, issuer_did)
 
 
@@ -428,39 +429,8 @@ class ClaimsPair(dict):
         return os.linesep.join(rtn)
 
 
-class ProofInput(
-    namedtuple('ProofInput', 'nonce, revealedAttrs, predicates, ts, seqNo'),
-    NamedTupleStrSerializer):
-    def __new__(cls, nonce=None, revealedAttrs=None, predicates=None, ts=None, seqNo=None):
-        return super(ProofInput, cls).__new__(cls, nonce, revealedAttrs or {},
-                                              predicates or {},
-                                              ts, seqNo)
-
-    @classmethod
-    def fromStrDict(cls, d):
-        d = fromDictWithStrValues(d)
-        revealedAttrs = {k: AttributeInfo.fromStrDict(v) for k, v in d['revealedAttrs'].items()}
-        predicates = {k: Predicate.fromStrDict(v) for k, v in d['predicates'].items()}
-        result = cls(**d)
-        return result._replace(revealedAttrs=revealedAttrs, predicates=predicates)
-
-    def to_str_dict(self):
-        return {
-            'nonce': str(self.nonce),
-            'revealedAttrs': {k: v.to_str_dict() for k, v in self.revealedAttrs.items()},
-            'predicates': {k: v.to_str_dict() for k, v in self.predicates.items()}
-        }
-
-    @classmethod
-    def from_str_dict(cls, d):
-        nonce = int(d['nonce'])
-        revealedAttrs = {k: AttributeInfo.from_str_dict(v) for k, v in d['revealedAttrs'].items()}
-        predicates = {k: Predicate.from_str_dict(v) for k, v in d['predicates'].items()}
-        return ProofInput(nonce=nonce, revealedAttrs=revealedAttrs, predicates=predicates)
-
-
 class AttributeInfo(
-    namedtuple('ProofInput', 'name, schema_seq_no, issuer_did'),
+    namedtuple('AttributeInfo', 'name, schema_seq_no, issuer_did'),
     NamedTupleStrSerializer):
     def __new__(cls, name=None, schema_seq_no=None, issuer_did=None):
         return super(AttributeInfo, cls).__new__(cls, name, schema_seq_no, issuer_did)
@@ -475,7 +445,7 @@ class AttributeInfo(
     @classmethod
     def from_str_dict(cls, d):
         schema_seq_no = int(d['schema_seq_no']) if d['schema_seq_no'] else None
-        issuer_did = int(d['issuer_did']) if d['issuer_did'] else None
+        issuer_did = int(d['issuer_did']) if (('issuer_did' in d) and d['issuer_did']) else None
         name = d['name']
         return AttributeInfo(name, schema_seq_no, issuer_did)
 
@@ -783,7 +753,7 @@ class FullProof(namedtuple('FullProof', 'proofs, aggregatedProof, requestedProof
     def from_str_dict(cls, d, n):
         aggregatedProof = AggregatedProof.from_str_dict(d['aggregated_proof'])
         requestedProof = RequestedProof.from_str_dict(d['requested_proof'])
-        proofs = {k: Proof.from_str_dict(v['proof'], n) for k, v in d['proofs']}
+        proofs = {item[0]: ProofInfo.from_str_dict(item[1], n[i]) for i, item in enumerate(d['proofs'].items())}
 
         return FullProof(aggregatedProof=aggregatedProof, requestedProof=requestedProof, proofs=proofs)
 
@@ -839,10 +809,98 @@ class ClaimAttributeValues(namedtuple('ClaimAttributeValues', 'raw, encoded'),
         return super(ClaimAttributeValues, cls).__new__(cls, raw, encoded)
 
     def to_str_dict(self):
-        return [self.raw, str(self.encoded)]
+        return [str(self.raw), str(self.encoded)]
 
     @classmethod
     def from_str_dict(cls, d):
         raw = d[0]
         encoded = int(to_crypto_int(d[1]))
         return ClaimAttributeValues(raw=raw, encoded=encoded)
+
+
+AvailableClaim = NamedTuple("AvailableClaim", [("name", str),
+                                               ("version", str),
+                                               ("origin", str)])
+
+
+class ProofRequest:
+    def __init__(self, name, version, nonce, attributes={}, verifiableAttributes={}, predicates={}):
+        self.name = name
+        self.version = version
+        self.nonce = nonce
+        self.attributes = attributes
+        self.verifiableAttributes = \
+            {str(uuid.uuid4()): AttributeInfo(name=a) for a in verifiableAttributes} if \
+                isinstance(verifiableAttributes, list) else verifiableAttributes
+        self.predicates = {str(uuid.uuid4()): PredicateGE(attrName=p['attrName'], value=p['value']) for p in
+                           predicates} if isinstance(predicates, list) else predicates
+        self.fulfilledByClaims = []
+        self.selfAttestedAttrs = {}
+        self.ts = None
+        self.seqNo = None
+        # TODO _F_ need to add support for predicates on unrevealed attibutes
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    @property
+    def toDict(self):
+        return {
+            "name": self.name,
+            "version": self.version,
+            "nonce": self.nonce,
+            "attributes": self.attributes,
+            "verifiableAttributes": self.verifiableAttributes
+        }
+
+    def to_str_dict(self):
+        return {
+            "name": self.name,
+            "version": self.version,
+            "nonce": str(self.nonce),
+            "requested_attrs": {k: v.to_str_dict() for k, v in self.verifiableAttributes.items()},
+            "requested_predicates": {k: v.to_str_dict() for k, v in self.predicates.items()}
+        }
+
+    @staticmethod
+    def from_str_dict(d):
+        return ProofRequest(name=d['name'],
+                            version=d['version'],
+                            nonce=int(d['nonce']),
+                            attributes=d['attributes'] if 'attributes' in d else {},
+                            verifiableAttributes={k: AttributeInfo.from_str_dict(v) for k, v in
+                                                  d['requested_attrs'].items()},
+                            predicates={k: PredicateGE.from_str_dict(v) for k, v in d['requested_predicates'].items()})
+
+    @property
+    def attributeValues(self):
+        return \
+            'Attributes:' + '\n    ' + \
+            format("\n    ".join(
+                ['{}: {}'.format(k, v)
+                 for k, v in self.attributes.items()])) + '\n'
+
+    @property
+    def verifiableClaimAttributeValues(self):
+        return \
+            'Verifiable Attributes:' + '\n    ' + \
+            format("\n    ".join(
+                ['{}'.format(v.name)
+                 for k, v in self.verifiableAttributes.items()])) + '\n'
+
+    @property
+    def predicateValues(self):
+        return \
+            'Predicates:' + '\n    ' + \
+            format("\n    ".join(
+                ['{}'.format(v.attrName)
+                 for k, v in self.predicates.items()])) + '\n'
+
+    @property
+    def fixedInfo(self):
+        return 'Status: Requested' + '\n' \
+                                     'Name: ' + self.name + '\n' \
+                                                            'Version: ' + self.version + '\n'
+
+    def __str__(self):
+        return self.fixedInfo + self.attributeValues + self.verifiableClaimAttributeValues

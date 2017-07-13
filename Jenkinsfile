@@ -1,8 +1,8 @@
 #!groovy
 
-@Library('SovrinHelpers') _
+@Library('SovrinHelpersNewPackageNames') _
 
-def name = 'anoncreds'
+def name = 'indy-anoncreds'
 
 def testUbuntu = {
     try {

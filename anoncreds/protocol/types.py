@@ -824,7 +824,7 @@ AvailableClaim = NamedTuple("AvailableClaim", [("name", str),
 
 
 class ProofRequest:
-    def __init__(self, name, version, nonce, attributes=[], verifiableAttributes=[], predicates=[]):
+    def __init__(self, name, version, nonce, attributes={}, verifiableAttributes={}, predicates={}):
         self.name = name
         self.version = version
         self.nonce = nonce
@@ -850,7 +850,7 @@ class ProofRequest:
             "version": self.version,
             "nonce": self.nonce,
             "attributes": self.attributes,
-            "requested_attrs": self.verifiableAttributes
+            "verifiableAttributes": self.verifiableAttributes
         }
 
     def to_str_dict(self):
@@ -867,7 +867,7 @@ class ProofRequest:
         return ProofRequest(name=d['name'],
                             version=d['version'],
                             nonce=int(d['nonce']),
-                            attributes=d['attributes'] if 'attributes' in d else [],
+                            attributes=d['attributes'] if 'attributes' in d else {},
                             verifiableAttributes={k: AttributeInfo.from_str_dict(v) for k, v in
                                                   d['requested_attrs'].items()},
                             predicates={k: PredicateGE.from_str_dict(v) for k, v in d['requested_predicates'].items()})
@@ -878,7 +878,7 @@ class ProofRequest:
             'Attributes:' + '\n    ' + \
             format("\n    ".join(
                 ['{}: {}'.format(k, v)
-                 for k, v in self.attributes])) + '\n'
+                 for k, v in self.attributes.items()])) + '\n'
 
     @property
     def verifiableClaimAttributeValues(self):

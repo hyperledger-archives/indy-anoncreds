@@ -40,19 +40,19 @@ class NonRevocationClaimInitializer:
         accPk = await self._wallet.getPublicKeyAccumulator(schemaid)
         m2 = int(await self._wallet.getContextAttr(schemaid))
 
-        zCalc = cmod.pair(claim.gi, acc.acc) / cmod.pair(pkR.g,
+        zCalc = cmod.pair(claim.witness.gi, acc.acc) / cmod.pair(pkR.g,
                                                          claim.witness.omega)
         if zCalc != accPk.z:
             raise ValueError("issuer is sending incorrect data")
 
-        pairGGCalc = cmod.pair(pkR.pk * claim.gi, claim.witness.sigmai)
-        pairGG = cmod.pair(pkR.g, pkR.g)
+        pairGGCalc = cmod.pair(pkR.pk * claim.witness.gi, claim.witness.sigmai)
+        pairGG = cmod.pair(pkR.g, pkR.gprime)
         if pairGGCalc != pairGG:
             raise ValueError("issuer is sending incorrect data")
 
-        pairH1 = cmod.pair(claim.sigma, pkR.y * (pkR.h ** claim.c))
+        pairH1 = cmod.pair(claim.sigma, pkR.y * (pkR.hhat ** claim.c))
         pairH2 = cmod.pair(
-            pkR.h0 * (pkR.h1 ** m2) * (pkR.h2 ** claim.v) * claim.gi, pkR.h)
+            pkR.h0 * (pkR.h1 ** m2) * (pkR.h2 ** claim.v) * claim.witness.gi, pkR.hhat)
         if pairH1 != pairH2:
             raise ValueError("issuer is sending incorrect data")
 
@@ -87,11 +87,11 @@ class NonRevocationProofBuilder:
             vNewMinusOld = newV - oldV
             omegaDenom = 1
             for j in vOldMinusNew:
-                omegaDenom *= tails[newAccum.L + 1 - j + c2.i]
+                omegaDenom *= tails.gprime[newAccum.L + 1 - j + c2.i]
             omegaNum = 1
             newOmega = c2.witness.omega
             for j in vNewMinusOld:
-                omegaNum *= tails[newAccum.L + 1 - j + c2.i]
+                omegaNum *= tails.gprime[newAccum.L + 1 - j + c2.i]
                 newOmega *= omegaNum / omegaDenom
 
             newWitness = c2.witness._replace(V=newV, omega=newOmega)
@@ -168,10 +168,10 @@ class NonRevocationProofBuilder:
         E = (pkR.h ** params.rho) * (pkR.htilde ** params.o)
         D = (pkR.g ** params.r) * (pkR.htilde ** params.oPrime)
         A = c2.sigma * (pkR.htilde ** params.rho)
-        G = c2.gi * (pkR.htilde ** params.r)
-        W = c2.witness.omega * (pkR.htilde ** params.rPrime)
-        S = c2.witness.sigmai * (pkR.htilde ** params.rPrimePrime)
-        U = c2.witness.ui * (pkR.htilde ** params.rPrimePrimePrime)
+        G = c2.witness.gi * (pkR.htilde ** params.r)
+        W = c2.witness.omega * (pkR.hhat ** params.rPrime)
+        S = c2.witness.sigmai * (pkR.hhat ** params.rPrimePrime)
+        U = c2.witness.ui * (pkR.hhat ** params.rPrimePrimePrime)
         return NonRevocProofCList(E, D, A, G, W, S, U)
 
     def _genTauListParams(self, schemaId) -> NonRevocProofXList:

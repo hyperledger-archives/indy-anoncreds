@@ -4,7 +4,7 @@ from typing import Any, Dict, Sequence
 from anoncreds.protocol.repo.public_repo import PublicRepo
 from anoncreds.protocol.types import Schema, SchemaKey, \
     PublicKey, ID, \
-    RevocationPublicKey, AccumulatorPublicKey, Accumulator, TailsType
+    RevocationPublicKey, AccumulatorPublicKey, Accumulator, Tails
 
 
 class Wallet:
@@ -54,7 +54,7 @@ class Wallet:
         raise NotImplementedError
 
     @abstractmethod
-    async def getTails(self, schemaId: ID) -> TailsType:
+    async def getTails(self, schemaId: ID) -> Tails:
         raise NotImplementedError
 
 
@@ -111,7 +111,7 @@ class WalletInMemory(Wallet):
         return await self._getValueForId(self._accums, schemaId,
                                          self._repo.getAccumulator)
 
-    async def getTails(self, schemaId: ID) -> TailsType:
+    async def getTails(self, schemaId: ID) -> Tails:
         return await self._getValueForId(self._tails, schemaId,
                                          self._repo.getTails)
 

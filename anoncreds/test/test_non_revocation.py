@@ -16,7 +16,7 @@ async def testIssueRevocationCredential(claimsProver1Gvt, issuerGvt,
     assert nonRevocClaimGvtProver1.witness
     assert nonRevocClaimGvtProver1.witness.V
     assert nonRevocClaimGvtProver1.i == 1
-    assert nonRevocClaimGvtProver1.witness.gi == tails[1]
+    assert nonRevocClaimGvtProver1.witness.gi == tails.g[1]
 
     assert acc.V
     assert acc.acc != 1

@@ -15,7 +15,9 @@ class ProverWallet(Wallet):
     # SUBMIT
 
     @abstractmethod
-    async def submitClaimAttributes(self, schemaId: ID, claims: Dict[str, ClaimAttributeValues]):
+    async def submitClaimAttributes(
+            self, schemaId: ID,
+            claimAttributes: Dict[str, ClaimAttributeValues]):
         raise NotImplementedError
 
     @abstractmethod
@@ -52,7 +54,7 @@ class ProverWallet(Wallet):
         raise NotImplementedError
 
     @abstractmethod
-    async def getClaimAttributes(self, schemaId: ID) -> Claims:
+    async def getClaimAttributes(self, schemaId: ID):
         raise NotImplementedError
 
     @abstractmethod
@@ -64,7 +66,7 @@ class ProverWallet(Wallet):
         raise NotImplementedError
 
     @abstractmethod
-    async def getAllClaimsSignatures(self) -> ClaimsPair:
+    async def getAllClaimsSignatures(self):
         raise NotImplementedError
 
     @abstractmethod
@@ -100,8 +102,10 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
 
     # SUBMIT
 
-    async def submitClaimAttributes(self, schemaId: ID, claims: Dict[str, ClaimAttributeValues]):
-        await self._cacheValueForId(self._claims, schemaId, claims)
+    async def submitClaimAttributes(
+            self, schemaId: ID,
+            claimAttributes: Dict[str, ClaimAttributeValues]):
+        await self._cacheValueForId(self._claims, schemaId, claimAttributes)
 
     async def submitPrimaryClaim(self, schemaId: ID, claim: PrimaryClaim):
         await self._cacheValueForId(self._c1s, schemaId, claim)
@@ -141,13 +145,13 @@ class ProverWalletInMemory(ProverWallet, WalletInMemory):
         return Claims(c1, c2)
 
     async def getAllClaimsAttributes(self) -> ClaimsPair:
-        res = dict()
+        res = ClaimsPair()
         for schemaKey in self._claims.keys():
             res[schemaKey] = await self.getClaimAttributes(ID(schemaKey))
         return res
 
-    async def getAllClaimsSignatures(self) -> ClaimsPair:
-        res = ClaimsPair()
+    async def getAllClaimsSignatures(self):
+        res = dict()
         for schemaKey in self._c1s.keys():
             res[schemaKey] = await self.getClaimSignature(ID(schemaKey))
         return res

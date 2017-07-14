@@ -345,14 +345,6 @@ class ClaimRequest(namedtuple('ClaimRequest', 'userId, U, Ur'),
 class PrimaryClaim(
     namedtuple('PrimaryClaim', 'm2, A, e, v'),
     NamedTupleStrSerializer):
-    pass
-
-    def __str__(self):
-        rtn = ['Attributes:']
-        for key, value in self.attrs.items():
-            rtn.append('    {}: {}'.format(str(key), str(value)))
-
-        return os.linesep.join(rtn)
 
     def to_str_dict(self):
         return {
@@ -420,20 +412,20 @@ class Claims(namedtuple('Claims', 'primaryClaim, nonRevocClaim'),
 
         return cls(primaryClaim=primary, nonRevocClaim=nonRevoc)
 
-    def __str__(self):
-        return str(self.primaryClaim)
-
 
 class ClaimsPair(dict):
     def __str__(self):
         rtn = list()
         rtn.append('Claims')
 
-        for schema_key, claims in self.items():
+        for schema_key, claim_attrs in self.items():
             rtn.append('')
             rtn.append(schema_key.name)
             rtn.append(str(schema_key))
-            rtn.append(str(claims))
+            rtn.append('Attributes:')
+            for attr_name, attr_raw_enc in claim_attrs.items():
+                rtn.append('    {}: {}'.format(str(attr_name),
+                                               str(attr_raw_enc)))
 
         return os.linesep.join(rtn)
 
@@ -593,7 +585,6 @@ class InitProof(namedtuple('InitProof', 'nonRevocInitProof, primaryInitProof'),
 class PrimaryEqualProof(namedtuple('PrimaryEqualProof',
                                    'e, v, m, m1, m2, Aprime, revealedAttrs'),
                         NamedTupleStrSerializer):
-    pass
 
     def to_str_dict(self):
         return {
@@ -817,6 +808,9 @@ class ClaimAttributeValues(namedtuple('ClaimAttributeValues', 'raw, encoded'),
     def __new__(cls, raw=None, encoded=None):
         return super(ClaimAttributeValues, cls).__new__(cls, raw, encoded)
 
+    def __str__(self):
+        return self.raw
+
     def to_str_dict(self):
         return [str(self.raw), str(self.encoded)]
 
@@ -907,9 +901,12 @@ class ProofRequest:
 
     @property
     def fixedInfo(self):
-        return 'Status: Requested' + '\n' \
-                                     'Name: ' + self.name + '\n' \
-                                                            'Version: ' + self.version + '\n'
+        return 'Status: Requested' + '\n' + \
+               'Name: ' + self.name + '\n' + \
+               'Version: ' + self.version + '\n'
 
     def __str__(self):
-        return self.fixedInfo + self.attributeValues + self.verifiableClaimAttributeValues
+        return 'Proof Request\n' + \
+               self.fixedInfo + \
+               self.attributeValues + \
+               self.verifiableClaimAttributeValues

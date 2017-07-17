@@ -18,12 +18,12 @@ sed -i 's/{package_name}/'${PACKAGE_NAME}'/' ${PREREM_TMP}
 fpm --input-type "python" \
     --output-type "deb" \
     --verbose \
-    --maintainer "Evernym <dev@evernym.com>" \
     --architecture "amd64" \
     --python-package-name-prefix "python3" \
     --python-bin "/usr/bin/python3" \
     --exclude "*.pyc" \
     --exclude "*.pyo" \
+    --maintainer "Hyperledger <hyperledger-indy@lists.hyperledger.org>" \
     --after-install ${POSTINST_TMP} \
     --before-remove ${PREREM_TMP} \
     --name ${PACKAGE_NAME} \

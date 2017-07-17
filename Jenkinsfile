@@ -1,6 +1,6 @@
 #!groovy
 
-@Library('SovrinHelpers') _
+@Library('SovrinHelpersTest') _
 
 def name = 'indy-anoncreds'
 
@@ -52,4 +52,25 @@ def testWindowsNoDocker = {
     }
 }
 
-testAndPublish(name, [ubuntu: [anoncreds: testUbuntu], windows: [anoncreds: testWindowsNoDocker], windowsNoDocker: [anoncreds: testWindowsNoDocker]])
+def buildDebUbuntu = { repoName, releaseVersion, sourcePath ->
+    def volumeName = "indy-anoncreds-deb-u1604"
+    sh "docker volume rm -f $volumeName"
+    dir('build-scripts/ubuntu-1604') {
+        sh "./build-indy-anoncreds-docker.sh $sourcePath"
+    }
+    return "$volumeName"
+}
+
+def options = new TestAndPublishOptions()
+options.skip([
+    StagesEnum.IS_TESTED,
+    StagesEnum.TEST,
+    StagesEnum.AUTOMERGE,
+    StagesEnum.PYPI_RELEASE,
+    StagesEnum.PACK_RELEASE_DEPS,
+    StagesEnum.GITHUB_RELEASE,
+    StagesEnum.BUILD_RESULT_NOTIF
+])
+options.setPublishableBranches(['master'])
+
+testAndPublish(name, [ubuntu: [anoncreds: testUbuntu], windows: [anoncreds: testWindowsNoDocker], windowsNoDocker: [anoncreds: testWindowsNoDocker]], true, options, [ubuntu: buildDebUbuntu])

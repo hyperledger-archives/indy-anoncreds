@@ -71,6 +71,7 @@ async def create_proof_request(conn):
     schema_id = ID(schema.getKey())
 
     # 3. Create keys for the Schema
+    global global_dict
     await issuer.wallet.submitPublicKeys(schema_id, global_dict['public_key'])
 
     # 4. set attributes for user1
@@ -86,7 +87,6 @@ async def create_proof_request(conn):
         verifiableAttributes={'attr_uuid': AttributeInfo('name', schema.seqId)},
         predicates={'predicate_uuid': PredicateGE('age', 18)})
 
-    global global_dict
     global_dict['verifier'] = verifier
     global_dict['proof_request'] = proof_request
 

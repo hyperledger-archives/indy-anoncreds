@@ -4,7 +4,7 @@ import pytest
 
 from anoncreds.protocol.globals import PAIRING_GROUP
 from anoncreds.protocol.utils import toDictWithStrValues, \
-    deserializeFromStr, serializeToStr, fromDictWithStrValues, get_hash_as_int
+    deserializeFromStr, serializeToStr, fromDictWithStrValues, get_hash_as_int, intToArrayBytes, bytesToInt
 from anoncreds.test.conftest import primes
 from config.config import cmod
 
@@ -199,3 +199,18 @@ def _checkHashEqual(input):
     h1 = get_hash_as_int(*input)
     h2 = get_hash_as_int(*reversed(input))
     assert h1 == h2
+
+
+def testIntToArrayBytes():
+    val = cmod.integer(1606507817390189252221968804450207070282033)
+    res = [18, 113, 26, 39, 35, 240, 231, 239, 92, 226, 84, 46, 230, 174, 230, 41, 225, 49]
+    assert res == intToArrayBytes(val)
+
+def testBytesToInt():
+    val = [18, 113, 26, 39, 35, 240, 231, 239, 92, 226, 84, 46, 230, 174, 230, 41, 225, 49]
+    res = 1606507817390189252221968804450207070282033
+    assert res == bytesToInt(val)
+
+def testIntToArrayBytesAndBack():
+    val = cmod.integer(1606507817390189252221968804450207070282033)
+    assert val == bytesToInt(intToArrayBytes(val))

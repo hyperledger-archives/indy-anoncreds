@@ -1,11 +1,12 @@
 from anoncreds.protocol.globals import LARGE_VPRIME_PRIME, LARGE_E_START, \
     LARGE_E_END_RANGE, LARGE_PRIME
 from anoncreds.protocol.types import PublicKey, SecretKey, PrimaryClaim, ID, \
-    Attribs
+    Attribs, ClaimAttributeValues
 from anoncreds.protocol.utils import get_prime_in_range, strToCryptoInteger, \
     randomQR
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
 from config.config import cmod
+from typing import Dict
 
 
 class PrimaryClaimIssuer:
@@ -73,7 +74,7 @@ class PrimaryClaimIssuer:
         return prime
 
     async def issuePrimaryClaim(self, schemaId: ID, attributes: Attribs,
-                                U) -> PrimaryClaim:
+                                U) -> (PrimaryClaim, Dict[str, ClaimAttributeValues]):
         u = strToCryptoInteger(U) if isinstance(U, str) else U
 
         if not u:
@@ -90,8 +91,10 @@ class PrimaryClaimIssuer:
         A = await self._sign(schemaId, encodedAttrs, vprimeprime, u, e)
 
         m2 = await self._wallet.getContextAttr(schemaId)
-        return PrimaryClaim(attributes._vals, encodedAttrs, m2, A, e,
-                            vprimeprime)
+        claimAttributes = \
+            {attr: ClaimAttributeValues(attributes._vals[attr], encodedAttrs[attr]) for attr in attributes.keys()}
+
+        return (PrimaryClaim(m2, A, e, vprimeprime), claimAttributes)
 
     async def _sign(self, schemaId: ID, attrs, v, u, e):
         pk = await self._wallet.getPublicKey(schemaId)

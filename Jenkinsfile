@@ -2,7 +2,7 @@
 
 @Library('SovrinHelpers') _
 
-def name = 'anoncreds'
+def name = 'indy-anoncreds'
 
 def testUbuntu = {
     try {
@@ -52,4 +52,4 @@ def testWindowsNoDocker = {
     }
 }
 
-testAndPublish(name, [ubuntu: testUbuntu])
+testAndPublish(name, [ubuntu: [anoncreds: testUbuntu], windows: [anoncreds: testWindowsNoDocker], windowsNoDocker: [anoncreds: testWindowsNoDocker]])

@@ -1,13 +1,13 @@
 from typing import Dict
 
-from anoncreds.protocol.globals import LARGE_MASTER_SECRET, TYPE_CL
+from anoncreds.protocol.globals import LARGE_MASTER_SECRET
 from anoncreds.protocol.primary.primary_claim_issuer import PrimaryClaimIssuer
 from anoncreds.protocol.repo.attributes_repo import AttributeRepo
 from anoncreds.protocol.revocation.accumulators.non_revocation_claim_issuer import \
     NonRevocationClaimIssuer
 from anoncreds.protocol.types import PrimaryClaim, NonRevocationClaim, \
     Schema, ID, Claims, ClaimRequest, Attribs, PublicKey, \
-    RevocationPublicKey, AccumulatorPublicKey
+    RevocationPublicKey, AccumulatorPublicKey, ClaimAttributeValues
 from anoncreds.protocol.utils import strToInt, get_hash_as_int
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
 from config.config import cmod
@@ -97,7 +97,7 @@ class Issuer:
 
     async def issueClaim(self, schemaId: ID, claimRequest: ClaimRequest,
                          iA=None,
-                         i=None) -> Claims:
+                         i=None) -> (Claims, Dict[str, ClaimAttributeValues]):
         """
         Issue a claim for the given user and schema.
 
@@ -120,13 +120,16 @@ class Issuer:
         # TODO this has un-obvious side-effects
         await self._genContxt(schemaId, iA, claimRequest.userId)
 
-        c1 = await self._issuePrimaryClaim(schemaId, attributes,
+        (c1, claim) = await self._issuePrimaryClaim(schemaId, attributes,
                                            claimRequest.U)
         # TODO re-enable when revocation registry is fully implemented
         c2 = await self._issueNonRevocationClaim(schemaId, claimRequest.Ur,
                                                  iA,
                                                  i) if claimRequest.Ur else None
-        return Claims(primaryClaim=c1, nonRevocClaim=c2)
+
+        signature = Claims(primaryClaim=c1, nonRevocClaim=c2)
+
+        return (signature, claim)
 
     async def issueClaims(self, allClaimRequest: Dict[ID, ClaimRequest]) -> \
             Dict[ID, Claims]:
@@ -156,7 +159,7 @@ class Issuer:
         return m2
 
     async def _issuePrimaryClaim(self, schemaId: ID, attributes: Attribs,
-                                 U) -> PrimaryClaim:
+                                 U) -> (PrimaryClaim, Dict[str, ClaimAttributeValues]):
         return await self._primaryIssuer.issuePrimaryClaim(schemaId,
                                                            attributes, U)
 

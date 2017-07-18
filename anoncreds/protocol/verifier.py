@@ -5,8 +5,8 @@ from anoncreds.protocol.primary.primary_proof_verifier import \
     PrimaryProofVerifier
 from anoncreds.protocol.revocation.accumulators.non_revocation_proof_verifier import \
     NonRevocationProofVerifier
-from anoncreds.protocol.types import FullProof, ProofInput
-from anoncreds.protocol.utils import get_hash_as_int
+from anoncreds.protocol.types import FullProof, ProofRequest
+from anoncreds.protocol.utils import get_hash_as_int, isCryptoInteger
 from anoncreds.protocol.wallet.wallet import Wallet
 from config.config import cmod
 
@@ -24,33 +24,42 @@ class Verifier:
     def generateNonce(self):
         return cmod.integer(cmod.randomBits(LARGE_NONCE))
 
-    async def verify(self, proofInput: ProofInput, proof: FullProof,
-                     allRevealedAttrs, nonce):
+    async def verify(self, proofRequest: ProofRequest, proof: FullProof):
         """
         Verifies a proof from the prover.
 
-        :param proofInput: description of a proof to be presented (revealed
+        :param proofRequest: description of a proof to be presented (revealed
         attributes, predicates, timestamps for non-revocation)
         :param proof: a proof
-        :param allRevealedAttrs: values of revealed attributes (initial values, non-encoded)
-        :param nonce: verifier's nonce
         :return: True if verified successfully and false otherwise.
         """
+
+        if proofRequest.verifiableAttributes.keys() != proof.requestedProof.revealed_attrs.keys():
+            raise ValueError('Received attributes ={} do not correspond to requested={}'.format(
+                proof.requestedProof.revealed_attrs.keys(), proofRequest.verifiableAttributes.keys()))
+
+        if proofRequest.predicates.keys() != proof.requestedProof.predicates.keys():
+            raise ValueError('Received predicates ={} do not correspond to requested={}'.format(
+                proof.requestedProof.predicates.keys(), proofRequest.predicates.keys()))
+
         TauList = []
-        for schemaKey, proofItem in zip(proof.schemaKeys, proof.proofs):
-            if proofItem.nonRevocProof:
+        for (uuid, proofItem) in proof.proofs.items():
+            if proofItem.proof.nonRevocProof:
                 TauList += await self._nonRevocVerifier.verifyNonRevocation(
-                    proofInput, schemaKey, proof.cHash,
-                    proofItem.nonRevocProof)
-            if proofItem.primaryProof:
-                TauList += await self._primaryVerifier.verify(schemaKey,
-                                                              proof.cHash,
-                                                              proofItem.primaryProof,
-                                                              allRevealedAttrs)
+                    proofRequest, proofItem.schema_seq_no, proof.aggregatedProof.cHash,
+                    proofItem.proof.nonRevocProof)
+            if proofItem.proof.primaryProof:
+                TauList += await self._primaryVerifier.verify(proofItem.schema_seq_no,
+                                                              proof.aggregatedProof.cHash,
+                                                              proofItem.proof.primaryProof)
 
-        CHver = self._get_hash(proof.CList, TauList, nonce)
+        CHver = self._get_hash(proof.aggregatedProof.CList, self._prepare_collection(TauList),
+                               cmod.integer(proofRequest.nonce))
 
-        return CHver == proof.cHash
+        return CHver == proof.aggregatedProof.cHash
+
+    def _prepare_collection(self, values):
+        return [cmod.toInt(el) if isCryptoInteger(el) else el for el in values]
 
     def _get_hash(self, CList, TauList, nonce):
         return get_hash_as_int(nonce,

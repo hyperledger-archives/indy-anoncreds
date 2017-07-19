@@ -8,6 +8,13 @@ OUTPUT_PATH=${1:-.}
 function build_from_pypi {
     PACKAGE_NAME=$1
 
+    if [ ${PACKAGE_NAME} == "Charm-Crypto" ];
+    then
+        EXTRA_DEPENDENCE="-d libpbc0"
+    else
+        EXTRA_DEPENDENCE=""
+    fi
+
     if [ -z $2 ]; then
         PACKAGE_VERSION=""
     else
@@ -28,7 +35,8 @@ function build_from_pypi {
         --python-bin "/usr/bin/python3" \
         --exclude "*.pyc" \
         --exclude "*.pyo" \
-        --maintainer "Sovrin Foundation <repo@sovrin.org>" \
+        ${EXTRA_DEPENDENCE} \
+        --maintainer "Hyperledger <hyperledger-indy@lists.hyperledger.org>" \
         --after-install ${POSTINST_TMP} \
         --before-remove ${PREREM_TMP} \
         --package ${OUTPUT_PATH} \

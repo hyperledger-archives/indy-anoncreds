@@ -36,7 +36,7 @@ setup(
     long_description='Anonymous credentials',
     url='https://github.com/hyperledger/indy-anoncreds',
     author=__author__,
-    author_email='repo@sovrin.org',
+    author_email='hyperledger-indy@lists.hyperledger.org',
     license=__license__,
     keywords='Anonymous credentials',
     packages=find_packages(exclude=['docs', 'docs*']),

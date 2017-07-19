@@ -23,7 +23,7 @@ fpm --input-type "python" \
     --python-bin "/usr/bin/python3" \
     --exclude "*.pyc" \
     --exclude "*.pyo" \
-    --maintainer "Sovrin Foundation <repo@sovrin.org>" \
+    --maintainer "Hyperledger <hyperledger-indy@lists.hyperledger.org>" \
     --after-install ${POSTINST_TMP} \
     --before-remove ${PREREM_TMP} \
     --name ${PACKAGE_NAME} \

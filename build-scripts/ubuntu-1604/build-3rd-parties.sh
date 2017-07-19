@@ -36,7 +36,7 @@ function build_from_pypi {
         --exclude "*.pyc" \
         --exclude "*.pyo" \
         ${EXTRA_DEPENDENCE} \
-        --maintainer "Sovrin Foundation <repo@sovrin.org>" \
+        --maintainer "Hyperledger <hyperledger-indy@lists.hyperledger.org>" \
         --after-install ${POSTINST_TMP} \
         --before-remove ${PREREM_TMP} \
         --package ${OUTPUT_PATH} \

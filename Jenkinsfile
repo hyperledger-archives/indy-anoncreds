@@ -52,4 +52,15 @@ def testWindowsNoDocker = {
     }
 }
 
-testAndPublish(name, [ubuntu: [anoncreds: testUbuntu], windows: [anoncreds: testWindowsNoDocker], windowsNoDocker: [anoncreds: testWindowsNoDocker]])
+def buildDebUbuntu = { repoName, releaseVersion, sourcePath ->
+    def volumeName = "indy-anoncreds-deb-u1604"
+    sh "docker volume rm -f $volumeName"
+    dir('build-scripts/ubuntu-1604') {
+        sh "./build-indy-anoncreds-docker.sh $sourcePath"
+        sh "./build-3rd-parties-docker.sh"
+    }
+    return "$volumeName"
+}
+
+def options = new TestAndPublishOptions()
+testAndPublish(name, [ubuntu: [anoncreds: testUbuntu], windows: [anoncreds: testWindowsNoDocker], windowsNoDocker: [anoncreds: testWindowsNoDocker]], true, options, [ubuntu: buildDebUbuntu])

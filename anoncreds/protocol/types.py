@@ -49,6 +49,10 @@ class AttribDef:
                          self.attrTypes + other.attrTypes)
 
     def attribs(self, **vals):
+        for k in vals:
+            # Check that keys provided in vals match the attibute names
+            # in the schema definition
+            assert k in self.attribNames()
         return Attribs(self, **vals)
 
     def attribNames(self):

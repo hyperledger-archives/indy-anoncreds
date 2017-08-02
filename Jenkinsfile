@@ -1,6 +1,6 @@
 #!groovy
 
-@Library('SovrinHelpers') _
+@Library('SovrinHelpersTest') _
 
 def name = 'indy-anoncreds'
 
@@ -53,10 +53,10 @@ def testWindowsNoDocker = {
 }
 
 def buildDebUbuntu = { repoName, releaseVersion, sourcePath ->
-    def volumeName = "indy-anoncreds-deb-u1604"
+    def volumeName = "$name-deb-u1604"
     sh "docker volume rm -f $volumeName"
     dir('build-scripts/ubuntu-1604') {
-        sh "./build-indy-anoncreds-docker.sh $sourcePath"
+        sh "./build-$name-docker.sh $sourcePath $releaseVersion"
         sh "./build-3rd-parties-docker.sh"
     }
     return "$volumeName"

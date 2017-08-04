@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import Dict, Any
 
+from anoncreds.protocol.exceptions import SchemaNotFoundError
 from anoncreds.protocol.types import ID, PublicKey, RevocationPublicKey, \
     Schema, Tails, Accumulator, \
     AccumulatorPublicKey, TimestampType, SchemaKey
@@ -90,7 +91,7 @@ class PublicRepoInMemory(PublicRepo):
         if schemaId.schemaId and schemaId.schemaId in self._schemasById:
             return self._schemasById[schemaId.schemaId]
 
-        raise KeyError(
+        raise SchemaNotFoundError(
             'No schema with ID={} and key={}'.format(
                 schemaId.schemaId,
                 schemaId.schemaKey))

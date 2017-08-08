@@ -18,6 +18,7 @@ cd ${TMP_DIR}/build-scripts/ubuntu-1604
 
 # build the package
 
+sed -i 's/{package_name}/'${PACKAGE_NAME}'/' 'postinst'
 sed -i 's/{package_name}/'${PACKAGE_NAME}'/' 'prerm'
 
 fpm --input-type "python" \
@@ -29,7 +30,7 @@ fpm --input-type "python" \
     --exclude "*.pyc" \
     --exclude "*.pyo" \
     --maintainer "Hyperledger <hyperledger-indy@lists.hyperledger.org>" \
-    --after-install "postinst_anoncreds" \
+    --after-install "postinst" \
     --before-remove "prerm" \
     --name ${PACKAGE_NAME} \
     --package ${OUTPUT_PATH} \

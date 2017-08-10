@@ -92,7 +92,8 @@ class PrimaryClaimIssuer:
 
         m2 = await self._wallet.getContextAttr(schemaId)
         claimAttributes = \
-            {attr: ClaimAttributeValues(attributes._vals[attr], encodedAttrs[attr]) for attr in attributes.keys()}
+            {attr: ClaimAttributeValues(
+                attributes._vals[attr], encodedAttrs[attr]) for attr in attributes.keys()}
 
         return (PrimaryClaim(m2, A, e, vprimeprime), claimAttributes)
 

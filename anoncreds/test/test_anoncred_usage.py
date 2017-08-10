@@ -47,7 +47,8 @@ async def testSingleIssuerSingleProver(primes1):
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
 
     proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
-                                verifiableAttributes={'attr_uuid': AttributeInfo('name', schema.seqId)},
+                                verifiableAttributes={
+                                    'attr_uuid': AttributeInfo('name', schema.seqId)},
                                 predicates={'predicate_uuid': PredicateGE('age', 18)})
 
     proof = await prover.presentProof(proofRequest)
@@ -152,7 +153,8 @@ async def testSingleIssuerMultipleCredDefsSingleProver(primes1, primes2):
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
 
     proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
-                                verifiableAttributes={'attr_uuid1': AttributeInfo('name', schema1.seqId)},
+                                verifiableAttributes={
+                                    'attr_uuid1': AttributeInfo('name', schema1.seqId)},
                                 predicates={'predicate_uuid1': PredicateGE('age', 18),
                                             'predicate_uuid2': PredicateGE('period', 5)})
 
@@ -194,7 +196,8 @@ async def testSingleIssuerSingleProverPrimaryOnly(primes1):
     verifier = Verifier(WalletInMemory('verifier1', publicRepo))
 
     proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
-                                verifiableAttributes={'attr_uuid1': AttributeInfo('name', schema.seqId)},
+                                verifiableAttributes={
+                                    'attr_uuid1': AttributeInfo('name', schema.seqId)},
                                 predicates={'predicate_uuid1': PredicateGE('age', 18)})
 
     proof = await prover.presentProof(proofRequest)

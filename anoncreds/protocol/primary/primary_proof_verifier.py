@@ -41,7 +41,7 @@ class PrimaryProofVerifier:
     async def _verifyGEPredicate(self, schemaId, cH,
                                  proof: PrimaryPredicateGEProof):
         pk = await self._wallet.getPublicKey(ID(schemaId=schemaId))
-        k, v = proof.predicate.attrName, proof.predicate.value
+        v = proof.predicate.value
 
         TauList = calcTge(pk, proof.u, proof.r, proof.mj, proof.alpha, proof.T)
 

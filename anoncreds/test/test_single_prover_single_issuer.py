@@ -12,7 +12,7 @@ async def testPrimaryClaimOnlyEmpty(prover1, verifier, claimsProver1Gvt, nonce):
     claims, requestedProof = await prover1._findClaims(proofRequest)
     claims = {schemaId: ProofClaims(
         Claims(primaryClaim=proofClaim.claims.primaryClaim))
-              for schemaId, proofClaim in claims.items()}
+        for schemaId, proofClaim in claims.items()}
 
     proof = await prover1._prepareProof(claims, proofRequest.nonce, requestedProof)
 
@@ -84,7 +84,8 @@ async def testMultipleRevealedAttrs(prover1, verifier, claimsProver1Gvt):
 @pytest.mark.asyncio
 async def testGePredicate(prover1, verifier, claimsProver1Gvt):
     proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
-                                verifiableAttributes={'attr_uuid': AttributeInfo(name='name')},
+                                verifiableAttributes={
+                                    'attr_uuid': AttributeInfo(name='name')},
                                 predicates={'predicate_uuid': PredicateGE('age', 18)})
     assert await presentProofAndVerify(verifier, proofRequest, prover1)
 
@@ -93,7 +94,8 @@ async def testGePredicate(prover1, verifier, claimsProver1Gvt):
 @pytest.mark.asyncio
 async def testGePredicateForEqual(prover1, verifier, claimsProver1Gvt):
     proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
-                                verifiableAttributes={'attr_uuid': AttributeInfo(name='name')},
+                                verifiableAttributes={
+                                    'attr_uuid': AttributeInfo(name='name')},
                                 predicates={'predicate_uuid': PredicateGE('age', 28)})
     assert await presentProofAndVerify(verifier, proofRequest, prover1)
 
@@ -102,7 +104,8 @@ async def testGePredicateForEqual(prover1, verifier, claimsProver1Gvt):
 @pytest.mark.asyncio
 async def testGePredicateNegative(prover1, verifier, claimsProver1Gvt):
     proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
-                                verifiableAttributes={'attr_uuid': AttributeInfo(name='name')},
+                                verifiableAttributes={
+                                    'attr_uuid': AttributeInfo(name='name')},
                                 predicates={'predicate_uuid': PredicateGE('age', 29)})
     with pytest.raises(ValueError):
         await presentProofAndVerify(verifier, proofRequest, prover1)
@@ -112,7 +115,8 @@ async def testGePredicateNegative(prover1, verifier, claimsProver1Gvt):
 @pytest.mark.asyncio
 async def testMultipleGePredicate(prover1, verifier, claimsProver1Gvt):
     proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
-                                verifiableAttributes={'attr_uuid': AttributeInfo(name='name')},
+                                verifiableAttributes={
+                                    'attr_uuid': AttributeInfo(name='name')},
                                 predicates={'predicate_uuid1': PredicateGE('age', 18),
                                             'predicate_uuid2': PredicateGE('height', 170)})
     assert await presentProofAndVerify(verifier, proofRequest, prover1)
@@ -122,7 +126,8 @@ async def testMultipleGePredicate(prover1, verifier, claimsProver1Gvt):
 @pytest.mark.asyncio
 async def testMultipleGePredicateNegative(prover1, verifier, claimsProver1Gvt):
     proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
-                                verifiableAttributes={'attr_uuid': AttributeInfo(name='name')},
+                                verifiableAttributes={
+                                    'attr_uuid': AttributeInfo(name='name')},
                                 predicates={'predicate_uuid1': PredicateGE('age', 18),
                                             'predicate_uuid2': PredicateGE('height', 180)})
     with pytest.raises(ValueError):
@@ -156,7 +161,8 @@ async def testUParamShouldBeSame(prover1, verifier, issuerGvt, schemaGvtId,
     await prover1.processClaim(schemaGvtId, claim_attributes, claim_signature)
 
     proofRequest = ProofRequest("proof1", "1.0", verifier.generateNonce(),
-                                verifiableAttributes={'attr_uuid': AttributeInfo(name='name')},
+                                verifiableAttributes={
+                                    'attr_uuid': AttributeInfo(name='name')},
                                 predicates={})
     assert not await presentProofAndVerify(verifier, proofRequest, prover1)
 

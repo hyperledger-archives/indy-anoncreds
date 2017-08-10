@@ -39,13 +39,15 @@ def main():
             logging.debug('get_claim_def -> done')
         if ('type' in data) & (data['type'] == 'issue_claim'):
             logging.debug('issue_claim -> start')
-            future = asyncio.ensure_future(issue_claim(conn, data['data']['blinded_ms']))
+            future = asyncio.ensure_future(
+                issue_claim(conn, data['data']['blinded_ms']))
             loop.run_until_complete(future)
             logging.debug('issue_claim -> done')
         if (('type' in data) & (data['type'] == 'close')) | (not data):
             break
 
     sock.close()
+
 
 async def issuer_init(primes, conn):
     # 1. Init entities
@@ -84,7 +86,8 @@ async def issuer_init(primes, conn):
 
 
 async def issue_claim(conn, claim_request):
-    claim_request = ClaimRequest.from_str_dict(claim_request, global_dict['public_key'].N)
+    claim_request = ClaimRequest.from_str_dict(
+        claim_request, global_dict['public_key'].N)
 
     (signature, claims) = await global_dict['issuer'].issueClaim(global_dict['schema_id'], claim_request)
 

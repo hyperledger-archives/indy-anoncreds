@@ -76,7 +76,8 @@ class PrimaryProofBuilder:
             -> PrimaryEqualInitProof:
         m2Tilde = m2Tilde if m2Tilde else cmod.integer(
             cmod.randomBits(LARGE_MVECT))
-        revealedAttrs, unrevealedAttrs = splitRevealedAttrs(claimAttributes, [a.name for a in revealedAttrs])
+        revealedAttrs, unrevealedAttrs = splitRevealedAttrs(
+            claimAttributes, [a.name for a in revealedAttrs])
         mtilde = self._getMTilde(unrevealedAttrs)
 
         Ra = cmod.integer(cmod.randomBits(LARGE_VPRIME))
@@ -176,7 +177,7 @@ class PrimaryProofBuilder:
 
         alpha = initProof.alphaTilde + cH * (initProof.r[DELTA] - urproduct)
 
-        k, value = initProof.predicate.attrName, initProof.predicate.value
+        k = initProof.predicate.attrName
         return PrimaryPredicateGEProof(u, r, alpha, eqProof.m[str(k)],
                                        initProof.T, initProof.predicate)
 

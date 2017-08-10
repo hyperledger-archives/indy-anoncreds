@@ -3,7 +3,7 @@ from anoncreds.protocol.types import NonRevocationClaim, RevocationPublicKey, \
     RevocationSecretKey, \
     Accumulator, AccumulatorPublicKey, AccumulatorSecretKey, Witness, \
     ID, TimestampType, Tails
-from anoncreds.protocol.utils import currentTimestampMillisec, groupIdentityG1, groupIdentityG2
+from anoncreds.protocol.utils import currentTimestampMillisec, groupIdentityG2
 from anoncreds.protocol.wallet.issuer_wallet import IssuerWallet
 from config.config import cmod
 
@@ -42,7 +42,7 @@ class NonRevocationClaimIssuer:
 
     async def issueAccumulator(self, schemaId, iA, L) \
             -> (Accumulator, Tails, AccumulatorPublicKey,
-                    AccumulatorSecretKey):
+                AccumulatorSecretKey):
         pkR = await self._wallet.getPublicKeyRevocation(schemaId)
         group = cmod.PairingGroup(PAIRING_GROUP)
         gamma = group.random(cmod.ZR)

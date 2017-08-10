@@ -7,19 +7,23 @@ from anoncreds.protocol.utils import encodeAttr
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testEmpty(prover1):
-    proofRequest = ProofRequest("proof1", "1.0", 1, verifiableAttributes={}, predicates={})
+    proofRequest = ProofRequest(
+        "proof1", "1.0", 1, verifiableAttributes={}, predicates={})
     assert ({}, RequestedProof([], [], [], [])) == await prover1._findClaims(proofRequest)
 
 
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testOneRevealedOnly(prover1, allClaims, schemaGvtId, attrRepo, schemaGvt):
-    proofRequest = ProofRequest("proof1", "1.0", 1, verifiableAttributes={'uuid': AttributeInfo(name='name')})
+    proofRequest = ProofRequest("proof1", "1.0", 1, verifiableAttributes={
+                                'uuid': AttributeInfo(name='name')})
     claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
 
     proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [])}
-    attr = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
-    requestedProof = RequestedProof(revealed_attrs={'uuid': [str(schemaGvt.seqId), attr, str(encodeAttr(attr))]})
+    attr = attrRepo.getAttributes(
+        schemaGvtId.schemaKey, prover1.proverId)['name']
+    requestedProof = RequestedProof(
+        revealed_attrs={'uuid': [str(schemaGvt.seqId), attr, str(encodeAttr(attr))]})
 
     assert proofClaims, requestedProof == await prover1._findClaims(proofRequest)
 
@@ -34,8 +38,10 @@ async def testPredicatesEmpty(prover1, allClaims, schemaGvtId, attrRepo, schemaG
 
     proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [])}
 
-    attr = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
-    requestedProof = RequestedProof(revealed_attrs={'uuid': [schemaGvt.seqId, attr, str(encodeAttr(attr))]})
+    attr = attrRepo.getAttributes(
+        schemaGvtId.schemaKey, prover1.proverId)['name']
+    requestedProof = RequestedProof(
+        revealed_attrs={'uuid': [schemaGvt.seqId, attr, str(encodeAttr(attr))]})
 
     assert proofClaims, requestedProof == await prover1._findClaims(proofRequest)
 
@@ -43,11 +49,12 @@ async def testPredicatesEmpty(prover1, allClaims, schemaGvtId, attrRepo, schemaG
 @pytest.mark.skipif('sys.platform == "win32"', reason='SOV-86')
 @pytest.mark.asyncio
 async def testOnePredicateOnly(prover1, allClaims, schemaGvtId, schemaGvt):
-    proofRequest = ProofRequest("proof1", "1.0", 1, predicates={'uuid': PredicateGE('age', 18)})
+    proofRequest = ProofRequest("proof1", "1.0", 1, predicates={
+                                'uuid': PredicateGE('age', 18)})
 
     claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
     proofClaims = {schemaGvt.seqId:
-                       ProofClaims(claimsGvt, [], [PredicateGE('age', 18)])}
+                   ProofClaims(claimsGvt, [], [PredicateGE('age', 18)])}
 
     requestedProof = RequestedProof(predicates={'uuid': schemaGvt.seqId})
 
@@ -62,7 +69,7 @@ async def testRevealedEmpty(prover1, allClaims, schemaGvtId, schemaGvt):
 
     claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
     proofClaims = {schemaGvt.seqId:
-                       ProofClaims(claimsGvt, [], [PredicateGE('age', 18)])}
+                   ProofClaims(claimsGvt, [], [PredicateGE('age', 18)])}
 
     requestedProof = RequestedProof(predicates={'uuid': schemaGvt.seqId})
 
@@ -74,13 +81,16 @@ async def testRevealedEmpty(prover1, allClaims, schemaGvtId, schemaGvt):
 async def testRevealedAndPredicateSameIssuer(prover1, allClaims, schemaGvtId,
                                              attrRepo, schemaGvt):
     proofRequest = ProofRequest("proof1", "1.0", 1,
-                                verifiableAttributes={'attr_uuid': AttributeInfo(name='name')},
+                                verifiableAttributes={
+                                    'attr_uuid': AttributeInfo(name='name')},
                                 predicates={'predicate_uuid': PredicateGE('age', 18)})
 
     claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
-    proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [PredicateGE('age', 18)])}
+    proofClaims = {schemaGvt.seqId: ProofClaims(
+        claimsGvt, ['name'], [PredicateGE('age', 18)])}
 
-    attr = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
+    attr = attrRepo.getAttributes(
+        schemaGvtId.schemaKey, prover1.proverId)['name']
     requestedProof = RequestedProof(revealed_attrs={'attr_uuid': [schemaGvt.seqId, attr, str(encodeAttr(attr))]},
                                     predicates={'predicate_uuid': schemaGvt.seqId})
 
@@ -93,7 +103,8 @@ async def testRevealedAndPredicateDifferentIssuers(prover1, allClaims,
                                                    schemaGvtId, schemaXyzId,
                                                    attrRepo, schemaGvt):
     proofRequest = ProofRequest("proof1", "1.0", 1,
-                                verifiableAttributes={'attr_uuid': AttributeInfo(name='status')},
+                                verifiableAttributes={
+                                    'attr_uuid': AttributeInfo(name='status')},
                                 predicates={'predicate_uuid': PredicateGE('age', 18)})
 
     claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
@@ -101,7 +112,8 @@ async def testRevealedAndPredicateDifferentIssuers(prover1, allClaims,
     proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, [], [PredicateGE('age', 18)]),
                    schemaGvt.seqId: ProofClaims(claimsXyz, ['status'], [])}
 
-    attr = attrRepo.getAttributes(schemaXyzId.schemaKey, prover1.proverId)['status']
+    attr = attrRepo.getAttributes(
+        schemaXyzId.schemaKey, prover1.proverId)['status']
     requestedProof = RequestedProof(revealed_attrs={'attr_uuid': [schemaGvt.seqId, attr, str(encodeAttr(attr))]},
                                     predicates={'predicate_uuid': schemaGvt.seqId})
 
@@ -121,8 +133,10 @@ async def testMultipledRevealed(prover1, allClaims, schemaGvtId,
     proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], []),
                    schemaGvt.seqId: ProofClaims(claimsXyz, ['status'], [])}
 
-    attr1 = attrRepo.getAttributes(schemaXyzId.schemaKey, prover1.proverId)['status']
-    attr2 = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
+    attr1 = attrRepo.getAttributes(
+        schemaXyzId.schemaKey, prover1.proverId)['status']
+    attr2 = attrRepo.getAttributes(
+        schemaGvtId.schemaKey, prover1.proverId)['name']
     requestedProof = RequestedProof(revealed_attrs={'attr_uuid1': [schemaGvt.seqId, attr1, str(encodeAttr(attr1))],
                                                     'attr_uuid2': [schemaGvt.seqId, attr2, str(encodeAttr(attr2))]})
 
@@ -163,8 +177,10 @@ async def testMultipleAll(prover1, allClaims, schemaGvtId, schemaXyzId,
     proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [PredicateGE('age', 18)]),
                    schemaGvt.seqId: ProofClaims(claimsXyz, ['status'], [PredicateGE('period', 8)])}
 
-    attr1 = attrRepo.getAttributes(schemaXyzId.schemaKey, prover1.proverId)['status']
-    attr2 = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
+    attr1 = attrRepo.getAttributes(
+        schemaXyzId.schemaKey, prover1.proverId)['status']
+    attr2 = attrRepo.getAttributes(
+        schemaGvtId.schemaKey, prover1.proverId)['name']
 
     requestedProof = RequestedProof(
         revealed_attrs={'attr_uuid1': [schemaGvt.seqId, attr1, str(encodeAttr(attr1))],
@@ -204,8 +220,10 @@ async def testOneRevealedFromSchema(prover1, allClaims, schemaGvtId, attrRepo, s
     claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
 
     proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [])}
-    attr = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
-    requestedProof = RequestedProof(revealed_attrs={'uuid': [str(schemaGvt.seqId), attr, str(encodeAttr(attr))]})
+    attr = attrRepo.getAttributes(
+        schemaGvtId.schemaKey, prover1.proverId)['name']
+    requestedProof = RequestedProof(
+        revealed_attrs={'uuid': [str(schemaGvt.seqId), attr, str(encodeAttr(attr))]})
 
     assert proofClaims, requestedProof == await prover1._findClaims(proofRequest)
 
@@ -230,8 +248,10 @@ async def testOneRevealedFromSpecificSchemaAndIssuer(prover1, allClaims, schemaG
     claimsGvt = await prover1.wallet.getClaimSignature(schemaGvtId)
 
     proofClaims = {schemaGvt.seqId: ProofClaims(claimsGvt, ['name'], [])}
-    attr = attrRepo.getAttributes(schemaGvtId.schemaKey, prover1.proverId)['name']
-    requestedProof = RequestedProof(revealed_attrs={'uuid': [str(schemaGvt.seqId), attr, str(encodeAttr(attr))]})
+    attr = attrRepo.getAttributes(
+        schemaGvtId.schemaKey, prover1.proverId)['name']
+    requestedProof = RequestedProof(
+        revealed_attrs={'uuid': [str(schemaGvt.seqId), attr, str(encodeAttr(attr))]})
 
     assert proofClaims, requestedProof == await prover1._findClaims(proofRequest)
 

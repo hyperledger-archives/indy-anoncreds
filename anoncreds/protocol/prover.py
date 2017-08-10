@@ -162,8 +162,10 @@ class Prover:
         allClaimsAttributes = await self.wallet.getAllClaimsAttributes()
 
         async def addProof():
-            revealedAttrsForClaim = [a for a in revealedAttrs.values() if a.name in claim.keys()]
-            revealedPredicatesForClaim = [p for p in predicates.values() if p.attrName in claim.keys()]
+            revealedAttrsForClaim = [
+                a for a in revealedAttrs.values() if a.name in claim.keys()]
+            revealedPredicatesForClaim = [
+                p for p in predicates.values() if p.attrName in claim.keys()]
 
             claims = await self.wallet.getClaimSignature(ID(schemaId=schemaId))
             proofClaim = ProofClaims(claims=claims, revealedAttrs=revealedAttrsForClaim,
@@ -175,12 +177,13 @@ class Prover:
             schemas[schemaKey] = (await self.wallet.getSchema(ID(schemaKey)))
 
         for uuid, revealedAttr in revealedAttrs.items():
-            matches = [(schemas[key].seqId, c) for key, c in allClaimsAttributes.items() if revealedAttr.name in c
-                       and (schemas[key].seqId == revealedAttr.schema_seq_no if revealedAttr.schema_seq_no else True)
-                       and (schemas[key].issuerId == revealedAttr.issuer_did if revealedAttr.issuer_did else True)]
+            matches = [(schemas[key].seqId, c) for key, c in allClaimsAttributes.items() if revealedAttr.name in c and
+                       (schemas[key].seqId == revealedAttr.schema_seq_no if revealedAttr.schema_seq_no else True) and
+                       (schemas[key].issuerId == revealedAttr.issuer_did if revealedAttr.issuer_did else True)]
 
             if len(matches) == 0:
-                raise ValueError("A claim isn't found for the following attributes: {}", revealedAttr.name)
+                raise ValueError(
+                    "A claim isn't found for the following attributes: {}", revealedAttr.name)
 
             schemaId, claim = matches[0]
             foundRevealedAttrs[uuid] = [str(schemaId), str(claim[revealedAttr.name].raw),
@@ -190,12 +193,13 @@ class Prover:
                 await addProof()
 
         for uuid, predicate in predicates.items():
-            matches = [(schemas[key].seqId, c) for key, c in allClaimsAttributes.items() if predicate.attrName in c
-                       and (schemas[key].seqId == predicate.schema_seq_no if predicate.schema_seq_no else True)
-                       and (schemas[key].issuerId == predicate.issuer_did if predicate.issuer_did else True)]
+            matches = [(schemas[key].seqId, c) for key, c in allClaimsAttributes.items() if predicate.attrName in c and
+                       (schemas[key].seqId == predicate.schema_seq_no if predicate.schema_seq_no else True) and
+                       (schemas[key].issuerId == predicate.issuer_did if predicate.issuer_did else True)]
 
             if len(matches) == 0:
-                raise ValueError("A claim isn't found for the following predicate: {}", predicate)
+                raise ValueError(
+                    "A claim isn't found for the following predicate: {}", predicate)
 
             schemaId, claim = matches[0]
             foundPredicates[uuid] = str(schemaId)
@@ -203,7 +207,8 @@ class Prover:
             if schemaId not in proofClaims:
                 await addProof()
 
-        requestedProof = RequestedProof(revealed_attrs=foundRevealedAttrs, predicates=foundPredicates)
+        requestedProof = RequestedProof(
+            revealed_attrs=foundRevealedAttrs, predicates=foundPredicates)
 
         return proofClaims, requestedProof
 
@@ -241,7 +246,8 @@ class Prover:
             initProofs[schemaId] = initProof
 
         # 2. hash
-        cH = self._get_hash(self._prepare_collection(CList), self._prepare_collection(TauList), nonce)
+        cH = self._get_hash(self._prepare_collection(
+            CList), self._prepare_collection(TauList), nonce)
 
         # 3. finalize proofs
         proofs = {}
@@ -256,7 +262,8 @@ class Prover:
             schema = await self.wallet.getSchema(ID(schemaId=schemaId))
 
             proof = Proof(primaryProof, nonRevocProof)
-            proofInfo = ProofInfo(proof=proof, schema_seq_no=schemaId, issuer_did=schema.issuerId)
+            proofInfo = ProofInfo(
+                proof=proof, schema_seq_no=schemaId, issuer_did=schema.issuerId)
 
             proofs[str(schemaId)] = proofInfo
 

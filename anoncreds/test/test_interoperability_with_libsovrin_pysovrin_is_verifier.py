@@ -42,7 +42,8 @@ def main():
         if ('type' in data) & (data['type'] == 'receive_claim_def'):
             logging.debug('receive_claim_def -> start')
             global global_dict
-            global_dict['public_key'] = PublicKey.from_str_dict(data['data']['data']['primary'])
+            global_dict['public_key'] = PublicKey.from_str_dict(
+                data['data']['data']['primary'])
             logging.debug('receive_claim_def -> done')
         if ('type' in data) & (data['type'] == 'get_proof_request'):
             logging.debug('get_proof_request -> start')
@@ -84,13 +85,15 @@ async def create_proof_request(conn):
     proof_request = ProofRequest(
         name='Test_proof', version='1.0',
         nonce=verifier.generateNonce(),
-        verifiableAttributes={'attr_uuid': AttributeInfo('name', schema.seqId)},
+        verifiableAttributes={
+            'attr_uuid': AttributeInfo('name', schema.seqId)},
         predicates={'predicate_uuid': PredicateGE('age', 18)})
 
     global_dict['verifier'] = verifier
     global_dict['proof_request'] = proof_request
 
     conn.send(json.dumps(proof_request.to_str_dict()).encode())
+
 
 async def verify(proof, conn):
     proof = FullProof.from_str_dict(proof, [global_dict['public_key'].N])

@@ -17,8 +17,7 @@ primes = {
         (cmod.integer(
             157329491389375793912190594961134932804032426403110797476730107804356484516061051345332763141806005838436304922612495876180233509449197495032194146432047460167589034147716097417880503952139805241591622353828629383332869425029086898452227895418829799945650973848983901459733426212735979668835984691928193677469),
          cmod.integer(
-             151323892648373196579515752826519683836764873607632072057591837216698622729557534035138587276594156320800768525825023728398410073692081011811496168877166664537052088207068061172594879398773872352920912390983199416927388688319207946493810449203702100559271439586753256728900713990097168484829574000438573295723))
-    , "prime2":
+             151323892648373196579515752826519683836764873607632072057591837216698622729557534035138587276594156320800768525825023728398410073692081011811496168877166664537052088207068061172594879398773872352920912390983199416927388688319207946493810449203702100559271439586753256728900713990097168484829574000438573295723)), "prime2":
         (cmod.integer(
             150619677884468353208058156632953891431975271416620955614548039937246769610622017033385394658879484186852231469238992217246264205570458379437126692055331206248530723117202131739966737760399755490935589223401123762051823602343810554978803032803606907761937587101969193241921351011430750970746500680609001799529),
          cmod.integer(
@@ -207,7 +206,8 @@ def claimsProver1Gvt(prover1, issuerGvt, claimsRequestProver1Gvt, schemaGvtId,
                      attrsProver1Gvt, event_loop):
     signature, claim = event_loop.run_until_complete(
         issuerGvt.issueClaim(schemaGvtId, claimsRequestProver1Gvt))
-    event_loop.run_until_complete(prover1.processClaim(schemaGvtId, claim, signature))
+    event_loop.run_until_complete(
+        prover1.processClaim(schemaGvtId, claim, signature))
     return event_loop.run_until_complete(
         prover1.wallet.getClaimSignature(schemaGvtId))
 
@@ -219,7 +219,8 @@ def claimsProver2Gvt(prover2, issuerGvt, schemaGvtId, attrsProver2Gvt,
         prover2.createClaimRequest(schemaGvtId))
     signature, claim = event_loop.run_until_complete(
         issuerGvt.issueClaim(schemaGvtId, claimsReq))
-    event_loop.run_until_complete(prover2.processClaim(schemaGvtId, claim, signature))
+    event_loop.run_until_complete(
+        prover2.processClaim(schemaGvtId, claim, signature))
     return event_loop.run_until_complete(
         prover2.wallet.getClaimSignature(schemaGvtId))
 
@@ -231,7 +232,8 @@ def claimsProver1Xyz(prover1, issuerXyz, schemaXyzId, attrsProver1Xyz,
         prover1.createClaimRequest(schemaXyzId))
     signature, claim = event_loop.run_until_complete(
         issuerXyz.issueClaim(schemaXyzId, claimsReq))
-    event_loop.run_until_complete(prover1.processClaim(schemaXyzId, claim, signature))
+    event_loop.run_until_complete(
+        prover1.processClaim(schemaXyzId, claim, signature))
     return event_loop.run_until_complete(
         prover1.wallet.getClaimSignature(schemaXyzId))
 
@@ -243,7 +245,8 @@ def claimsProver2Xyz(prover2, issuerXyz, schemaXyzId, attrsProver2Xyz,
         prover2.createClaimRequest(schemaXyzId))
     signature, claim = event_loop.run_until_complete(
         issuerXyz.issueClaim(schemaXyzId, claimsReq))
-    event_loop.run_until_complete(prover2.processClaim(schemaXyzId, claim, signature))
+    event_loop.run_until_complete(
+        prover2.processClaim(schemaXyzId, claim, signature))
     return event_loop.run_until_complete(
         prover2.wallet.getClaimSignature(schemaXyzId))
 

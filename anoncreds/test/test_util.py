@@ -92,7 +92,7 @@ def testToFromDictWithStrValuesSets():
 
 
 def testToFromDictWithStrValuesSubDicts():
-    group = cmod.PairingGroup(PAIRING_GROUP)
+    cmod.PairingGroup(PAIRING_GROUP)
     dictionary = OrderedDict((
         ('4', {'aaa', 'bbb'}),
         ('2', OrderedDict((
@@ -153,7 +153,7 @@ def testToFromDictWithStrValuesDictInList():
                  )
             ))
         ]
-         ),
+        ),
         ('3', 3)
     ))
     assert dictionary == fromDictWithStrValues(toDictWithStrValues(dictionary))
@@ -203,13 +203,17 @@ def _checkHashEqual(input):
 
 def testIntToArrayBytes():
     val = cmod.integer(1606507817390189252221968804450207070282033)
-    res = [18, 113, 26, 39, 35, 240, 231, 239, 92, 226, 84, 46, 230, 174, 230, 41, 225, 49]
+    res = [18, 113, 26, 39, 35, 240, 231, 239, 92,
+           226, 84, 46, 230, 174, 230, 41, 225, 49]
     assert res == intToArrayBytes(val)
 
+
 def testBytesToInt():
-    val = [18, 113, 26, 39, 35, 240, 231, 239, 92, 226, 84, 46, 230, 174, 230, 41, 225, 49]
+    val = [18, 113, 26, 39, 35, 240, 231, 239, 92,
+           226, 84, 46, 230, 174, 230, 41, 225, 49]
     res = 1606507817390189252221968804450207070282033
     assert res == bytesToInt(val)
+
 
 def testIntToArrayBytesAndBack():
     val = cmod.integer(1606507817390189252221968804450207070282033)

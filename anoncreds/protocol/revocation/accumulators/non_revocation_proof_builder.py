@@ -27,7 +27,7 @@ class NonRevocationClaimInitializer:
     async def initNonRevocationClaim(self, schemaId: ID,
                                      claim: NonRevocationClaim):
         vrPrime = (
-        await self._wallet.getNonRevocClaimInitData(schemaId)).vPrime
+            await self._wallet.getNonRevocClaimInitData(schemaId)).vPrime
         newV = claim.v + vrPrime
         claim = claim._replace(v=newV)
         await self._testWitnessCredential(schemaId, claim)
@@ -41,7 +41,7 @@ class NonRevocationClaimInitializer:
         m2 = int(await self._wallet.getContextAttr(schemaid))
 
         zCalc = cmod.pair(claim.witness.gi, acc.acc) / cmod.pair(pkR.g,
-                                                         claim.witness.omega)
+                                                                 claim.witness.omega)
         if zCalc != accPk.z:
             raise ValueError("issuer is sending incorrect data")
 

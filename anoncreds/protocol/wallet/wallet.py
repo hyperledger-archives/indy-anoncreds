@@ -82,9 +82,6 @@ class WalletInMemory(Wallet):
             return self._schemasById[schemaId.schemaId]
 
         schema = await self._repo.getSchema(schemaId)
-        if not schema:
-            raise ValueError('No schema with ID={} and key={}'.format(
-                schemaId.schemaId, schemaId.schemaKey))
 
         self._cacheSchema(schema)
 
@@ -135,19 +132,17 @@ class WalletInMemory(Wallet):
         if schemaKey in dictionary:
             return dictionary[schemaKey]
 
-        value = None
-        if getFromRepo:
+        elif getFromRepo:
             schemaId = schemaId._replace(schemaKey=schemaKey,
                                          schemaId=schema.seqId)
             value = await getFromRepo(schemaId)
+            dictionary[schemaKey] = value
+            return value
 
-        if not value:
+        else:
             raise ValueError(
                 'No value for schema with ID={} and key={}'.format(
                     schemaId.schemaId, schemaId.schemaKey))
-
-        dictionary[schemaKey] = value
-        return value
 
     async def _cacheValueForId(self, dictionary: Dict[SchemaKey, Any],
                                schemaId: ID, value: Any):

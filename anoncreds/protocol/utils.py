@@ -159,8 +159,10 @@ def int_to_ZR(intHash, group):
 def groupIdentityG1():
     return cmod.PairingGroup(PAIRING_GROUP).init(cmod.G1, 0)
 
+
 def groupIdentityG2():
     return cmod.PairingGroup(PAIRING_GROUP).init(cmod.G2, 0)
+
 
 def get_values_of_dicts(*args):
     l = list()

@@ -5,7 +5,7 @@ from anoncreds.protocol.types import ID, \
     Claims, ClaimInitDataType, \
     PrimaryClaim, NonRevocationClaim, ClaimsPair, ClaimAttributeValues
 from anoncreds.protocol.wallet.wallet import Wallet, WalletInMemory
-from typing import Dict, Sequence, Any
+from typing import Dict
 
 
 class ProverWallet(Wallet):

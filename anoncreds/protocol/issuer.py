@@ -121,7 +121,7 @@ class Issuer:
         await self._genContxt(schemaId, iA, claimRequest.userId)
 
         (c1, claim) = await self._issuePrimaryClaim(schemaId, attributes,
-                                           claimRequest.U)
+                                                    claimRequest.U)
         # TODO re-enable when revocation registry is fully implemented
         c2 = await self._issueNonRevocationClaim(schemaId, claimRequest.Ur,
                                                  iA,

@@ -1,14 +1,14 @@
 ### Build indy-anoncreds using docker
 
 ```
-./build-indy-anoncreds-docker.sh <path-to-sources> 
+./build-indy-anoncreds-docker.sh <path-to-sources> <version>
 ```
 Built package is placed in a docker volume `indy-anoncreds-deb-u1604`. 
 
 ### Build indy-anoncreds
 
 ```
-./build-indy-anoncreds.sh <path to sources> <output-path: default='.'>
+./build-indy-anoncreds.sh <path to sources> <version> <output-path: default='.'>
 ```
 
 Built package is placed in the `output-path` folder.

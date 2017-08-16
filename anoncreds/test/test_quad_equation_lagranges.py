@@ -15,4 +15,4 @@ def testQuadEquationLagranges():
 def testQuadEquationLagrangesNegativeInt():
     delta = -5
     with pytest.raises(ValueError):
-        u = fourSquares(delta)
+        fourSquares(delta)

@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import Dict, Any
 
+from anoncreds.protocol.exceptions import SchemaNotFoundError
 from anoncreds.protocol.types import ID, PublicKey, RevocationPublicKey, \
     Schema, Tails, Accumulator, \
     AccumulatorPublicKey, TimestampType, SchemaKey
@@ -16,13 +17,13 @@ class PublicRepo:
     @abstractmethod
     async def getPublicKey(self,
                            schemaId: ID,
-                           signatureType = 'CL') -> PublicKey:
+                           signatureType='CL') -> PublicKey:
         raise NotImplementedError
 
     @abstractmethod
     async def getPublicKeyRevocation(self,
                                      schemaId: ID,
-                                     signatureType = 'CL') -> RevocationPublicKey:
+                                     signatureType='CL') -> RevocationPublicKey:
         raise NotImplementedError
 
     @abstractmethod
@@ -50,7 +51,7 @@ class PublicRepo:
                                schemaId: ID,
                                pk: PublicKey,
                                pkR: RevocationPublicKey = None,
-                               signatureType = 'CL') -> (
+                               signatureType='CL') -> (
             PublicKey, RevocationPublicKey):
         raise NotImplementedError
 
@@ -90,19 +91,19 @@ class PublicRepoInMemory(PublicRepo):
         if schemaId.schemaId and schemaId.schemaId in self._schemasById:
             return self._schemasById[schemaId.schemaId]
 
-        raise KeyError(
+        raise SchemaNotFoundError(
             'No schema with ID={} and key={}'.format(
                 schemaId.schemaId,
                 schemaId.schemaKey))
 
     async def getPublicKey(self,
                            schemaId: ID,
-                           signatureType = 'CL') -> PublicKey:
+                           signatureType='CL') -> PublicKey:
         return await self._getValueForId(self._pks, schemaId)
 
     async def getPublicKeyRevocation(self,
                                      schemaId: ID,
-                                     signatureType = 'CL') -> RevocationPublicKey:
+                                     signatureType='CL') -> RevocationPublicKey:
         return await self._getValueForId(self._pkRs, schemaId)
 
     async def getPublicKeyAccumulator(self,
@@ -162,7 +163,7 @@ class PublicRepoInMemory(PublicRepo):
                              schemaId: ID) -> Any:
         schema = await self.getSchema(schemaId)
         schemaKey = schema.getKey()
-        if not schemaKey in dictionary:
+        if schemaKey not in dictionary:
             raise ValueError(
                 'No value for schema with ID={} and key={}'.format(
                     schemaId.schemaId, schemaId.schemaKey))

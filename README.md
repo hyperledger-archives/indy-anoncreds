@@ -1,5 +1,5 @@
 # AnonCreds: Anonymous credentials protocol implementation in python
-[![Build Status](https://jenkins.evernym.com/buildStatus/icon?job=Anoncreds/master)](https://jenkins.evernym.com/view/Core/job/Anoncreds/job/master/)
+[![Build Status](https://ci.evernym.com/buildStatus/icon?job=Anoncreds/master)](https://ci.evernym.com/view/Core/job/Anoncreds/job/master/)
 
 This is a python implementation of the anonymous credentials ideas developed by
 IBM Research (see https://idemix.wordpress.com/ and
@@ -36,8 +36,8 @@ Anonymous Credentials requires a cryptographic framework. We have tested it with
 ### Command-line Install
 
 ```
-git clone https://github.com/evernym/anoncreds.git
-cd anoncreds
+git clone https://github.com/hyperledger/indy-anoncreds.git
+cd indy-anoncreds
 sh setup-charm.sh
 ```
 
@@ -51,8 +51,8 @@ sh setup-charm.sh
 ### Command-line Install
 
 ```
-git clone https://github.com/evernym/anoncreds.git
-cd anoncreds
+git clone https://github.com/hyperledger/indy-anoncreds.git
+cd indy-anoncreds
 sh setup-charm-homebrew.sh
 ```
 

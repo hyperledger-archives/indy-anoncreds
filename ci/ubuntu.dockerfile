@@ -2,6 +2,7 @@
 FROM ubuntu:16.04
 
 ARG uid=1000
+ARG user=indy
 
 # Install environment
 RUN apt-get update -y
@@ -20,15 +21,15 @@ RUN pip3 install -U \
 	pip \ 
 	setuptools \
 	virtualenv
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EAA542E8
-RUN echo "deb https://repo.evernym.com/deb xenial master" >> /etc/apt/sources.list
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
+RUN echo "deb https://repo.sovrin.org/deb xenial master" >> /etc/apt/sources.list
 ADD setup-charm.sh setup-charm.sh
 RUN bash setup-charm.sh
-RUN useradd -ms /bin/bash -u $uid sovrin
-USER sovrin
-RUN virtualenv -p python3.5 /home/sovrin/test
+RUN useradd -ms /bin/bash -u $uid $user
+USER $user
+RUN virtualenv -p python3.5 /home/$user/test
 USER root
-RUN ln -sf /home/sovrin/test/bin/python /usr/local/bin/python
-RUN ln -sf /home/sovrin/test/bin/pip /usr/local/bin/pip
-USER sovrin
-WORKDIR /home/sovrin
+RUN ln -sf /home/$user/test/bin/python /usr/local/bin/python
+RUN ln -sf /home/$user/test/bin/pip /usr/local/bin/pip
+USER $user
+WORKDIR /home/$user

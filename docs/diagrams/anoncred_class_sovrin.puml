@@ -38,13 +38,13 @@ Prover o-- ProverWallet
 Verifier o-- Wallet
 }
 
-package  sovrin.anoncreds #DDDDDD {
+package  indy.anoncreds #DDDDDD {
 
-Issuer <|-- SovrinIssuer
-Prover <|-- SovrinProver
-Verifier <|-- SovrinVerifier
+Issuer <|-- IndyIssuer
+Prover <|-- IndyProver
+Verifier <|-- IndyVerifier
 
-PublicRepo <|-- SovrinPublicRepo
+PublicRepo <|-- IndyPublicRepo
 }
 
 

@@ -22,7 +22,7 @@ def config = [
     codeValidation: true,
     runTests: true,
     failFast: false,
-    sendNotif: true
+    sendNotif: false
 ]
 
 

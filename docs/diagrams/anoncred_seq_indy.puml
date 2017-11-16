@@ -2,12 +2,12 @@
 actor Prover as P
 participant "Issuer" as I
 participant "Verifier" as V
-participant "Sovrin" as S
+participant "Indy" as N
 participant "Reliable\nPublic Storage" as D
 
 note over I, D #white
     dashed arrows: a value may be cached, so a call to the ledger/public storage may not be needed
-    <font color=green>green:</font> submit/get to/from Sovrin
+    <font color=green>green:</font> submit/get to/from Indy
     <font color=blue>blue:</font> submit/get to/from Reliable Public Storage
     black: communication between Issuer/Prover/Verifier
     <font color=red>red:</font> store locally
@@ -17,7 +17,7 @@ endnote
 
 note over I: Define Schema with attributes **m1, m2, ..., ml**
 
-I -[#green]> S: Submit **SCHEMA** txn
+I -[#green]> N: Submit **SCHEMA** txn
 
 == Issuer Setup for each Schema==
 
@@ -25,14 +25,14 @@ note over I: **1.** Generate Primary Keys: **PK** and **SK**\n**2.** Generate No
 
 I -> I: Store Private Keys **SK**, **SKr**
 
-I -[#green]> S: Submit Primary and Revocation Public Keys: **CLAIM_DEF** txn
+I -[#green]> N: Submit Primary and Revocation Public Keys: **CLAIM_DEF** txn
 
 
 note over I:**3.**  Create accumulator with keys: **accum**, **PKaccum**, **SKaccum**, **Tails**
 
 I -> I: Store Private Key **SKaccum**
 
-I -[#green]> S: Submit Accumulator Definition: **REVOC_REG** txn
+I -[#green]> N: Submit Accumulator Definition: **REVOC_REG** txn
 
 I -[#blue]> D: Publish **Tails**
 
@@ -44,7 +44,7 @@ note over P: Generate Master Secret **m1**
 
 P -> P: Store **m1**
 
-S -[#green]-> P: Get **PK** and **PKr**: **CLAIM_DEF** txn
+N -[#green]-> P: Get **PK** and **PKr**: **CLAIM_DEF** txn
 
 note over P: **P1.** generate U, vPrime, Ur and vrPrime with prover-generated values
 
@@ -60,11 +60,11 @@ end note
 
 I -> I: Store **m2,...,ml**
 
-S -[#green]-> I: Get **accum** value: **REVOC_REG_UPDATE** txn
+N -[#green]-> I: Get **accum** value: **REVOC_REG_UPDATE** txn
 
-S -[#green]-> I: Get **PKaccum** value: **REVOC_REG** txn
+N -[#green]-> I: Get **PKaccum** value: **REVOC_REG** txn
 
-S -[#green]-> I: Get **PK** and **PKr**: **CLAIM_DEF** txn
+N -[#green]-> I: Get **PK** and **PKr**: **CLAIM_DEF** txn
 
 
 note over I
@@ -73,11 +73,11 @@ note over I
     **I7.** Update Revocation Registry (**accum**)
 end note
 
-I -[#green]> S: Submit accumulator update: **REVOC_REG_UPDATE** txn
+I -[#green]> N: Submit accumulator update: **REVOC_REG_UPDATE** txn
 
 I -[#black]> P: Send **c1**, **c2**, **m2**
 
-S -[#green]-> P: Get **PKaccum** value: **REVOC_REG** txn
+N -[#green]-> P: Get **PKaccum** value: **REVOC_REG** txn
 
 note over P
     **P3.** update **c1**, **c2** with **vPrime, vrPrime**
@@ -94,15 +94,15 @@ note over P
     **P1.** Take **revealedAttributes, predicates, accumSeqNo/TS** from a Verifier's link
 end note
 
-S -[#green]-> P: Get **PK** and **PKr**: **CLAIM_DEF** txn
+N -[#green]-> P: Get **PK** and **PKr**: **CLAIM_DEF** txn
 
-S -[#green]-> P: Get **PKaccum** value: **REVOC_REG** txn
+N -[#green]-> P: Get **PKaccum** value: **REVOC_REG** txn
 
 D -[#blue]-> P: Get **Tails**
 
 note over P: **P3.** Check accumSeqNo/TS of the last **accum**\n and update the latest accum if needed
 
-S -[#green]> P: Update **accum** and get all issued/revoced since the last update: **GET_TXNS** query request
+N -[#green]> P: Update **accum** and get all issued/revoced since the last update: **GET_TXNS** query request
 
 note over P
     **P4.** Update **c2** (witness) for the latest **accum**
@@ -112,11 +112,11 @@ end note
 
 P -[#black]> V: Send Full Proof: **Pr=(PrC, PrP)**
 
-S -[#green]-> V: Update **accum**: **REVOC_REG_UPDATE**
+N -[#green]-> V: Update **accum**: **REVOC_REG_UPDATE**
 
-S -[#green]-> V: Get **PK** and **PKr**: **CLAIM_DEF** txn
+N -[#green]-> V: Get **PK** and **PKr**: **CLAIM_DEF** txn
 
-S -[#green]-> V: Get **PKaccum** value: **REVOC_REG** txn
+N -[#green]-> V: Get **PKaccum** value: **REVOC_REG** txn
 
 note over V: **V1.** Verify **Pr**
 

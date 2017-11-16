@@ -63,7 +63,7 @@ If the pre-built packages (see above) doesn't work or not appropriate for some r
 
 6. Patch Python to be able to work with Mingw32
     1. Patch the cygwin compiler in distutils:
-        1. Open _C:\Users\sovrin\AppData\Local\Application Data\Programs\Python\Python35-32\Lib\distutils\cygwinccompiler.py_
+        1. Open _C:\Users\indy\AppData\Local\Application Data\Programs\Python\Python35-32\Lib\distutils\cygwinccompiler.py_
         2. Comment out all lines with `get_msvcr()` call.
     
 7. Build charm-crypto

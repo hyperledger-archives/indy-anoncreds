@@ -18,20 +18,20 @@ class Verifier
 
 }
 
-package  sovrin.anoncreds {
+package  indy.anoncreds {
 
-Issuer <|-- SovrinIssuer
-Prover <|-- SovrinProver
-Verifier <|-- SovrinVerifier
+Issuer <|-- IndyIssuer
+Prover <|-- IndyProver
+Verifier <|-- IndyVerifier
 
-PublicRepo <|-- SovrinPublicRepo
+PublicRepo <|-- IndyPublicRepo
 }
 
-package  sovrin.agent #DDDDDD {
+package  indy.agent #DDDDDD {
 
-AgentIssuer o--SovrinIssuer
-AgentProver o--SovrinProver
-AgentVerifier o--SovrinVerifier
+AgentIssuer o--IndyIssuer
+AgentProver o--IndyProver
+AgentVerifier o--IndyVerifier
 
 AgentIssuer <|-- Walleted
 AgentProver <|-- Walleted

@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Sequence, Iterable
 
 from anoncreds.protocol.repo.public_repo import PublicRepo
 from anoncreds.protocol.types import Schema, SchemaKey, \
@@ -87,7 +87,7 @@ class WalletInMemory(Wallet):
 
         return schema
 
-    async def getAllSchemas(self) -> Sequence[Schema]:
+    async def getAllSchemas(self) -> Iterable[Schema]:
         return self._schemasByKey.values()
 
     async def getPublicKey(self, schemaId: ID) -> PublicKey:

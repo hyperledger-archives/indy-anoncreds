@@ -30,6 +30,8 @@ METADATA = os.path.join(SETUP_DIRNAME, 'anoncreds', '__metadata__.py')
 # Load the metadata using exec() so we don't trigger an import of ioflo.__init__
 exec(compile(open(METADATA).read(), METADATA, 'exec'))
 
+tests_require = ['pytest', 'pytest-asyncio']
+
 setup(
     name='indy-anoncreds-dev',
     version=__version__,
@@ -46,5 +48,8 @@ setup(
              '*.css', '*.ico', '*.png', 'LICENSE', 'LEGAL']},
     install_requires=['Charm-Crypto', 'lazy-object-proxy', 'base58'],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest', 'pytest-asyncio']
+    extras_require={
+        'tests': tests_require
+    },
+    tests_require=tests_require
 )

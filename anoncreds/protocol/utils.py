@@ -165,10 +165,10 @@ def groupIdentityG2():
 
 
 def get_values_of_dicts(*args):
-    l = list()
+    _l = list()
     for d in args:
-        l.extend(list(d.values()))
-    return l
+        _l.extend(list(d.values()))
+    return _l
 
 
 def get_prime_in_range(start, end):

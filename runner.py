@@ -11,6 +11,13 @@ def run():
     collectedData = open(testListFile).read()
     os.remove(testListFile)
     log("Collecting modules")
+
+    # check errors during collect
+    if re.findall("={5,} ERRORS ={5,}", collectedData):
+        log("Errors found during collection")
+        log(collectedData)
+        return -1
+
     testList = re.findall("<Module '(.+)'>", collectedData)
     log("Found {} test modules".format(len(testList)))
     if not testList:

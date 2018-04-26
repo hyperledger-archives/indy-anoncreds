@@ -68,4 +68,5 @@ def buildDebUbuntu = { repoName, releaseVersion, sourcePath ->
 }
 
 def options = new TestAndPublishOptions()
+options.setPrContexts(["ci/hyperledger-jenkins/pr-merge"])
 testAndPublish(name, [ubuntu: [anoncreds: testUbuntu], windows: [anoncreds: testWindowsNoDocker], windowsNoDocker: [anoncreds: testWindowsNoDocker]], true, options, [ubuntu: buildDebUbuntu])
